@@ -172,137 +172,88 @@ sha3 = { version = "0.10", default-features = false }
 
 ---
 
-### REIMPLEMENT: Simple Dependencies
+### VENDOR: Simple Dependencies
 
-#### 6. `hex` (1k LOC) → **REIMPLEMENT**
+#### 6. `hex` (686 LOC) → **VENDOR**
 
 **Current Usage**: Hex encoding/decoding for display
 
-**Why Reimplement**:
-- Simple algorithm (~200 LOC)
-- No security-critical operations
-- Reduces dependency count
-- Full control over implementation
+**Why Vendor** (instead of reimplementing):
+- Small, stable crate (~686 LOC)
+- License: MIT OR Apache-2.0 ✅
+- No dependencies
+- Well-tested upstream code
+- Easy to audit once and freeze
 
-**Implementation Plan**:
+**Vendoring Strategy**:
 
+Instead of reimplementing from scratch, we **vendor** (copy) the source code into our repository:
+
+```
+crates/universal-decoder-core/src/vendored/hex/
+├── README.md           # Attribution and vendoring info
+├── LICENSE-MIT         # Original MIT license
+├── LICENSE-APACHE      # Original Apache license
+├── mod.rs              # Integration module
+├── lib.rs              # Original hex/src/lib.rs (minimal changes)
+└── error.rs            # Original hex/src/error.rs
+```
+
+**Benefits over reimplementing**:
+- ✅ **Battle-tested code**: Upstream has extensive tests
+- ✅ **Proper implementation**: No risk of introducing bugs
+- ✅ **Easy to verify**: Can compare with original using search/replace
+- ✅ **Legal compliance**: Proper attribution maintained
+- ✅ **Saves time**: ~2-3 hours vs 1-2 days for reimplementing
+
+**Vendoring Process**:
+
+1. ✅ Copy source files from hex v0.4.3 with attribution
+2. ✅ Include original license files (MIT + Apache)
+3. ✅ Create README documenting vendoring
+4. ✅ Minimal changes: Remove serde feature (we don't use it)
+5. ✅ Keep original tests for validation
+6. ✅ Remove external `hex` dependency from Cargo.toml
+7. ✅ Update imports: `use hex::` → `use crate::hex::`
+
+**Validation Strategy**:
+- Keep `hex = "0.4.3"` in `[dev-dependencies]` for comparison tests
+- Write tests that verify vendored version matches external version
+- Property tests: Ensure behavior is identical
+
+**Example Comparison Test**:
 ```rust
-// crates/universal-decoder-core/src/utils/hex.rs
+#[cfg(test)]
+mod validation {
+    use hex as external_hex; // From dev-dependencies
+    use crate::hex as vendored_hex;
 
-/// Internal hex encoding (replaces `hex` crate)
-pub mod hex {
-    use core::fmt;
+    #[test]
+    fn test_vendored_matches_external() {
+        let data = b"Hello, world!";
 
-    const HEX_CHARS: &[u8; 16] = b"0123456789abcdef";
+        let external = external_hex::encode(data);
+        let vendored = vendored_hex::encode(data);
 
-    /// Encode bytes to hex string
-    pub fn encode(bytes: &[u8]) -> String {
-        let mut result = String::with_capacity(bytes.len() * 2);
-        for &byte in bytes {
-            result.push(HEX_CHARS[(byte >> 4) as usize] as char);
-            result.push(HEX_CHARS[(byte & 0xf) as usize] as char);
-        }
-        result
-    }
-
-    /// Decode hex string to bytes
-    pub fn decode(s: &str) -> Result<Vec<u8>, HexError> {
-        if s.len() % 2 != 0 {
-            return Err(HexError::OddLength);
-        }
-
-        let mut result = Vec::with_capacity(s.len() / 2);
-        let bytes = s.as_bytes();
-
-        for chunk in bytes.chunks(2) {
-            let high = decode_nibble(chunk[0])?;
-            let low = decode_nibble(chunk[1])?;
-            result.push((high << 4) | low);
-        }
-
-        Ok(result)
-    }
-
-    fn decode_nibble(c: u8) -> Result<u8, HexError> {
-        match c {
-            b'0'..=b'9' => Ok(c - b'0'),
-            b'a'..=b'f' => Ok(c - b'a' + 10),
-            b'A'..=b'F' => Ok(c - b'A' + 10),
-            _ => Err(HexError::InvalidChar(c as char)),
-        }
-    }
-
-    #[derive(Debug, PartialEq)]
-    pub enum HexError {
-        OddLength,
-        InvalidChar(char),
-    }
-
-    impl fmt::Display for HexError {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            match self {
-                HexError::OddLength => write!(f, "hex string has odd length"),
-                HexError::InvalidChar(c) => write!(f, "invalid hex character: {}", c),
-            }
-        }
-    }
-
-    impl std::error::Error for HexError {}
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn test_encode() {
-            assert_eq!(encode(&[0x00]), "00");
-            assert_eq!(encode(&[0xff]), "ff");
-            assert_eq!(encode(&[0xde, 0xad, 0xbe, 0xef]), "deadbeef");
-        }
-
-        #[test]
-        fn test_decode() {
-            assert_eq!(decode("00").unwrap(), vec![0x00]);
-            assert_eq!(decode("ff").unwrap(), vec![0xff]);
-            assert_eq!(decode("deadbeef").unwrap(), vec![0xde, 0xad, 0xbe, 0xef]);
-        }
-
-        #[test]
-        fn test_roundtrip() {
-            let original = vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
-            let encoded = encode(&original);
-            let decoded = decode(&encoded).unwrap();
-            assert_eq!(original, decoded);
-        }
-
-        #[test]
-        fn test_odd_length() {
-            assert_eq!(decode("f"), Err(HexError::OddLength));
-        }
-
-        #[test]
-        fn test_invalid_char() {
-            assert_eq!(decode("zz"), Err(HexError::InvalidChar('z')));
-        }
+        assert_eq!(external, vendored);
     }
 }
 ```
 
-**Testing Strategy**:
-- Unit tests: Encode, decode, roundtrip
-- Property tests: `decode(encode(x)) == x` for all `x`
-- Comparison tests: Verify matches behavior of `hex` crate
-
 **Migration Steps**:
-1. ✅ Implement `hex.rs` module
-2. ✅ Write comprehensive tests
-3. ✅ Replace all `hex::encode` calls with `crate::utils::hex::encode`
-4. ✅ Replace all `hex::decode` calls with `crate::utils::hex::decode`
-5. ✅ Remove `hex` from `Cargo.toml`
-6. ✅ Run full test suite
+1. ✅ Create `src/vendored/hex/` directory structure
+2. ✅ Copy source files with proper attribution
+3. ✅ Write vendoring README
+4. ✅ Remove serde feature (minimal modification)
+5. ✅ Update Cargo.toml (remove from deps, add to dev-deps for validation)
+6. ✅ Search/replace all imports
+7. ✅ Run comparison tests
+8. ✅ Update NOTICE file with attribution
 
-**Timeline**: 1-2 days
-**Risk**: Low (simple algorithm, well-tested)
+**Timeline**: 2-3 hours (much faster than reimplementing)
+**Risk**: Very Low (established code, proper attribution)
+
+**See**: `docs/VENDORING_GUIDE.md` for detailed process
 
 ---
 
@@ -599,13 +550,14 @@ pub fn canonical_hash_deterministic(tx: &TxIR)
    - **Effort**: 1 day
    - **Risk**: Low
 
-2. ✅ **Reimplement `hex` module**
-   - Create `src/utils/hex.rs`
-   - Write comprehensive tests
-   - Replace all usages
-   - Remove dependency
-   - **Effort**: 2 days
-   - **Risk**: Low
+2. ✅ **Vendor `hex` crate**
+   - Create `src/vendored/hex/` directory
+   - Copy source files with attribution
+   - Include original licenses
+   - Update imports throughout codebase
+   - Remove external dependency
+   - **Effort**: 2-3 hours
+   - **Risk**: Very Low
 
 ### Phase 2: Evaluation (1 week)
 

@@ -50,7 +50,7 @@ This document summarizes the comprehensive testing strategy and dependency manag
 
 **Actions Identified**:
 1. ✅ **Keep**: serde, borsh, thiserror, sha2, sha3 (essential, audited)
-2. ✅ **Reimplement**: `hex` (~200 LOC, simple)
+2. ✅ **Vendor**: `hex` (~686 LOC, proper attribution)
 3. ✅ **Evaluate**: `smallvec` (benchmark first)
 4. ✅ **Move**: `serde_json` to dev-dependencies
 
@@ -104,19 +104,20 @@ hex-literal = "0.4"  # Test utilities
 ### Phase 1: Core Dependency Cleanup (1 week)
 
 **Week 1: Immediate Actions**
-1. ✅ Reimplement `hex` module internally (~200 LOC)
-   - Create `crates/universal-decoder-core/src/utils/hex.rs`
-   - Write comprehensive tests
-   - Replace all `hex::encode`/`hex::decode` calls
-   - Remove `hex` from Cargo.toml
+1. ✅ Vendor `hex` crate (~686 LOC with proper attribution)
+   - Create `crates/universal-decoder-core/src/vendored/hex/`
+   - Copy source files with original licenses
+   - Write attribution README
+   - Update imports: `hex::` → `crate::hex::`
+   - Remove external dependency from Cargo.toml
 
 2. ✅ Move `serde_json` to dev-dependencies
    - Remove public JSON APIs from core
    - Move to `[dev-dependencies]`
    - Update tests
 
-**Effort**: 3 days
-**Risk**: Low
+**Effort**: 1 day (vendoring is much faster than reimplementing)
+**Risk**: Very Low
 
 ### Phase 2: Evaluate `smallvec` (1 week)
 
@@ -344,7 +345,7 @@ proptest! {
 
 ### ✅ Decisions to Remove/Move Dependencies
 
-1. **hex**: Simple enough to reimplement (~200 LOC)
+1. **hex**: Vendor the crate (~686 LOC, MIT/Apache-2.0, proper attribution)
 2. **smallvec**: Evaluate performance, potentially remove
 3. **serde_json**: Move to dev-dependencies (display only)
 4. **bitcoin/ethers-core**: Move to dev-dependencies (validation only)
@@ -361,7 +362,7 @@ proptest! {
 ### Immediate (Week 1)
 
 1. ✅ Review and approve this testing strategy
-2. ✅ Reimplement `hex` module
+2. ✅ Vendor `hex` crate (with proper attribution)
 3. ✅ Move `serde_json` to dev-dependencies
 4. ✅ Write first unit tests for core
 
