@@ -3,6 +3,7 @@
 //! This module defines the trait hierarchy that enables modular, compile-time safe
 //! decoding of blockchain transactions through static dispatch.
 
+use crate::chain::ChainIdentity;
 use crate::error::{DecoderError, Result};
 use crate::ir::TxIR;
 
@@ -15,15 +16,24 @@ use crate::ir::TxIR;
 /// # Type Parameters
 ///
 /// - `TxSpecific`: The chain-specific transaction type that can be canonicalized
-/// - `Error`: The error type for chain-specific decoding failures
+/// - `Chain`: The chain identity type implementing `ChainIdentity`
 ///
 /// # Example
 ///
 /// ```ignore
-/// struct BitcoinDecoder;
+/// struct BitcoinChain;
+/// impl ChainIdentity for BitcoinChain {
+///     fn chain_id(&self) -> u64 { 0 }
+///     fn chain_name(&self) -> &str { "Bitcoin" }
+///     fn chain_family(&self) -> ChainFamily { ChainFamily::Utxo }
+/// }
 ///
+/// struct BitcoinDecoder;
 /// impl ChainDecoder for BitcoinDecoder {
 ///     type TxSpecific = BitcoinTransaction;
+///     type Chain = BitcoinChain;
+///
+///     fn chain() -> Self::Chain { BitcoinChain }
 ///
 ///     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
 ///         // Parse Bitcoin transaction format
@@ -34,6 +44,12 @@ use crate::ir::TxIR;
 pub trait ChainDecoder {
     /// The chain-specific transaction type that implements Canonicalizer
     type TxSpecific: for<'a> Canonicalizer<'a>;
+
+    /// The chain identity type
+    type Chain: ChainIdentity;
+
+    /// Get the chain identity for this decoder
+    fn chain() -> Self::Chain;
 
     /// Decode raw transaction bytes into the chain-specific structure
     ///
@@ -54,9 +70,6 @@ pub trait ChainDecoder {
         let _ = raw_bytes;
         Ok(())
     }
-
-    /// Get the chain identifier for this decoder
-    fn chain_id() -> crate::ir::ChainId;
 }
 
 /// Trait for transforming chain-specific transactions into the canonical TxIR.

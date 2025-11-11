@@ -52,6 +52,8 @@
 //! let canonical = tx.canonicalize()?;
 //! ```
 
+pub mod canonical;
+pub mod chain;
 pub mod error;
 pub mod hooks;
 pub mod ir;
@@ -59,12 +61,14 @@ pub mod traits;
 
 // Re-export commonly used types
 pub mod prelude {
+    pub use crate::canonical::{CanonicalSerialize, CanonicalTxIR};
+    pub use crate::chain::{ChainFamily, ChainIdentity, ChainRef};
     pub use crate::error::{DecoderError, Result};
     pub use crate::hooks::{
         Hook, HookContext, HookRegistry, HookRegistryBuilder, HookResult, HookStage,
     };
     pub use crate::ir::{
-        AccountChange, Address, Amount, AssetId, AuthorizationPackage, ChainId, ContractCall,
+        AccountChange, Address, Amount, AssetId, AuthorizationPackage, ContractCall,
         ContractDeploy, GenericOperation, InputReference, KeyType, Operation, OutputValue,
         PublicKey, ResourceLimits, ResourceType, Signature, SignatureScheme, Stake,
         StakeOperationType, StateDeltas, StorageChange, Transfer, TxIR, TxMetadata,

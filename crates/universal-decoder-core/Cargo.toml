@@ -10,6 +10,7 @@ description = "Core traits and types for universal blockchain transaction decodi
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+borsh = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 sha3 = { workspace = true }

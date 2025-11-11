@@ -4,18 +4,9 @@
 //! The TxIR normalizes transactions from different blockchain models (UTXO, Account, Instruction)
 //! into a unified semantic structure.
 
+use crate::chain::{ChainIdentity, ChainRef};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
-
-/// Chain identifier to distinguish which blockchain this transaction belongs to
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ChainId {
-    Bitcoin,
-    Ethereum,
-    Solana,
-    Substrate,
-    Custom(u32),
-}
 
 /// Transaction version with const generic parameter for compile-time version enforcement
 ///
@@ -23,8 +14,8 @@ pub enum ChainId {
 /// ensuring version-specific logic cannot be accidentally mixed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TxIR<'a, const V: u8> {
-    /// Chain identifier
-    pub chain_id: ChainId,
+    /// Chain reference (trait-based, extensible)
+    pub chain: ChainRef,
 
     /// Transaction metadata
     pub metadata: TxMetadata,
@@ -44,16 +35,38 @@ pub struct TxIR<'a, const V: u8> {
 }
 
 impl<'a, const V: u8> TxIR<'a, V> {
-    /// Creates a new TxIR instance
-    pub fn new(
-        chain_id: ChainId,
+    /// Creates a new TxIR instance from a chain identity
+    ///
+    /// # Arguments
+    ///
+    /// * `chain` - A type implementing `ChainIdentity` to identify the blockchain
+    /// * `metadata` - Transaction metadata
+    /// * `authorization` - Authorization information (signatures, public keys)
+    /// * `operations` - Operations performed by this transaction
+    /// * `state_deltas` - Expected state changes
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use universal_decoder_core::prelude::*;
+    ///
+    /// let tx_ir = TxIR::new(
+    ///     &BitcoinChain,
+    ///     metadata,
+    ///     authorization,
+    ///     operations,
+    ///     state_deltas,
+    /// );
+    /// ```
+    pub fn new<C: ChainIdentity>(
+        chain: &C,
         metadata: TxMetadata,
         authorization: AuthorizationPackage,
         operations: Vec<Operation>,
         state_deltas: StateDeltas,
     ) -> Self {
         Self {
-            chain_id,
+            chain: ChainRef::from(chain),
             metadata,
             authorization,
             operations,
