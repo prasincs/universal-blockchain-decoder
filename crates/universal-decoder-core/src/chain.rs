@@ -18,6 +18,7 @@ use std::fmt::Debug;
 /// ```rust
 /// use universal_decoder_core::chain::*;
 ///
+/// #[derive(Debug)]
 /// pub struct BitcoinChain;
 ///
 /// impl ChainIdentity for BitcoinChain {
@@ -47,8 +48,8 @@ pub trait ChainIdentity: Send + Sync + Debug {
         None
     }
 
-    /// Optional: Chain-specific metadata
-    fn metadata(&self) -> Option<serde_json::Value> {
+    /// Optional: Chain-specific metadata (JSON string)
+    fn metadata(&self) -> Option<String> {
         None
     }
 }

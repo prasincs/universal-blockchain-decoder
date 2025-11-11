@@ -96,8 +96,8 @@ pub struct TxMetadata {
     /// Transaction size in bytes
     pub size: usize,
 
-    /// Additional chain-specific metadata
-    pub extra: serde_json::Value,
+    /// Additional chain-specific metadata (JSON string)
+    pub extra: String,
 }
 
 /// Authorization package containing signatures and public keys
@@ -122,8 +122,8 @@ pub struct Signature {
     /// Index of the corresponding public key
     pub key_index: usize,
 
-    /// Additional signature metadata
-    pub metadata: Option<serde_json::Value>,
+    /// Additional signature metadata (JSON string)
+    pub metadata: Option<String>,
 }
 
 /// Public key data
@@ -252,8 +252,8 @@ pub struct GenericOperation {
     /// Operation data
     pub data: Vec<u8>,
 
-    /// Additional metadata
-    pub metadata: serde_json::Value,
+    /// Additional metadata (JSON string)
+    pub metadata: String,
 }
 
 /// State deltas representing inputs consumed and outputs created
@@ -380,17 +380,34 @@ pub enum ResourceType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chain::{ChainFamily, ChainIdentity};
+
+    #[derive(Debug)]
+    struct TestChain;
+
+    impl ChainIdentity for TestChain {
+        fn chain_id(&self) -> u64 {
+            0
+        }
+        fn chain_name(&self) -> &str {
+            "Bitcoin"
+        }
+        fn chain_family(&self) -> ChainFamily {
+            ChainFamily::Utxo
+        }
+    }
 
     #[test]
     fn test_txir_version_const_generic() {
+        let chain = TestChain;
         let tx_v1 = TxIR::<1>::new(
-            ChainId::Bitcoin,
+            &chain,
             TxMetadata {
                 tx_hash: vec![0; 32],
                 block_height: Some(800000),
                 timestamp: Some(1699999999),
                 size: 250,
-                extra: serde_json::json!({}),
+                extra: "{}".to_string(),
             },
             AuthorizationPackage {
                 signatures: vec![],
