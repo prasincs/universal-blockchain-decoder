@@ -19,3 +19,8 @@ smallvec = { workspace = true }
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "vec_vs_smallvec"
+harness = false
