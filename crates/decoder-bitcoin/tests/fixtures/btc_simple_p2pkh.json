@@ -1,0 +1,36 @@
+{
+  "description": "Simple P2PKH Transaction",
+  "txid": "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16",
+  "block_height": 170,
+  "version": 1,
+  "locktime": 0,
+  "input_count": 1,
+  "output_count": 2,
+  "is_coinbase": false,
+  "inputs": [
+    {
+      "index": 0,
+      "prev_txid": "0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9",
+      "prev_vout": 0,
+      "script_sig_length": 72
+    }
+  ],
+  "outputs": [
+    {
+      "index": 0,
+      "value": 1000000000,
+      "value_btc": "10.00000000",
+      "script_type": "P2PK"
+    },
+    {
+      "index": 1,
+      "value": 4000000000,
+      "value_btc": "40.00000000",
+      "script_type": "P2PK"
+    }
+  ],
+  "notes": [
+    "First real Bitcoin transaction between users",
+    "Satoshi sent 10 BTC to Hal Finney"
+  ]
+}

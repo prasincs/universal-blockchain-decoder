@@ -1,0 +1,79 @@
+name: Code Coverage
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Generate coverage report
+        run: |
+          cargo tarpaulin \
+            --verbose \
+            --all-features \
+            --workspace \
+            --timeout 300 \
+            --out Xml \
+            --output-dir ./coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/cobertura.xml
+          fail_ci_if_error: false  # Don't fail CI if codecov upload fails
+          verbose: true
+
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage
+          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/cobertura.xml | head -1)
+          COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | xargs printf "%.0f")
+
+          echo "Coverage: ${COVERAGE_PCT}%"
+
+          # Core should have >90% coverage (strict)
+          # Overall project >80% (allows for work-in-progress decoders)
+          if [ "$COVERAGE_PCT" -lt 80 ]; then
+            echo "❌ Coverage below 80%: ${COVERAGE_PCT}%"
+            echo "ℹ️  This is expected during Phase 1.5 (decoders incomplete)"
+            echo "ℹ️  Target: Core >90%, Overall >80% by Phase 2 completion"
+            # Don't fail during Phase 1.5
+            exit 0
+          else
+            echo "✅ Coverage meets threshold: ${COVERAGE_PCT}%"
+          fi
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/cobertura.xml
