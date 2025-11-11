@@ -228,6 +228,9 @@ jobs:
       - name: Check with minimal versions
         run: |
           cargo +nightly update -Z minimal-versions
-          # proc-macro2 < 1.0.60 is incompatible with Rust 1.91+ (proc_macro_span_shrink feature)
+          # Minimal version overrides for compatibility:
+          # - proc-macro2 >= 1.0.70: Required for Rust 1.91+ (proc_macro_span_shrink feature)
+          # - serde >= 1.0.127: Required for i128/u128 support and const generics in derive macros
+          # - thiserror >= 1.0.30: Required for #[from] attribute with modern syn versions
           cargo update -p proc-macro2 --precise 1.0.70
           cargo check --all-features
