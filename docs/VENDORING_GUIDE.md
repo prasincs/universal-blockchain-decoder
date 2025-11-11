@@ -9,6 +9,25 @@ Vendoring (copying external crate source code into our repository) is a pragmati
 3. **Code is small and simple**: Easy to maintain and audit (~500-1000 LOC)
 4. **License compatible**: MIT or Apache-2.0
 
+## 🎯 Recommended Approach: Git Subtree
+
+**Use `git subtree` instead of manual copying** for maximum verifiability:
+
+✅ **Cryptographically verifiable** - Git history proves what was vendored
+✅ **Easy to audit** - Anyone can verify against upstream
+✅ **Updatable** - `git subtree pull` for updates
+✅ **Transparent** - All modifications tracked in git
+
+**See `docs/GIT_SUBTREE_VENDORING.md` for detailed implementation.**
+
+Quick comparison:
+
+| Method | Verifiable | Updatable | Complexity |
+|--------|-----------|-----------|------------|
+| **Git Subtree** ⭐ | ✅✅✅ | ✅ One command | Low |
+| Manual Copy | ❌ | ❌ Manual | Very Low |
+| Git Submodule | ✅ | ✅ | High |
+
 ## Vendored Dependencies
 
 ### `hex` crate (v0.4.3)
