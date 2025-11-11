@@ -57,7 +57,7 @@ Tasks:
   - [ ] Decide: keep, remove, or vendor based on <10% threshold
 - [ ] Move blockchain libs to dev-dependencies
   - [ ] `bitcoin` → dev-dependencies (test validation only)
-  - [ ] `ethers-core` → dev-dependencies (test validation only)
+  - [ ] `alloy` → dev-dependencies (test validation only)
   - [ ] Decoders use pure Rust parsing
 
 **Final Dependencies**:
@@ -207,11 +207,11 @@ Testing Tasks:
 
 **Priority**: HIGH (Reference Account implementation)
 
-**Strategy**: Pure Rust RLP parsing, validate against `ethers-core` in dev-dependencies
+**Strategy**: Pure Rust RLP parsing, validate against `alloy` in dev-dependencies
 
 Implementation Tasks:
 - [ ] Create `EthereumChain` struct implementing `ChainIdentity`
-- [ ] **Implement pure Rust RLP parsing** (NO production dependency on `ethers-core`)
+- [ ] **Implement pure Rust RLP parsing** (NO production dependency on `alloy`)
   - [ ] RLP decoder (Recursive Length Prefix)
   - [ ] Legacy transaction parsing (pre-EIP-1559)
   - [ ] EIP-2930 transaction parsing (access lists)
@@ -222,8 +222,8 @@ Implementation Tasks:
 - [ ] Update `EthereumTransaction::canonicalize()` to use `ChainRef`
 
 Testing Tasks:
-- [ ] Add `ethers-core = "2.0"` to `[dev-dependencies]` (validation only)
-- [ ] Create validation tests comparing with `ethers-core`
+- [ ] Add `alloy = "2.0"` to `[dev-dependencies]` (validation only)
+- [ ] Create validation tests comparing with `alloy`
 - [ ] Add real Ethereum transaction test cases
   - [ ] Legacy transaction (pre-EIP-1559)
   - [ ] EIP-1559 transaction (London hard fork)
@@ -236,8 +236,8 @@ Testing Tasks:
 - [ ] Fuzz testing with random bytes
 
 **Validation Criteria**:
-- ✅ **Pure Rust implementation** (no `ethers-core` in production deps)
-- ✅ RLP parsing matches `ethers-core` behavior (validated in tests)
+- ✅ **Pure Rust implementation** (no `alloy` in production deps)
+- ✅ RLP parsing matches `alloy` behavior (validated in tests)
 - ✅ Decodes mainnet Ethereum transactions
 - ✅ Handles all transaction types (Legacy, EIP-2930, EIP-1559)
 - ✅ Canonical serialization works

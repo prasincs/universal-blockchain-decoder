@@ -36,9 +36,12 @@ anyhow = "1.0"
 proptest = "1.4"
 criterion = "0.5"
 
-# Blockchain-specific dependencies
+# Blockchain-specific dependencies (for test validation only, Phase 1.5+)
 bitcoin = "0.31"
-ethers-core = "2.0"
+# Using alloy-rs (modern successor to ethers)
+alloy = "0.1"
+alloy-primitives = "0.7"
+alloy-rlp = "0.3"
 solana-sdk = "1.17"
 solana-transaction-status = "1.17"
 

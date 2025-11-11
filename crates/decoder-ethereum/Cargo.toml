@@ -9,7 +9,8 @@ description = "Ethereum transaction decoder for universal-decoder"
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
-ethers-core = { workspace = true }
+# NOTE: Will move to dev-dependencies in Phase 1.5
+# For now, ethers-core → alloy migration pending
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -18,3 +19,7 @@ sha3 = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+# TODO Phase 1.5: Add alloy for test validation
+# alloy = "0.1"
+# alloy-primitives = "0.7"
+# alloy-rlp = "0.3"

@@ -50,7 +50,7 @@ assert_matches = "1.5"        # Pattern matching assertions
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 bitcoin = "0.31"              # OK: Chain-specific parsing
-ethers-core = "2.0"           # OK: Ethereum types
+alloy = "2.0"           # OK: Ethereum types
 # ... other chain-specific libraries
 ```
 

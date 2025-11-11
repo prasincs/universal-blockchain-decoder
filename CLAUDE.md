@@ -1,5 +1,24 @@
 # CLAUDE: Core Library Architecture & Unified Design Ethos
 
+## Quick Reference
+
+**Current Phase**: Phase 1.5 - Testing & Dependency Infrastructure ⚡
+
+**Documentation Map**:
+- 📋 `ROADMAP.md` - Project phases and timeline
+- 📊 `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Testing strategy overview
+- 📦 `docs/GIT_SUBTREE_VENDORING.md` - Verifiable dependency vendoring
+- 🧪 `docs/TESTING_STRATEGY.md` - 5-level testing pyramid
+- 🔧 `docs/DECODER_DEPENDENCY_STRATEGY.md` - Pure Rust decoder pattern
+
+**Next Actions** (Week 1):
+1. Vendor `hex` using git subtree (see below)
+2. Move `serde_json` to dev-dependencies
+3. Benchmark `smallvec` vs `Vec`
+4. Move blockchain libs to dev-dependencies
+
+---
+
 ## Design Philosophy
 
 This document outlines the **fundamental design criteria** for the Universal Blockchain Decoder. These principles are **immutable** and guide all architectural decisions.
@@ -363,40 +382,305 @@ pub struct TxIR<'a, const V: u8> { /* ... */ }
 
 ## Current Status vs Goals
 
-| Criterion | Current | Goal | Status |
-|-----------|---------|------|--------|
-| Core LOC | ~2500 | < 3000 | ✅ Good |
-| Enum-based chains | Yes | No (traits) | ⚠️ Needs refactor |
-| Formal verification | No | Verus annotations | 📋 Planned |
-| Canonical serialization | Borsh ✅ | Borsh ✅ | ✅ Done |
-| Core dependencies | 7 | < 10 | ✅ Good |
-| Test coverage | Basic | Comprehensive | 📋 In progress |
-| Documentation | Partial | Complete | 📋 In progress |
+| Criterion | Current | Goal | Phase 1.5 Target | Status |
+|-----------|---------|------|------------------|--------|
+| Core LOC | ~2500 | < 3000 | ~2700 | ✅ Good |
+| Core dependencies | 8 | ≤ 5 | 5 (hex vendored) | 🚧 In Progress |
+| Decoder dependencies | Yes (bitcoin, ethers) | 0 (pure Rust) | 0 (dev-deps only) | 📋 Planned |
+| Formal verification | No | Verus annotations | Basic annotations | 📋 Week 2 |
+| Canonical serialization | Borsh ✅ | Borsh ✅ | Borsh ✅ | ✅ Done |
+| Test coverage | 0% | 100% core, 90% decoders | 50%+ | 🚧 Week 2 |
+| Property tests | 0 | 50+ | 20+ | 📋 Week 2 |
+| Integration tests | 0 | 100+ fixtures | 50+ | 📋 Week 2 |
+| Fuzz testing | No | Continuous | Infrastructure | 📋 Week 2 |
+| CI/CD | No | Comprehensive | Full pipeline | 📋 Week 2 |
+| Documentation | Architecture | Testing + Deps | Complete | ✅ Done |
 
-## Roadmap
+## Phased Development & Stacked PRs
 
-### v0.1.0 (Current)
-- ✅ Basic trait hierarchy
-- ✅ Bitcoin & Ethereum decoders
-- ✅ Canonical serialization (Borsh)
-- ⚠️ Enum-based chains (temporary)
+### Current: Phase 1.5 - Testing & Dependency Infrastructure (2 weeks)
 
-### v0.2.0 (Next - 2 months)
-- 🎯 **Trait-based chain identity**
-- 🎯 **Refactor to open architecture**
-- 🎯 Add Verus annotations
-- 🎯 Property-based tests
+**Week 1: Dependency Minimization**
+- PR #1: Vendor `hex` using git subtree
+- PR #2: Move `serde_json` to dev-dependencies
+- PR #3: Benchmark `smallvec`, decide keep/remove
+- PR #4: Move blockchain libs to dev-dependencies
 
-### v0.3.0 (3-4 months)
-- 🎯 Formal verification of core
-- 🎯 Security audit
-- 🎯 Production-ready
+**Week 2: Testing Infrastructure**
+- PR #5: Set up test organization + first unit tests
+- PR #6: Add property-based testing (proptest)
+- PR #7: Create test fixture repository + integration tests
+- PR #8: Set up CI/CD pipeline (GitHub Actions)
+- PR #9: Add fuzzing infrastructure (cargo-fuzz)
+- PR #10: Install Verus + first annotations
 
-### v1.0.0 (6 months)
-- 🎯 Fully verified core
-- 🎯 Comprehensive test suite
-- 🎯 Stable API
-- 🎯 Ecosystem of decoders
+**Stacking Strategy**:
+```bash
+# Create feature branches stacked on each other
+git checkout -b phase1.5/vendor-hex
+# ... implement PR #1 ...
+git push -u origin phase1.5/vendor-hex
+
+# Stack PR #2 on top of PR #1
+git checkout -b phase1.5/move-serde-json phase1.5/vendor-hex
+# ... implement PR #2 ...
+git push -u origin phase1.5/move-serde-json
+
+# Continue stacking...
+```
+
+**Merge Strategy**: Merge PRs sequentially (#1 → #2 → #3...) after each passes CI
+
+### Next: Phase 2 - Pure Rust Decoders (6-8 weeks)
+
+**Weeks 1-2: Bitcoin Decoder**
+- PR #11-15: Pure Rust Bitcoin transaction parsing
+- PR #16-18: Validation tests against `bitcoin` crate
+- PR #19-20: Property tests + fuzzing
+
+**Weeks 3-4: Ethereum Decoder**
+- PR #21-25: Pure Rust RLP + Ethereum parsing
+- PR #26-28: Validation tests against `ethers-core`
+- PR #29-30: Property tests + fuzzing
+
+**Weeks 5-6: Integration**
+- PR #31-33: End-to-end tests with real blockchain data
+- PR #34-35: Performance benchmarking
+- PR #36: Documentation updates
+
+### Future Phases
+
+**Phase 3** (Months 3-4): Extended Chain Support (Solana, Cardano, Polkadot)
+**Phase 4** (Months 4-5): Formal Verification (Verus proofs)
+**Phase 5** (Months 5-6): Security Audit & Production Hardening
+**Phase 6** (Month 6): v1.0.0 Release 🎉
+
+**See**: `ROADMAP.md` for detailed timeline
+
+---
+
+## Quick Start: Phase 1.5 Implementation
+
+### PR #1: Vendor `hex` using Git Subtree
+
+**Goal**: Replace external `hex` dependency with vendored version using git subtree for maximum verifiability.
+
+**Commands**:
+```bash
+# 1. Add hex as git subtree
+cd /home/user/universal-blockchain-decoder
+git subtree add \
+    --prefix crates/universal-decoder-core/src/vendored/hex \
+    https://github.com/KokaKiwi/rust-hex.git \
+    v0.4.3 \
+    --squash
+
+# 2. Create integration module
+cat > crates/universal-decoder-core/src/vendored/mod.rs <<'EOF'
+pub mod hex {
+    include!("hex/src/lib.rs");
+}
+pub use hex::FromHexError;
+EOF
+
+# 3. Re-export in core
+# Edit crates/universal-decoder-core/src/lib.rs:
+#   mod vendored;
+#   pub use vendored::hex;
+
+# 4. Update Cargo.toml
+# Remove: hex = "0.4" from [dependencies]
+# Add: hex = "0.4.3" to [dev-dependencies] (for validation)
+
+# 5. Update imports in all decoder crates
+find crates/decoder-* -name "*.rs" -type f \
+    -exec sed -i 's/use hex::/use universal_decoder_core::hex::/g' {} \;
+
+# 6. Write validation tests
+# crates/universal-decoder-core/tests/vendored_hex_validation.rs
+
+# 7. Run tests
+cargo test --all
+
+# 8. Verify dependency count
+cargo tree -p universal-decoder-core | grep -v "└──" | wc -l
+# Should show 5 dependencies (not counting hex)
+
+# 9. Commit
+git add -A
+git commit -m "Vendor hex crate using git subtree for verifiable supply chain"
+git push -u origin phase1.5/vendor-hex
+```
+
+**Validation**:
+- ✅ `hex` not in production dependencies
+- ✅ Git history shows exact upstream commit
+- ✅ Can verify: `git diff v0.4.3 -- crates/.../vendored/hex`
+- ✅ All tests pass
+- ✅ Decoders can use `universal_decoder_core::hex`
+
+**See**: `docs/GIT_SUBTREE_VENDORING.md` for detailed guide
+
+### PR #2: Move `serde_json` to dev-dependencies
+
+**Goal**: Remove `serde_json` from production dependencies (JSON is for display only, not canonical encoding).
+
+**Commands**:
+```bash
+git checkout -b phase1.5/move-serde-json phase1.5/vendor-hex
+
+# 1. Update Cargo.toml
+# crates/universal-decoder-core/Cargo.toml:
+#   [dependencies]
+#   - Remove: serde_json = "1.0"
+#   [dev-dependencies]
+#   + Add: serde_json = "1.0"
+
+# 2. Remove public JSON APIs (if any)
+# Search for public methods that use serde_json and move to tests
+
+# 3. Ensure JSON only in tests
+grep -r "serde_json" crates/universal-decoder-core/src/
+# Should only appear in #[cfg(test)] blocks
+
+# 4. Run tests
+cargo test --all
+
+# 5. Commit
+git commit -am "Move serde_json to dev-dependencies (display/test only)"
+git push -u origin phase1.5/move-serde-json
+```
+
+**Validation**:
+- ✅ `serde_json` not in production dependencies
+- ✅ JSON only used in tests
+- ✅ Canonical encoding uses Borsh only
+- ✅ All tests pass
+
+### PR #3: Benchmark `smallvec`
+
+**Goal**: Decide whether to keep, remove, or vendor `smallvec` based on performance data.
+
+**Commands**:
+```bash
+git checkout -b phase1.5/benchmark-smallvec phase1.5/move-serde-json
+
+# 1. Create benchmark
+mkdir -p crates/universal-decoder-core/benches
+cat > crates/universal-decoder-core/benches/vec_vs_smallvec.rs <<'EOF'
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use smallvec::SmallVec;
+
+fn bench_vec(c: &mut Criterion) {
+    c.bench_function("vec_5_elements", |b| {
+        b.iter(|| {
+            let mut v = Vec::new();
+            for i in 0..5 {
+                v.push(black_box(i));
+            }
+            v
+        })
+    });
+}
+
+fn bench_smallvec(c: &mut Criterion) {
+    c.bench_function("smallvec_5_elements", |b| {
+        b.iter(|| {
+            let mut v = SmallVec::<[u32; 8]>::new();
+            for i in 0..5 {
+                v.push(black_box(i));
+            }
+            v
+        })
+    });
+}
+
+criterion_group!(benches, bench_vec, bench_smallvec);
+criterion_main!(benches);
+EOF
+
+# 2. Run benchmarks
+cargo bench --bench vec_vs_smallvec
+
+# 3. Analyze results
+# If SmallVec is < 10% faster: REMOVE it
+# If SmallVec is > 10% faster: KEEP or VENDOR it
+
+# 4. Make decision and update code accordingly
+# Option A: Remove smallvec
+#   - Replace SmallVec with Vec throughout codebase
+# Option B: Keep smallvec
+#   - Document performance justification
+# Option C: Vendor smallvec (if critical + want control)
+
+# 5. Commit
+git commit -am "Benchmark smallvec vs Vec: [decision]"
+git push -u origin phase1.5/benchmark-smallvec
+```
+
+### PR #4: Move Blockchain Libs to dev-dependencies
+
+**Goal**: Decoders use pure Rust parsing; blockchain libs only for test validation.
+
+**Commands**:
+```bash
+git checkout -b phase1.5/decoders-dev-deps phase1.5/benchmark-smallvec
+
+# 1. Update decoder Cargo.toml files
+# crates/decoder-bitcoin/Cargo.toml:
+#   [dependencies]
+#   - Remove: bitcoin = "0.31"
+#   [dev-dependencies]
+#   + Add: bitcoin = "0.31"
+
+# crates/decoder-ethereum/Cargo.toml:
+#   [dependencies]
+#   - Remove: ethers-core (if present)
+#   [dev-dependencies]
+#   + Add: alloy = "0.1"  # Modern Ethereum library (successor to ethers)
+#   + Add: alloy-primitives = "0.7"
+#   + Add: alloy-rlp = "0.3"
+
+# 2. Document that decoders are pure Rust
+# Add to each decoder's README:
+#   "Pure Rust implementation. Blockchain libraries (bitcoin, alloy-rs) are in dev-dependencies for test validation only."
+
+# 3. Ensure no production code uses blockchain libs
+grep -r "use bitcoin::" crates/decoder-bitcoin/src/
+grep -r "use alloy" crates/decoder-ethereum/src/
+grep -r "use ethers" crates/decoder-ethereum/src/
+# Should find no matches
+
+# 4. Run tests (will fail until we implement pure Rust parsing in Phase 2)
+cargo test --all || echo "Expected: decoders need pure Rust impl (Phase 2)"
+
+# 5. Commit
+git commit -am "Move blockchain libs to dev-dependencies (pure Rust strategy)"
+git push -u origin phase1.5/decoders-dev-deps
+```
+
+**Note**: This PR documents the strategy. Actual pure Rust implementations come in Phase 2.
+
+### Success Criteria for Phase 1.5
+
+After all PRs merged:
+- ✅ Core has ≤ 5 production dependencies
+- ✅ `hex` vendored via git subtree (verifiable)
+- ✅ `serde_json` in dev-dependencies only
+- ✅ `smallvec` benchmarked and decision made
+- ✅ Blockchain libs in dev-dependencies
+- ✅ Strategy documented for pure Rust decoders
+
+**Dependency Count Check**:
+```bash
+# Count production dependencies
+cargo tree -p universal-decoder-core -e normal --depth 1 | grep -v "^universal" | wc -l
+# Should be ≤ 5
+```
+
+**Next**: Phase 2 - Implement pure Rust decoders
+
+---
 
 ## Decision Log
 

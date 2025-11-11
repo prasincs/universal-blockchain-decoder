@@ -2,7 +2,7 @@
 
 ## Core Principle
 
-> **Blockchain-specific libraries (bitcoin, ethers-core, solana-sdk) should ONLY be used in dev-dependencies for testing purposes.**
+> **Blockchain-specific libraries (bitcoin, alloy, solana-sdk) should ONLY be used in dev-dependencies for testing purposes.**
 
 This ensures:
 1. Decoders remain **pure Rust implementations**
@@ -56,7 +56,7 @@ hex-literal = "0.4"
 
 ```bash
 # Check which decoders use blockchain libraries in production
-grep -r "bitcoin\|ethers-core\|solana-sdk" crates/*/Cargo.toml
+grep -r "bitcoin\|alloy\|solana-sdk" crates/*/Cargo.toml
 ```
 
 ### Phase 2: Reimplement Parsing Logic
@@ -279,7 +279,7 @@ cd crates/decoder-bitcoin
 cargo tree --depth 1
 
 # Identify blockchain-specific dependencies
-# bitcoin, ethers-core, solana-sdk, etc.
+# bitcoin, alloy, solana-sdk, etc.
 ```
 
 ### Step 2: Implement Pure Rust Parsing
@@ -376,7 +376,7 @@ universal-blockchain-decoder/
 │   │   ├── [dependencies]
 │   │   │   └── universal-decoder-core  # ONLY core dependency
 │   │   └── [dev-dependencies]
-│   │       ├── ethers-core     # ✅ For testing only
+│   │       ├── alloy     # ✅ For testing only
 │   │       ├── proptest
 │   │       └── hex-literal
 │   │
@@ -492,8 +492,8 @@ fn test_matches_bitcoin_crate() {
 - [ ] Implement EIP-2930 (access list) parsing
 - [ ] Implement EIP-1559 (fee market) parsing
 - [ ] Write comprehensive tests
-- [ ] Validate against `ethers-core`
-- [ ] Move `ethers-core` to dev-dependencies
+- [ ] Validate against `alloy`
+- [ ] Move `alloy` to dev-dependencies
 
 ### Solana Decoder
 

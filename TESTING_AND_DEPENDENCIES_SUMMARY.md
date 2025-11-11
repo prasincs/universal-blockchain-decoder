@@ -56,7 +56,7 @@ This document summarizes the comprehensive testing strategy and dependency manag
 
 ### 3. `docs/DECODER_DEPENDENCY_STRATEGY.md`
 **Strategy for decoder implementations**:
-- Blockchain libraries (bitcoin, ethers-core) → dev-dependencies only
+- Blockchain libraries (bitcoin, alloy) → dev-dependencies only
 - Decoders: Pure Rust implementations
 - Tests: Validate against reference implementations
 
@@ -161,7 +161,7 @@ hex-literal = "0.4"  # Test utilities
    - EIP-1559 (fee market)
 
 3. Write comprehensive tests
-4. Move `ethers-core` to dev-dependencies
+4. Move `alloy` to dev-dependencies
 
 **Effort**: 10 days
 **Risk**: Medium (RLP complexity)
@@ -348,7 +348,7 @@ proptest! {
 1. **hex**: Vendor the crate (~686 LOC, MIT/Apache-2.0, proper attribution)
 2. **smallvec**: Evaluate performance, potentially remove
 3. **serde_json**: Move to dev-dependencies (display only)
-4. **bitcoin/ethers-core**: Move to dev-dependencies (validation only)
+4. **bitcoin/alloy**: Move to dev-dependencies (validation only)
 
 ### ✅ Testing Strategy Decisions
 
