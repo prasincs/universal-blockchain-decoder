@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use smallvec::SmallVec;
 
 /// Benchmark Vec vs SmallVec for common transaction parsing scenarios
@@ -106,15 +106,19 @@ fn bench_vec_preallocated(c: &mut Criterion) {
 
     // Test with pre-allocated capacity (common pattern)
     for size in [4, 8, 16] {
-        group.bench_with_input(BenchmarkId::new("vec_with_capacity", size), &size, |b, &size| {
-            b.iter(|| {
-                let mut v = Vec::with_capacity(size);
-                for i in 0..size as u32 {
-                    v.push(black_box(i));
-                }
-                black_box(v)
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("vec_with_capacity", size),
+            &size,
+            |b, &size| {
+                b.iter(|| {
+                    let mut v = Vec::with_capacity(size);
+                    for i in 0..size as u32 {
+                        v.push(black_box(i));
+                    }
+                    black_box(v)
+                })
+            },
+        );
 
         group.bench_with_input(BenchmarkId::new("smallvec_8", size), &size, |b, &size| {
             b.iter(|| {

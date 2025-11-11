@@ -7,6 +7,10 @@ authors.workspace = true
 repository.workspace = true
 description = "Core traits and types for universal blockchain transaction decoding"
 
+[features]
+# Enable formal verification support (Verus annotations)
+formal-verification = []
+
 [dependencies]
 serde = { workspace = true }
 borsh = { workspace = true }

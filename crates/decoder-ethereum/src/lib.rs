@@ -3,18 +3,40 @@
 //! This module provides a decoder for Ethereum transactions, transforming them
 //! from their native RLP format into the universal TxIR representation.
 
-use ethers_core::types::Transaction as EthTx;
 use universal_decoder_core::prelude::*;
 
 pub mod types;
 
 use types::EthereumTransaction;
 
+/// Ethereum chain identity
+#[derive(Debug, Clone, Copy)]
+pub struct EthereumChain;
+
+impl ChainIdentity for EthereumChain {
+    fn chain_id(&self) -> u64 {
+        1 // Ethereum chain ID
+    }
+
+    fn chain_name(&self) -> &str {
+        "Ethereum"
+    }
+
+    fn chain_family(&self) -> ChainFamily {
+        ChainFamily::Account
+    }
+}
+
 /// Ethereum decoder implementing the ChainDecoder trait
 pub struct EthereumDecoder;
 
 impl ChainDecoder for EthereumDecoder {
     type TxSpecific = EthereumTransaction;
+    type Chain = EthereumChain;
+
+    fn chain() -> Self::Chain {
+        EthereumChain
+    }
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         // Parse RLP-encoded transaction
@@ -39,17 +61,10 @@ impl ChainDecoder for EthereumDecoder {
 
         Ok(())
     }
-
-    fn chain_id() -> ChainId {
-        ChainId::Ethereum
-    }
 }
 
 /// Helper function to decode an Ethereum transaction with hooks
-pub fn decode_with_hooks(
-    raw_bytes: &[u8],
-    registry: &HookRegistry,
-) -> Result<EthereumTransaction> {
+pub fn decode_with_hooks(raw_bytes: &[u8], registry: &HookRegistry) -> Result<EthereumTransaction> {
     // Execute pre-decode hooks
     let context = HookContext::new(HookStage::PreDecode, raw_bytes);
     match registry.execute_stage(&context)? {
@@ -92,8 +107,11 @@ mod tests {
     }
 
     #[test]
-    fn test_chain_id() {
-        assert_eq!(EthereumDecoder::chain_id(), ChainId::Ethereum);
+    fn test_chain() {
+        let chain = EthereumDecoder::chain();
+        assert_eq!(chain.chain_id(), 1);
+        assert_eq!(chain.chain_name(), "Ethereum");
+        assert_eq!(chain.chain_family(), ChainFamily::Account);
     }
 
     #[test]

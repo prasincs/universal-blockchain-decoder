@@ -41,10 +41,10 @@ fn test_chain_decoder_trait() {
 #[test]
 fn test_decode_malformed_input() {
     let malformed_inputs = vec![
-        vec![],                          // Empty
-        vec![0x00],                      // Single byte
-        vec![0xFF; 10],                  // Invalid data
-        vec![0xc0],                      // Invalid RLP
+        vec![],         // Empty
+        vec![0x00],     // Single byte
+        vec![0xFF; 10], // Invalid data
+        vec![0xc0],     // Invalid RLP
     ];
 
     for input in malformed_inputs {
@@ -63,9 +63,9 @@ fn test_decode_malformed_input() {
 fn test_rlp_edge_cases() {
     // Test various invalid RLP encodings
     let invalid_rlp = vec![
-        vec![0xbf, 0xff],           // Invalid list length
-        vec![0xc1, 0x80],           // Nested empty
-        vec![0xf8, 0x00],           // Zero-length long string
+        vec![0xbf, 0xff], // Invalid list length
+        vec![0xc1, 0x80], // Nested empty
+        vec![0xf8, 0x00], // Zero-length long string
     ];
 
     for rlp in invalid_rlp {

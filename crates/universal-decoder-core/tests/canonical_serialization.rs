@@ -6,9 +6,9 @@
 //! 3. Hash computation is stable
 //! 4. Edge cases are handled correctly
 
-use universal_decoder_core::prelude::*;
 use universal_decoder_core::canonical::*;
 use universal_decoder_core::chain::{ChainFamily, ChainFamilyEncoded, ChainRef};
+use universal_decoder_core::prelude::*;
 
 fn create_test_canonical_tx() -> CanonicalTxIR {
     CanonicalTxIR {
@@ -85,7 +85,10 @@ fn test_different_transactions_have_different_hashes() {
     let hash1 = tx1.canonical_hash().unwrap();
     let hash2 = tx2.canonical_hash().unwrap();
 
-    assert_ne!(hash1, hash2, "Different transactions must have different hashes");
+    assert_ne!(
+        hash1, hash2,
+        "Different transactions must have different hashes"
+    );
 }
 
 #[test]
@@ -130,16 +133,20 @@ fn test_large_transaction() {
 
     // Add many operations
     for i in 0..100 {
-        tx.operations.push(CanonicalOperation::Generic(CanonicalGenericOperation {
-            op_type: format!("op_{}", i),
-            data: vec![i as u8; 100],
-            metadata: "{}".to_string(),
-        }));
+        tx.operations
+            .push(CanonicalOperation::Generic(CanonicalGenericOperation {
+                op_type: format!("op_{}", i),
+                data: vec![i as u8; 100],
+                metadata: "{}".to_string(),
+            }));
     }
 
     // Should handle large transactions
     let bytes = tx.to_canonical_bytes().unwrap();
-    assert!(bytes.len() > 10000, "Large transaction should produce large serialization");
+    assert!(
+        bytes.len() > 10000,
+        "Large transaction should produce large serialization"
+    );
 
     let deserialized = CanonicalTxIR::from_canonical_bytes(&bytes).unwrap();
     assert_eq!(tx.operations.len(), deserialized.operations.len());
@@ -161,7 +168,10 @@ fn test_all_signature_schemes() {
         let bytes = tx.to_canonical_bytes().unwrap();
         let deserialized = CanonicalTxIR::from_canonical_bytes(&bytes).unwrap();
 
-        assert_eq!(tx.authorization.signature_scheme, deserialized.authorization.signature_scheme);
+        assert_eq!(
+            tx.authorization.signature_scheme,
+            deserialized.authorization.signature_scheme
+        );
     }
 }
 

@@ -68,7 +68,10 @@ fn test_all_error_variants() {
         DecoderError::hook_execution("test"),
         DecoderError::chain_specific("test"),
         DecoderError::serialization("test".to_string()),
-        DecoderError::VersionMismatch { expected: 1, actual: 2 },
+        DecoderError::VersionMismatch {
+            expected: 1,
+            actual: 2,
+        },
     ];
 
     for err in errors {

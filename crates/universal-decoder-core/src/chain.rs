@@ -99,7 +99,9 @@ pub struct ChainRef {
 }
 
 /// Encoded version of ChainFamily for Borsh serialization
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+)]
 #[borsh(use_discriminant = true)]
 #[repr(u8)]
 pub enum ChainFamilyEncoded {

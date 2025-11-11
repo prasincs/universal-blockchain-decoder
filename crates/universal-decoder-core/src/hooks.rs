@@ -67,7 +67,7 @@ impl<'a> HookContext<'a> {
     }
 
     /// Try to downcast the TxIR to a specific type
-    pub fn get_tx_ir<const V: u8>(&self) -> Option<&TxIR<V>> {
+    pub fn get_tx_ir<const V: u8>(&self) -> Option<&TxIR<'_, V>> {
         self.tx_ir?.downcast_ref::<TxIR<V>>()
     }
 }
@@ -117,7 +117,7 @@ impl HookRegistry {
     pub fn register<H: Hook + 'static>(&mut self, hook: H) {
         self.hooks.push(Arc::new(hook));
         // Sort by priority (descending)
-        self.hooks.sort_by(|a, b| b.priority().cmp(&a.priority()));
+        self.hooks.sort_by_key(|b| std::cmp::Reverse(b.priority()));
     }
 
     /// Execute all hooks for a given stage
@@ -332,14 +332,18 @@ mod tests {
         let mut registry = HookRegistry::new();
         assert!(registry.is_empty());
 
-        registry.register(TestHook { should_abort: false });
+        registry.register(TestHook {
+            should_abort: false,
+        });
         assert_eq!(registry.len(), 1);
     }
 
     #[test]
     fn test_hook_execution() {
         let mut registry = HookRegistry::new();
-        registry.register(TestHook { should_abort: false });
+        registry.register(TestHook {
+            should_abort: false,
+        });
 
         let context = HookContext::new(HookStage::PreDecode, b"test");
         let result = registry.execute_stage(&context);

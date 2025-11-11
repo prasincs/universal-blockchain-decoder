@@ -8,14 +8,18 @@ use universal_decoder_core::prelude::*;
 fn test_decode_genesis_coinbase() {
     // Load real Bitcoin genesis coinbase transaction
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex fixture");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     // Decode the transaction
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
     // Verify basic properties
-    assert_eq!(decoded.version(), 1, "Genesis coinbase should have version 1");
+    assert_eq!(
+        decoded.version(),
+        1,
+        "Genesis coinbase should have version 1"
+    );
     assert_eq!(decoded.input_count(), 1, "Coinbase has 1 input");
     assert_eq!(decoded.output_count(), 1, "Genesis coinbase has 1 output");
     assert!(decoded.is_coinbase(), "Should be identified as coinbase");
@@ -23,7 +27,10 @@ fn test_decode_genesis_coinbase() {
     // Verify output value (50 BTC = 5,000,000,000 satoshis)
     let outputs = decoded.outputs();
     assert_eq!(outputs.len(), 1);
-    assert_eq!(outputs[0].value, 5_000_000_000, "Genesis block reward is 50 BTC");
+    assert_eq!(
+        outputs[0].value, 5_000_000_000,
+        "Genesis block reward is 50 BTC"
+    );
 
     // Verify locktime
     assert_eq!(decoded.locktime(), 0, "Genesis transaction has locktime 0");
@@ -34,8 +41,8 @@ fn test_decode_genesis_coinbase() {
 fn test_decode_simple_p2pkh() {
     // Load first real Bitcoin transaction (Satoshi -> Hal Finney)
     let tx_hex = include_str!("fixtures/btc_simple_p2pkh.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex fixture");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     // Decode the transaction
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
@@ -43,7 +50,11 @@ fn test_decode_simple_p2pkh() {
     // Verify basic properties
     assert_eq!(decoded.version(), 1, "Should have version 1");
     assert_eq!(decoded.input_count(), 1, "Has 1 input");
-    assert_eq!(decoded.output_count(), 2, "Has 2 outputs (payment + change)");
+    assert_eq!(
+        decoded.output_count(),
+        2,
+        "Has 2 outputs (payment + change)"
+    );
     assert!(!decoded.is_coinbase(), "Should not be coinbase");
 
     // Verify outputs
@@ -89,21 +100,24 @@ fn test_validate_format_rejects_invalid() {
 fn test_chain_decoder_trait() {
     // Verify basic decoder functionality
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex");
 
     let result = BitcoinDecoder::decode(&tx_bytes);
-    assert!(result.is_ok(), "Decoder should successfully decode valid transaction");
+    assert!(
+        result.is_ok(),
+        "Decoder should successfully decode valid transaction"
+    );
 }
 
 /// Test decoding with malformed input (should error gracefully)
 #[test]
 fn test_decode_malformed_input() {
     let malformed_inputs = vec![
-        vec![],                          // Empty
-        vec![0x00],                      // Single byte
-        vec![0xFF; 10],                  // Invalid data
-        vec![0x01, 0x00, 0x00, 0x00],    // Incomplete transaction
+        vec![],                       // Empty
+        vec![0x00],                   // Single byte
+        vec![0xFF; 10],               // Invalid data
+        vec![0x01, 0x00, 0x00, 0x00], // Incomplete transaction
     ];
 
     for input in malformed_inputs {
@@ -121,8 +135,8 @@ fn test_decode_malformed_input() {
 #[test]
 fn test_raw_bytes_preserved() {
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex fixture");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
@@ -135,8 +149,8 @@ fn test_raw_bytes_preserved() {
 #[test]
 fn test_canonicalization() {
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex fixture");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
@@ -186,8 +200,8 @@ fn test_decode_multiple_transactions() {
 #[test]
 fn test_transaction_size_bounds() {
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim())
-        .expect("Failed to decode hex fixture");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 

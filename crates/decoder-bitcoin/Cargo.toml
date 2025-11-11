@@ -12,10 +12,12 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;
+# NOTE: bitcoin crate is temporarily in dependencies for Phase 1.5
+# Will be moved to dev-dependencies in Phase 2 when pure Rust decoder is implemented
+bitcoin = "0.31"
 
 [dev-dependencies]
 # Blockchain libraries for test validation ONLY
 # Production code will use pure Rust parsing (Phase 2)
-bitcoin = "0.31"
 serde_json = { workspace = true }
 proptest = { workspace = true }
