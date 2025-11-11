@@ -4,6 +4,8 @@ use bitcoin::hashes::Hash;
 use bitcoin::Transaction as BitcoinTx;
 use universal_decoder_core::prelude::*;
 
+use crate::BitcoinChain;
+
 /// Bitcoin-specific transaction representation
 #[derive(Debug, Clone)]
 pub struct BitcoinTransaction {
@@ -62,22 +64,24 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         let tx = &self.inner;
 
         // Build metadata
+        let extra = format!(
+            r#"{{"version":{},"lock_time":{},"is_coinbase":{}}}"#,
+            tx.version.0,
+            tx.lock_time.to_consensus_u32(),
+            tx.is_coinbase()
+        );
         let metadata = TxMetadata {
             tx_hash: self.txid(),
             block_height: None, // Not available from transaction alone
             timestamp: Some(tx.lock_time.to_consensus_u32() as u64),
             size: self.raw_bytes.len(),
-            extra: serde_json::json!({
-                "version": tx.version.0,
-                "lock_time": tx.lock_time.to_consensus_u32(),
-                "is_coinbase": tx.is_coinbase(),
-            }),
+            extra,
         };
 
         // Build authorization package
         // Bitcoin transactions have signatures embedded in inputs (scriptSig)
         let mut signatures = Vec::new();
-        let mut public_keys = Vec::new();
+        let public_keys = Vec::new();
 
         for (idx, input) in tx.input.iter().enumerate() {
             // Extract signatures from scriptSig
@@ -86,9 +90,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
                 signatures.push(Signature {
                     data: input.script_sig.as_bytes().to_vec(),
                     key_index: idx,
-                    metadata: Some(serde_json::json!({
-                        "input_index": idx,
-                    })),
+                    metadata: Some(format!(r#"{{"input_index":{}}}"#, idx)),
                 });
             }
 
@@ -98,10 +100,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
                     signatures.push(Signature {
                         data: witness_item.to_vec(),
                         key_index: idx,
-                        metadata: Some(serde_json::json!({
-                            "input_index": idx,
-                            "witness": true,
-                        })),
+                        metadata: Some(format!(r#"{{"input_index":{},"witness":true}}"#, idx)),
                     });
                 }
             }
@@ -120,7 +119,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         for output in tx.output.iter() {
             operations.push(Operation::Transfer(Transfer {
                 from: Address {
-                    bytes: vec![],      // Input addresses require UTXO set
+                    bytes: vec![], // Input addresses require UTXO set
                     human_readable: None,
                 },
                 to: Address {
@@ -139,8 +138,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         let inputs: Vec<InputReference> = tx
             .input
             .iter()
-            .enumerate()
-            .map(|(idx, input)| InputReference {
+            .map(|input| InputReference {
                 prev_tx: input.previous_output.txid.as_byte_array().to_vec(),
                 output_index: input.previous_output.vout,
                 value: Amount {
@@ -176,7 +174,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         };
 
         Ok(TxIR::new(
-            ChainId::Bitcoin,
+            &BitcoinChain,
             metadata,
             authorization,
             operations,
@@ -210,13 +208,10 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         }
 
         // Check for overflow in output values
-        let total_output: Result<u64> = tx
-            .output
-            .iter()
-            .try_fold(0u64, |acc, output| {
-                acc.checked_add(output.value.to_sat())
-                    .ok_or_else(|| DecoderError::overflow("Output value overflow"))
-            });
+        let total_output: Result<u64> = tx.output.iter().try_fold(0u64, |acc, output| {
+            acc.checked_add(output.value.to_sat())
+                .ok_or_else(|| DecoderError::overflow("Output value overflow"))
+        });
 
         total_output?;
 

@@ -97,6 +97,10 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert!(!VERSION.is_empty());
+        // Verify VERSION constant is accessible and has expected format
+        assert!(
+            VERSION.split('.').count() >= 2,
+            "Version should follow semver"
+        );
     }
 }

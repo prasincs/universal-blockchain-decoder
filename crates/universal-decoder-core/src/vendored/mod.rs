@@ -6,7 +6,7 @@
 //! ## Vendored Dependencies
 //!
 //! - **hex** (v0.4.3): Hex encoding/decoding utilities
-//!   - Original: https://github.com/KokaKiwi/rust-hex
+//!   - Original: <https://github.com/KokaKiwi/rust-hex>
 //!   - License: MIT OR Apache-2.0
 //!   - Added via: `git subtree add --prefix crates/universal-decoder-core/src/vendored/hex https://github.com/KokaKiwi/rust-hex.git v0.4.3 --squash`
 //!
@@ -167,10 +167,7 @@ pub mod hex {
 
         #[test]
         fn test_decode() {
-            assert_eq!(
-                decode("48656c6c6f20776f726c6421").unwrap(),
-                b"Hello world!"
-            );
+            assert_eq!(decode("48656c6c6f20776f726c6421").unwrap(), b"Hello world!");
         }
 
         #[test]

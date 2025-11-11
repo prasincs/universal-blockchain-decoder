@@ -1,0 +1,36 @@
+[package]
+name = "universal-decoder-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.universal-decoder-core]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_canonical"
+path = "fuzz_targets/fuzz_canonical.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_amount_ops"
+path = "fuzz_targets/fuzz_amount_ops.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_borsh_serialization"
+path = "fuzz_targets/fuzz_borsh_serialization.rs"
+test = false
+doc = false

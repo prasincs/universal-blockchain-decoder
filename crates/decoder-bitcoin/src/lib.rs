@@ -11,11 +11,34 @@ pub mod types;
 
 use types::BitcoinTransaction;
 
+/// Bitcoin chain identity
+#[derive(Debug, Clone, Copy)]
+pub struct BitcoinChain;
+
+impl ChainIdentity for BitcoinChain {
+    fn chain_id(&self) -> u64 {
+        0 // Bitcoin chain ID
+    }
+
+    fn chain_name(&self) -> &str {
+        "Bitcoin"
+    }
+
+    fn chain_family(&self) -> ChainFamily {
+        ChainFamily::Utxo
+    }
+}
+
 /// Bitcoin decoder implementing the ChainDecoder trait
 pub struct BitcoinDecoder;
 
 impl ChainDecoder for BitcoinDecoder {
     type TxSpecific = BitcoinTransaction;
+    type Chain = BitcoinChain;
+
+    fn chain() -> Self::Chain {
+        BitcoinChain
+    }
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         // Parse using bitcoin crate
@@ -41,10 +64,6 @@ impl ChainDecoder for BitcoinDecoder {
         }
 
         Ok(())
-    }
-
-    fn chain_id() -> ChainId {
-        ChainId::Bitcoin
     }
 }
 
@@ -77,6 +96,7 @@ pub fn decode_with_hooks(raw_bytes: &[u8], registry: &HookRegistry) -> Result<Bi
 #[cfg(test)]
 mod tests {
     use super::*;
+    use universal_decoder_core::hex;
 
     // Example Bitcoin transaction (simplified for testing)
     // This is a minimal valid transaction structure
@@ -96,8 +116,11 @@ mod tests {
     }
 
     #[test]
-    fn test_chain_id() {
-        assert_eq!(BitcoinDecoder::chain_id(), ChainId::Bitcoin);
+    fn test_chain() {
+        let chain = BitcoinDecoder::chain();
+        assert_eq!(chain.chain_id(), 0);
+        assert_eq!(chain.chain_name(), "Bitcoin");
+        assert_eq!(chain.chain_family(), ChainFamily::Utxo);
     }
 
     #[test]

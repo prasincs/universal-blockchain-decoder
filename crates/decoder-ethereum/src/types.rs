@@ -1,10 +1,11 @@
 //! Ethereum-specific transaction types
+//!
+//! NOTE: This is a placeholder implementation for Phase 1.5.
+//! Phase 2 will implement pure Rust RLP parsing using alloy-rs.
 
-use ethers_core::types::{
-    transaction::eip2718::TypedTransaction, Bytes, NameOrAddress, Transaction as EthTx,
-    TransactionRequest, U256, U64,
-};
 use universal_decoder_core::prelude::*;
+
+use crate::EthereumChain;
 
 /// Ethereum-specific transaction representation
 ///
@@ -13,21 +14,21 @@ use universal_decoder_core::prelude::*;
 pub struct EthereumTransaction {
     /// Transaction data
     pub nonce: u64,
-    pub gas_price: Option<U256>,
-    pub gas_limit: U256,
-    pub to: Option<ethers_core::types::Address>,
-    pub value: U256,
+    pub gas_price: Option<u128>,
+    pub gas_limit: u128,
+    pub to: Option<[u8; 20]>, // Ethereum address (20 bytes)
+    pub value: u128,
     pub data: Vec<u8>,
-    pub chain_id: Option<U64>,
+    pub chain_id: Option<u64>,
 
     // EIP-1559 fields
-    pub max_fee_per_gas: Option<U256>,
-    pub max_priority_fee_per_gas: Option<U256>,
+    pub max_fee_per_gas: Option<u128>,
+    pub max_priority_fee_per_gas: Option<u128>,
 
     // Signature
     pub v: u64,
-    pub r: U256,
-    pub s: U256,
+    pub r: [u8; 32], // 256-bit signature component
+    pub s: [u8; 32], // 256-bit signature component
 
     /// Raw transaction bytes
     pub raw_bytes: Vec<u8>,
@@ -40,7 +41,7 @@ impl EthereumTransaction {
         // This is a simplified version that handles the structure
 
         // Check if it's a typed transaction (EIP-2718)
-        let is_typed = raw_bytes.first().map_or(false, |&b| b < 0x7f);
+        let is_typed = raw_bytes.first().is_some_and(|&b| b < 0x7f);
 
         if is_typed {
             // Parse typed transaction
@@ -52,42 +53,42 @@ impl EthereumTransaction {
     }
 
     fn parse_typed_transaction(raw_bytes: &[u8]) -> Result<Self> {
-        // Simplified parsing - in production, use proper RLP decoding
+        // Simplified parsing - in production, use proper RLP decoding with alloy-rs
 
         // For now, create a minimal transaction structure
         Ok(Self {
             nonce: 0,
             gas_price: None,
-            gas_limit: U256::from(21000),
+            gas_limit: 21000,
             to: None,
-            value: U256::zero(),
+            value: 0,
             data: vec![],
-            chain_id: Some(U64::from(1)), // Mainnet
-            max_fee_per_gas: Some(U256::from(1_000_000_000u64)),
-            max_priority_fee_per_gas: Some(U256::from(1_000_000_000u64)),
+            chain_id: Some(1), // Mainnet
+            max_fee_per_gas: Some(1_000_000_000),
+            max_priority_fee_per_gas: Some(1_000_000_000),
             v: 0,
-            r: U256::zero(),
-            s: U256::zero(),
+            r: [0u8; 32],
+            s: [0u8; 32],
             raw_bytes: raw_bytes.to_vec(),
         })
     }
 
     fn parse_legacy_transaction(raw_bytes: &[u8]) -> Result<Self> {
-        // Simplified parsing - in production, use proper RLP decoding
+        // Simplified parsing - in production, use proper RLP decoding with alloy-rs
 
         Ok(Self {
             nonce: 0,
-            gas_price: Some(U256::from(20_000_000_000u64)), // 20 gwei
-            gas_limit: U256::from(21000),
+            gas_price: Some(20_000_000_000), // 20 gwei
+            gas_limit: 21000,
             to: None,
-            value: U256::zero(),
+            value: 0,
             data: vec![],
             chain_id: None,
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             v: 0,
-            r: U256::zero(),
-            s: U256::zero(),
+            r: [0u8; 32],
+            s: [0u8; 32],
             raw_bytes: raw_bytes.to_vec(),
         })
     }
@@ -103,8 +104,9 @@ impl EthereumTransaction {
     }
 
     /// Get the sender address (would require signature recovery)
-    pub fn sender(&self) -> Option<ethers_core::types::Address> {
-        // In production, recover from signature
+    pub fn sender(&self) -> Option<[u8; 20]> {
+        // In production, recover from signature using ECDSA recovery
+        // This would use alloy-rs in Phase 2
         None
     }
 
@@ -120,20 +122,30 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
 
     fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
         // Build metadata
+        let extra = format!(
+            r#"{{"nonce":{},"gas_limit":{},"gas_price":{},"max_fee_per_gas":{},"max_priority_fee_per_gas":{},"is_eip1559":{},"chain_id":{}}}"#,
+            self.nonce,
+            self.gas_limit,
+            self.gas_price
+                .map(|p| p.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            self.max_fee_per_gas
+                .map(|p| p.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            self.max_priority_fee_per_gas
+                .map(|p| p.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            self.is_eip1559(),
+            self.chain_id
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "null".to_string())
+        );
         let metadata = TxMetadata {
             tx_hash: self.hash(),
             block_height: None,
             timestamp: None,
             size: self.raw_bytes.len(),
-            extra: serde_json::json!({
-                "nonce": self.nonce,
-                "gas_limit": self.gas_limit.as_u64(),
-                "gas_price": self.gas_price.map(|p| p.as_u64()),
-                "max_fee_per_gas": self.max_fee_per_gas.map(|p| p.as_u64()),
-                "max_priority_fee_per_gas": self.max_priority_fee_per_gas.map(|p| p.as_u64()),
-                "is_eip1559": self.is_eip1559(),
-                "chain_id": self.chain_id.map(|c| c.as_u64()),
-            }),
+            extra,
         };
 
         // Build authorization package
@@ -141,19 +153,13 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             data: {
                 let mut sig_bytes = Vec::new();
                 // Encode r, s, v
-                let mut r_bytes = [0u8; 32];
-                self.r.to_big_endian(&mut r_bytes);
-                let mut s_bytes = [0u8; 32];
-                self.s.to_big_endian(&mut s_bytes);
-                sig_bytes.extend_from_slice(&r_bytes);
-                sig_bytes.extend_from_slice(&s_bytes);
+                sig_bytes.extend_from_slice(&self.r);
+                sig_bytes.extend_from_slice(&self.s);
                 sig_bytes.push(self.v as u8);
                 sig_bytes
             },
             key_index: 0,
-            metadata: Some(serde_json::json!({
-                "v": self.v,
-            })),
+            metadata: Some(format!(r#"{{"v":{}}}"#, self.v)),
         };
 
         let authorization = AuthorizationPackage {
@@ -171,7 +177,7 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                 bytecode: self.data.clone(),
                 constructor_args: vec![],
                 value: Amount {
-                    value: self.value.as_u128(),
+                    value: self.value,
                     decimals: 18, // ETH has 18 decimals
                 },
             }));
@@ -185,22 +191,18 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
 
             operations.push(Operation::ContractCall(ContractCall {
                 contract: Address {
-                    bytes: self.to.map(|a| a.0.to_vec()).unwrap_or_default(),
+                    bytes: self.to.map(|a| a.to_vec()).unwrap_or_default(),
                     human_readable: self.to.map(|a| format!("{:?}", a)),
                 },
                 method,
                 data: self.data.clone(),
                 value: Some(Amount {
-                    value: self.value.as_u128(),
+                    value: self.value,
                     decimals: 18,
                 }),
                 resource_limits: ResourceLimits {
-                    max_units: self.gas_limit.as_u64(),
-                    unit_price: self
-                        .gas_price
-                        .or(self.max_fee_per_gas)
-                        .unwrap_or(U256::zero())
-                        .as_u64(),
+                    max_units: self.gas_limit as u64,
+                    unit_price: self.gas_price.or(self.max_fee_per_gas).unwrap_or(0) as u64,
                     resource_type: ResourceType::Gas,
                 },
             }));
@@ -212,11 +214,11 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                     human_readable: None,
                 },
                 to: Address {
-                    bytes: self.to.map(|a| a.0.to_vec()).unwrap_or_default(),
+                    bytes: self.to.map(|a| a.to_vec()).unwrap_or_default(),
                     human_readable: self.to.map(|a| format!("{:?}", a)),
                 },
                 amount: Amount {
-                    value: self.value.as_u128(),
+                    value: self.value,
                     decimals: 18,
                 },
                 asset: AssetId::Native,
@@ -232,7 +234,7 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                     human_readable: None,
                 },
                 nonce: Some(self.nonce),
-                balance_change: -(self.value.as_u128() as i128),
+                balance_change: -(self.value as i128),
                 storage_changes: vec![],
             },
         ];
@@ -241,11 +243,11 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             // Recipient account change
             account_changes.push(AccountChange {
                 address: Address {
-                    bytes: recipient.0.to_vec(),
+                    bytes: recipient.to_vec(),
                     human_readable: Some(format!("{:?}", recipient)),
                 },
                 nonce: None,
-                balance_change: self.value.as_u128() as i128,
+                balance_change: self.value as i128,
                 storage_changes: vec![],
             });
         }
@@ -257,7 +259,7 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         };
 
         Ok(TxIR::new(
-            ChainId::Ethereum,
+            &EthereumChain,
             metadata,
             authorization,
             operations,
@@ -267,10 +269,8 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
 
     fn validate(&self) -> Result<()> {
         // Check gas limit
-        if self.gas_limit.is_zero() {
-            return Err(DecoderError::invalid_structure(
-                "Gas limit cannot be zero",
-            ));
+        if self.gas_limit == 0 {
+            return Err(DecoderError::invalid_structure("Gas limit cannot be zero"));
         }
 
         // Check that either gas_price or EIP-1559 fields are set
@@ -283,7 +283,7 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         }
 
         // Validate signature components
-        if self.r.is_zero() || self.s.is_zero() {
+        if self.r == [0u8; 32] || self.s == [0u8; 32] {
             return Err(DecoderError::signature_verification(
                 "Invalid signature: r or s is zero",
             ));
@@ -318,16 +318,16 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 0,
             gas_price: None,
-            gas_limit: U256::from(21000),
+            gas_limit: 21000,
             to: None,
-            value: U256::zero(),
+            value: 0,
             data: vec![],
-            chain_id: Some(U64::from(1)),
-            max_fee_per_gas: Some(U256::from(1_000_000_000u64)),
-            max_priority_fee_per_gas: Some(U256::from(1_000_000_000u64)),
+            chain_id: Some(1),
+            max_fee_per_gas: Some(1_000_000_000),
+            max_priority_fee_per_gas: Some(1_000_000_000),
             v: 0,
-            r: U256::zero(),
-            s: U256::zero(),
+            r: [0u8; 32],
+            s: [0u8; 32],
             raw_bytes: vec![],
         };
 
@@ -338,17 +338,17 @@ mod tests {
     fn test_is_contract_creation() {
         let tx = EthereumTransaction {
             nonce: 0,
-            gas_price: Some(U256::from(20_000_000_000u64)),
-            gas_limit: U256::from(21000),
+            gas_price: Some(20_000_000_000),
+            gas_limit: 21000,
             to: None,
-            value: U256::zero(),
+            value: 0,
             data: vec![0x60, 0x80], // Contract bytecode
             chain_id: None,
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             v: 0,
-            r: U256::zero(),
-            s: U256::zero(),
+            r: [0u8; 32],
+            s: [0u8; 32],
             raw_bytes: vec![],
         };
 

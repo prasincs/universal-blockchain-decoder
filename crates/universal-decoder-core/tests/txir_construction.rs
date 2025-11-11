@@ -3,8 +3,8 @@
 //! Verifies that the transaction intermediate representation (TxIR)
 //! can be constructed correctly with different versions and chains.
 
-use universal_decoder_core::prelude::*;
 use universal_decoder_core::chain::{ChainFamily, ChainIdentity};
+use universal_decoder_core::prelude::*;
 
 #[derive(Debug)]
 struct TestChain {
@@ -26,7 +26,7 @@ impl ChainIdentity for TestChain {
     }
 }
 
-fn create_empty_txir<const V: u8>(chain: &impl ChainIdentity) -> TxIR<V> {
+fn create_empty_txir<const V: u8>(chain: &impl ChainIdentity) -> TxIR<'_, V> {
     TxIR::new(
         chain,
         TxMetadata {

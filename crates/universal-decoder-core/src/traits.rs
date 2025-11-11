@@ -168,7 +168,7 @@ impl HashAlgorithm for DoubleSha256 {
     fn hash(data: &[u8]) -> Vec<u8> {
         use sha2::{Digest, Sha256};
         let first = Sha256::digest(data);
-        Sha256::digest(&first).to_vec()
+        Sha256::digest(first).to_vec()
     }
 
     fn name() -> &'static str {

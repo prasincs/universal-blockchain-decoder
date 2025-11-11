@@ -19,7 +19,12 @@ fn arb_chain_family() -> impl Strategy<Value = ChainFamilyEncoded> {
 }
 
 fn arb_chain_ref() -> impl Strategy<Value = ChainRef> {
-    (0u64..1000, "[a-zA-Z]{3,15}", arb_chain_family(), prop::option::of("[a-z]{3,10}"))
+    (
+        0u64..1000,
+        "[a-zA-Z]{3,15}",
+        arb_chain_family(),
+        prop::option::of("[a-z]{3,10}"),
+    )
         .prop_map(|(id, name, family, network)| ChainRef {
             id,
             name,
@@ -45,15 +50,15 @@ fn arb_canonical_tx_metadata() -> impl Strategy<Value = CanonicalTxMetadata> {
         0usize..10000,
         prop::option::of("\\{.*\\}"),
     )
-        .prop_map(|(tx_hash, block_height, timestamp, size, extra)| {
-            CanonicalTxMetadata {
+        .prop_map(
+            |(tx_hash, block_height, timestamp, size, extra)| CanonicalTxMetadata {
                 tx_hash,
                 block_height,
                 timestamp,
                 size,
                 extra: extra.unwrap_or_else(|| "{}".to_string()),
-            }
-        })
+            },
+        )
 }
 
 fn arb_canonical_tx() -> impl Strategy<Value = CanonicalTxIR> {
@@ -63,22 +68,24 @@ fn arb_canonical_tx() -> impl Strategy<Value = CanonicalTxIR> {
         arb_canonical_tx_metadata(),
         arb_signature_scheme(),
     )
-        .prop_map(|(version, chain, metadata, signature_scheme)| CanonicalTxIR {
-            version,
-            chain,
-            metadata,
-            authorization: CanonicalAuthorizationPackage {
-                signatures: vec![],
-                public_keys: vec![],
-                signature_scheme,
+        .prop_map(
+            |(version, chain, metadata, signature_scheme)| CanonicalTxIR {
+                version,
+                chain,
+                metadata,
+                authorization: CanonicalAuthorizationPackage {
+                    signatures: vec![],
+                    public_keys: vec![],
+                    signature_scheme,
+                },
+                operations: vec![],
+                state_deltas: CanonicalStateDeltas {
+                    inputs: vec![],
+                    outputs: vec![],
+                    account_changes: vec![],
+                },
             },
-            operations: vec![],
-            state_deltas: CanonicalStateDeltas {
-                inputs: vec![],
-                outputs: vec![],
-                account_changes: vec![],
-            },
-        })
+        )
 }
 
 // Property tests

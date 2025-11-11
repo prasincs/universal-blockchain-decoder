@@ -1,7 +1,6 @@
 //! Simple decoder example demonstrating the universal blockchain decoder
 
-use decoder_bitcoin::BitcoinDecoder;
-use decoder_ethereum::EthereumDecoder;
+use universal_decoder_core::hex;
 use universal_decoder_core::prelude::*;
 
 fn main() {
@@ -43,7 +42,10 @@ fn demo_bitcoin_decoder(registry: &HookRegistry) {
     // In production, this would be actual transaction bytes
     let dummy_tx_bytes = create_dummy_bitcoin_tx();
 
-    println!("Decoding Bitcoin transaction ({} bytes)...", dummy_tx_bytes.len());
+    println!(
+        "Decoding Bitcoin transaction ({} bytes)...",
+        dummy_tx_bytes.len()
+    );
 
     match decoder_bitcoin::decode_with_hooks(&dummy_tx_bytes, registry) {
         Ok(tx) => {
@@ -51,13 +53,13 @@ fn demo_bitcoin_decoder(registry: &HookRegistry) {
             println!("  - Version: {}", tx.version());
             println!("  - Inputs: {}", tx.input_count());
             println!("  - Outputs: {}", tx.output_count());
-            println!("  - TXID: {}", hex::encode(&tx.txid()));
+            println!("  - TXID: {}", hex::encode(tx.txid()));
 
             // Canonicalize to TxIR
             match tx.canonicalize() {
                 Ok(tx_ir) => {
                     println!("✓ Successfully canonicalized to TxIR");
-                    println!("  - Chain: {:?}", tx_ir.chain_id);
+                    println!("  - Chain: {}", tx_ir.chain.name);
                     println!("  - Operations: {}", tx_ir.operations.len());
                     println!("  - Inputs consumed: {}", tx_ir.state_deltas.inputs.len());
                     println!("  - Outputs created: {}", tx_ir.state_deltas.outputs.len());
@@ -79,7 +81,10 @@ fn demo_ethereum_decoder(registry: &HookRegistry) {
     // Create a dummy Ethereum transaction for demonstration
     let dummy_tx_bytes = create_dummy_ethereum_tx();
 
-    println!("Decoding Ethereum transaction ({} bytes)...", dummy_tx_bytes.len());
+    println!(
+        "Decoding Ethereum transaction ({} bytes)...",
+        dummy_tx_bytes.len()
+    );
 
     match decoder_ethereum::decode_with_hooks(&dummy_tx_bytes, registry) {
         Ok(tx) => {
@@ -88,15 +93,18 @@ fn demo_ethereum_decoder(registry: &HookRegistry) {
             println!("  - Gas limit: {}", tx.gas_limit);
             println!("  - EIP-1559: {}", tx.is_eip1559());
             println!("  - Contract creation: {}", tx.is_contract_creation());
-            println!("  - Hash: {}", hex::encode(&tx.hash()));
+            println!("  - Hash: {}", hex::encode(tx.hash()));
 
             // Canonicalize to TxIR
             match tx.canonicalize() {
                 Ok(tx_ir) => {
                     println!("✓ Successfully canonicalized to TxIR");
-                    println!("  - Chain: {:?}", tx_ir.chain_id);
+                    println!("  - Chain: {}", tx_ir.chain.name);
                     println!("  - Operations: {}", tx_ir.operations.len());
-                    println!("  - Account changes: {}", tx_ir.state_deltas.account_changes.len());
+                    println!(
+                        "  - Account changes: {}",
+                        tx_ir.state_deltas.account_changes.len()
+                    );
                 }
                 Err(e) => println!("✗ Canonicalization failed: {}", e),
             }
@@ -126,7 +134,9 @@ fn demo_custom_hook() {
             // Example validation: check for specific patterns
             if context.raw_bytes.len() > 500_000 {
                 println!("    ✗ Transaction too large!");
-                return Ok(HookResult::Abort("Transaction exceeds size limit".to_string()));
+                return Ok(HookResult::Abort(
+                    "Transaction exceeds size limit".to_string(),
+                ));
             }
 
             println!("    ✓ Validation passed");
@@ -159,27 +169,17 @@ fn create_dummy_bitcoin_tx() -> Vec<u8> {
     // Version (4 bytes) + Input count (1 byte) + Input + Output count (1 byte) + Output + Locktime (4 bytes)
     vec![
         // Version
-        0x01, 0x00, 0x00, 0x00,
-        // Input count
-        0x01,
-        // Previous output hash (32 bytes)
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        // Previous output index (4 bytes)
-        0xff, 0xff, 0xff, 0xff,
-        // Script length
-        0x00,
-        // Sequence (4 bytes)
-        0xff, 0xff, 0xff, 0xff,
-        // Output count
-        0x01,
-        // Value (8 bytes)
-        0x00, 0xe1, 0xf5, 0x05, 0x00, 0x00, 0x00, 0x00,
-        // Script length
-        0x00,
-        // Locktime (4 bytes)
+        0x01, 0x00, 0x00, 0x00, // Input count
+        0x01, // Previous output hash (32 bytes)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, // Previous output index (4 bytes)
+        0xff, 0xff, 0xff, 0xff, // Script length
+        0x00, // Sequence (4 bytes)
+        0xff, 0xff, 0xff, 0xff, // Output count
+        0x01, // Value (8 bytes)
+        0x00, 0xe1, 0xf5, 0x05, 0x00, 0x00, 0x00, 0x00, // Script length
+        0x00, // Locktime (4 bytes)
         0x00, 0x00, 0x00, 0x00,
     ]
 }
@@ -193,21 +193,18 @@ fn create_dummy_ethereum_tx() -> Vec<u8> {
         0x85, 0x04, 0xa8, 0x17, 0xc8, 0x00, // Gas price
         0x82, 0x52, 0x08, // Gas limit
         0x94, // To address marker
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, // To address (20 bytes)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, // To address (20 bytes)
         0x85, 0x01, 0x00, 0x00, 0x00, 0x00, // Value
         0x80, // Data (empty)
         0x25, // V
         0xa0, // R marker
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // R (32 bytes)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, // R (32 bytes)
         0xa0, // S marker
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // S (32 bytes)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, // S (32 bytes)
     ]
 }

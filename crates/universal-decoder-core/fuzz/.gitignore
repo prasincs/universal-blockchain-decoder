@@ -1,0 +1,12 @@
+# Fuzz artifacts (crashes, hangs, slow inputs)
+artifacts/
+
+# Coverage data
+coverage/
+
+# Fuzzing corpus - commit interesting inputs but not all
+# corpus/
+
+# Build artifacts
+target/
+Cargo.lock

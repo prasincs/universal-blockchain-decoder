@@ -514,8 +514,9 @@ impl CanonicalSerialize for CanonicalTxIR {
     }
 
     fn from_canonical_bytes(bytes: &[u8]) -> Result<Self> {
-        borsh::from_slice(bytes)
-            .map_err(|e| DecoderError::serialization(format!("Borsh deserialization failed: {}", e)))
+        borsh::from_slice(bytes).map_err(|e| {
+            DecoderError::serialization(format!("Borsh deserialization failed: {}", e))
+        })
     }
 }
 
@@ -559,7 +560,10 @@ mod tests {
         let bytes1 = canonical_tx.to_canonical_bytes().unwrap();
         let bytes2 = canonical_tx.to_canonical_bytes().unwrap();
 
-        assert_eq!(bytes1, bytes2, "Canonical serialization must be deterministic");
+        assert_eq!(
+            bytes1, bytes2,
+            "Canonical serialization must be deterministic"
+        );
     }
 
     #[test]
