@@ -59,6 +59,12 @@ pub mod hooks;
 pub mod ir;
 pub mod traits;
 
+// Vendored dependencies (git subtree)
+mod vendored;
+
+// Re-export vendored hex for use by decoder crates
+pub use vendored::hex;
+
 // Re-export commonly used types
 pub mod prelude {
     pub use crate::canonical::{CanonicalSerialize, CanonicalTxIR};

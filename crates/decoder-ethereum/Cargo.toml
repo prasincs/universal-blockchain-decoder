@@ -15,7 +15,7 @@ ethers-core = "2.0"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-hex = { workspace = true }
+# hex - Use vendored version via: use universal_decoder_core::hex;
 sha3 = { workspace = true }
 
 [dev-dependencies]
