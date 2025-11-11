@@ -36,15 +36,10 @@ anyhow = "1.0"
 proptest = "1.4"
 criterion = "0.5"
 
-# Blockchain-specific dependencies (for test validation only, Phase 1.5+)
-bitcoin = "0.31"
-# Using alloy-rs (modern successor to ethers)
-alloy = "0.1"
-alloy-primitives = "0.7"
-alloy-rlp = "0.3"
-solana-sdk = "1.17"
-solana-transaction-status = "1.17"
-
-# Utilities
+# Utilities (shared across crates)
 byteorder = "1.5"
 smallvec = "1.11"
+
+# NOTE: Blockchain-specific dependencies (bitcoin, alloy, solana-sdk) are
+# declared in individual decoder crates, NOT in workspace.
+# This allows each decoder to manage its own dependencies and versions.
