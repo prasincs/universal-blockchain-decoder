@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/universal-decoder-core",
+    "crates/decoder-primitives",
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     # "crates/decoder-solana",  # Temporarily disabled due to dependency conflicts

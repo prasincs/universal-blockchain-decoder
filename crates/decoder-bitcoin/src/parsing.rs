@@ -7,6 +7,7 @@
 
 use std::io::Read;
 use universal_decoder_core::prelude::*;
+use decoder_primitives::prelude::*;
 
 /// Maximum script size (conservative limit for safety)
 pub const MAX_SCRIPT_SIZE: usize = 10_000;
@@ -17,60 +18,9 @@ pub const MAX_TRANSACTION_SIZE: usize = 100_000;
 /// Maximum number of inputs/outputs (sanity check)
 pub const MAX_INPUTS_OUTPUTS: usize = 10_000;
 
-/// Read a single byte
-#[inline]
-pub fn read_u8<R: Read>(reader: &mut R) -> Result<u8> {
-    let mut buf = [0u8; 1];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read u8: {}", e)))?;
-    Ok(buf[0])
-}
-
-/// Read u16 (little-endian)
-#[inline]
-pub fn read_u16_le<R: Read>(reader: &mut R) -> Result<u16> {
-    let mut buf = [0u8; 2];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read u16: {}", e)))?;
-    Ok(u16::from_le_bytes(buf))
-}
-
-/// Read u32 (little-endian)
-#[inline]
-pub fn read_u32_le<R: Read>(reader: &mut R) -> Result<u32> {
-    let mut buf = [0u8; 4];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read u32: {}", e)))?;
-    Ok(u32::from_le_bytes(buf))
-}
-
-/// Read u64 (little-endian)
-#[inline]
-pub fn read_u64_le<R: Read>(reader: &mut R) -> Result<u64> {
-    let mut buf = [0u8; 8];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read u64: {}", e)))?;
-    Ok(u64::from_le_bytes(buf))
-}
-
-/// Read exactly N bytes
+/// Read exactly N bytes with script size limit
 pub fn read_bytes<R: Read>(reader: &mut R, len: usize) -> Result<Vec<u8>> {
-    if len > MAX_SCRIPT_SIZE {
-        return Err(DecoderError::invalid_structure(format!(
-            "Script too large: {} bytes (max: {})",
-            len, MAX_SCRIPT_SIZE
-        )));
-    }
-
-    let mut buf = vec![0u8; len];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read {} bytes: {}", len, e)))?;
-    Ok(buf)
+    read_bytes_bounded(reader, len, MAX_SCRIPT_SIZE)
 }
 
 /// Parse a Bitcoin VarInt (variable-length integer)
