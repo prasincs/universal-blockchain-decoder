@@ -26,7 +26,7 @@ impl ChainIdentity for TestChain {
     }
 }
 
-fn create_empty_txir<const V: u8>(chain: &impl ChainIdentity) -> TxIR<V> {
+fn create_empty_txir<const V: u8>(chain: &impl ChainIdentity) -> TxIR<'_, V> {
     TxIR::new(
         chain,
         TxMetadata {

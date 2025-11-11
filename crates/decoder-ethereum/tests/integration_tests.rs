@@ -29,12 +29,11 @@ fn test_validate_format() {
 /// Test ChainDecoder trait implementation
 #[test]
 fn test_chain_decoder_trait() {
-    // Verify chain ID
-    assert_eq!(
-        EthereumDecoder::chain_id(),
-        ChainId::Ethereum,
-        "Chain ID should be Ethereum"
-    );
+    // Verify chain identity
+    let chain = EthereumDecoder::chain();
+    assert_eq!(chain.chain_id(), 1, "Chain ID should be 1 (Ethereum)");
+    assert_eq!(chain.chain_name(), "Ethereum");
+    assert_eq!(chain.chain_family(), ChainFamily::Account);
 }
 
 /// Test decoding with malformed input (should error gracefully)

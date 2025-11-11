@@ -81,7 +81,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         // Build authorization package
         // Bitcoin transactions have signatures embedded in inputs (scriptSig)
         let mut signatures = Vec::new();
-        let mut public_keys = Vec::new();
+        let public_keys = Vec::new();
 
         for (idx, input) in tx.input.iter().enumerate() {
             // Extract signatures from scriptSig
@@ -138,8 +138,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         let inputs: Vec<InputReference> = tx
             .input
             .iter()
-            .enumerate()
-            .map(|(idx, input)| InputReference {
+            .map(|input| InputReference {
                 prev_tx: input.previous_output.txid.as_byte_array().to_vec(),
                 output_index: input.previous_output.vout,
                 value: Amount {

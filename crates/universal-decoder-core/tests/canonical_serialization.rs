@@ -7,8 +7,7 @@
 //! 4. Edge cases are handled correctly
 
 use universal_decoder_core::canonical::*;
-use universal_decoder_core::chain::{ChainFamily, ChainFamilyEncoded, ChainRef};
-use universal_decoder_core::prelude::*;
+use universal_decoder_core::chain::{ChainFamilyEncoded, ChainRef};
 
 fn create_test_canonical_tx() -> CanonicalTxIR {
     CanonicalTxIR {

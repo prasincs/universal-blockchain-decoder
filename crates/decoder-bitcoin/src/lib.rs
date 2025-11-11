@@ -96,6 +96,7 @@ pub fn decode_with_hooks(raw_bytes: &[u8], registry: &HookRegistry) -> Result<Bi
 #[cfg(test)]
 mod tests {
     use super::*;
+    use universal_decoder_core::hex;
 
     // Example Bitcoin transaction (simplified for testing)
     // This is a minimal valid transaction structure
