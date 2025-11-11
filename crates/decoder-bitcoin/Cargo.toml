@@ -11,6 +11,7 @@ description = "Bitcoin transaction decoder for universal-decoder"
 universal-decoder-core = { path = "../universal-decoder-core" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;
 # NOTE: bitcoin crate is temporarily in dependencies for Phase 1.5
 # Will be moved to dev-dependencies in Phase 2 when pure Rust decoder is implemented
