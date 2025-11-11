@@ -9,18 +9,18 @@ description = "Ethereum transaction decoder for universal-decoder"
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
-# NOTE: Will move to dev-dependencies in Phase 1.5
-# Keeping current dependency for now (will migrate to alloy)
-ethers-core = "2.0"
 serde = { workspace = true }
-serde_json = { workspace = true }
 thiserror = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;
 sha3 = { workspace = true }
 
 [dev-dependencies]
+# Blockchain libraries for test validation ONLY
+# Production code will use pure Rust parsing (Phase 2)
+# Migration from ethers-core to alloy (modern Ethereum library)
 proptest = { workspace = true }
-# TODO Phase 1.5: Add alloy for test validation, remove ethers-core
-# alloy = "0.1"
+serde_json = { workspace = true }
+# ethers-core = "2.0"  # Will be removed in favor of alloy
+# alloy = "0.1"        # Modern successor to ethers
 # alloy-primitives = "0.7"
 # alloy-rlp = "0.3"

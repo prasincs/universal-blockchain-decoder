@@ -260,7 +260,7 @@ impl From<&TxMetadata> for CanonicalTxMetadata {
             block_height: meta.block_height,
             timestamp: meta.timestamp,
             size: meta.size,
-            extra: meta.extra.to_string(),
+            extra: meta.extra.clone(),
         }
     }
 }
@@ -280,7 +280,7 @@ impl From<&Signature> for CanonicalSignature {
         Self {
             data: sig.data.clone(),
             key_index: sig.key_index,
-            metadata: sig.metadata.as_ref().map(|m| m.to_string()),
+            metadata: sig.metadata.clone(),
         }
     }
 }
@@ -436,7 +436,7 @@ impl From<&GenericOperation> for CanonicalGenericOperation {
         Self {
             op_type: g.op_type.clone(),
             data: g.data.clone(),
-            metadata: g.metadata.to_string(),
+            metadata: g.metadata.clone(),
         }
     }
 }
