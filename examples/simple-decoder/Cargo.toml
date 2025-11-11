@@ -10,5 +10,5 @@ universal-decoder-core = { path = "../../crates/universal-decoder-core" }
 decoder-bitcoin = { path = "../../crates/decoder-bitcoin" }
 decoder-ethereum = { path = "../../crates/decoder-ethereum" }
 # decoder-solana = { path = "../../crates/decoder-solana" }  # Temporarily disabled
-hex = { workspace = true }
+# hex - Use vendored version via: use universal_decoder_core::hex;
 serde_json = { workspace = true }

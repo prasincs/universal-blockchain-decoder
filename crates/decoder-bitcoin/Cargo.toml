@@ -9,11 +9,12 @@ description = "Bitcoin transaction decoder for universal-decoder"
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
-bitcoin = { workspace = true }
+# NOTE: Will move to dev-dependencies in Phase 1.5 (pure Rust implementation)
+bitcoin = "0.31"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-hex = { workspace = true }
+# hex - Use vendored version via: use universal_decoder_core::hex;
 
 [dev-dependencies]
 proptest = { workspace = true }

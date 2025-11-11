@@ -14,7 +14,7 @@ borsh = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 sha3 = { workspace = true }
-hex = { workspace = true }
+# hex - VENDORED via git subtree (see src/vendored/hex)
 smallvec = { workspace = true }
 
 [dev-dependencies]
