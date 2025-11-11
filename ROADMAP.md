@@ -29,56 +29,223 @@ The core architecture is complete and validated. This roadmap outlines the path 
 4. **Zero-cost abstractions**: Static dispatch
 5. **Formally verifiable**: Verus-ready
 
-## Phase 2: Reference Implementations (Next)
+## Phase 1.5: Testing & Dependency Infrastructure ⚡ IN PROGRESS
+
+**Target**: v0.1.0-alpha+testing
+**Timeline**: 2 weeks
+**Focus**: Establish comprehensive testing strategy and minimal TCB
+**Status**: Documentation complete, implementation starting
+
+### 1.5.1: Dependency Minimization (Week 1)
+
+**Priority**: CRITICAL (Minimal TCB requirement)
+
+**Current Status**: 8 production dependencies → **Target**: 5 dependencies
+
+Tasks:
+- [ ] Vendor `hex` crate using git subtree (~3 hours)
+  - [ ] Use `git subtree add` for verifiable vendoring
+  - [ ] Include LICENSE-MIT and LICENSE-APACHE
+  - [ ] Create VENDORING.md with attribution
+  - [ ] Re-export from core: `pub use vendored::hex`
+  - [ ] Update all imports in decoder crates
+- [ ] Move `serde_json` to dev-dependencies (display/test only)
+  - [ ] Remove public JSON APIs from core
+  - [ ] Keep JSON only for debugging/tests
+- [ ] Benchmark `smallvec` vs `Vec`
+  - [ ] Create criterion benchmarks
+  - [ ] Decide: keep, remove, or vendor based on <10% threshold
+- [ ] Move blockchain libs to dev-dependencies
+  - [ ] `bitcoin` → dev-dependencies (test validation only)
+  - [ ] `ethers-core` → dev-dependencies (test validation only)
+  - [ ] Decoders use pure Rust parsing
+
+**Final Dependencies**:
+```toml
+[dependencies]
+serde = "1.0"      # Essential - serialization
+borsh = "1.3"      # Essential - canonical encoding
+thiserror = "1.0"  # Essential - error handling
+sha2 = "0.10"      # Essential - Bitcoin hashing
+sha3 = "0.10"      # Essential - Ethereum hashing
+# hex - VENDORED via git subtree
+```
+
+**Documentation**:
+- ✅ docs/TESTING_STRATEGY.md
+- ✅ docs/DEPENDENCY_AUDIT.md
+- ✅ docs/DECODER_DEPENDENCY_STRATEGY.md
+- ✅ docs/VENDORING_GUIDE.md
+- ✅ docs/GIT_SUBTREE_VENDORING.md
+- ✅ docs/USING_VENDORED_DEPS.md
+
+### 1.5.2: Testing Infrastructure (Week 2)
+
+**Priority**: CRITICAL (Quality assurance)
+
+**5-Level Testing Pyramid**:
+
+1. **Unit Tests** (100% core, 90% decoders)
+   - [ ] Set up test organization structure
+   - [ ] Core: Test all public functions
+   - [ ] Decoders: Test all parsers
+   - [ ] Target: < 5 min execution time
+
+2. **Property-Based Tests** (proptest)
+   - [ ] Install proptest framework
+   - [ ] Core: Canonical serialization properties
+   - [ ] Core: Amount arithmetic properties
+   - [ ] Decoders: Parse/encode roundtrip
+   - [ ] Target: 50+ property tests
+
+3. **Integration Tests** (Real blockchain data)
+   - [ ] Create test fixture repository
+   - [ ] Bitcoin: Genesis, SegWit, Taproot transactions
+   - [ ] Ethereum: Legacy, EIP-1559, EIP-2930 transactions
+   - [ ] Validation against reference implementations
+   - [ ] Target: 100+ real transaction fixtures
+
+4. **Fuzz Testing** (cargo-fuzz)
+   - [ ] Install cargo-fuzz
+   - [ ] Fuzz target: Bitcoin decoder
+   - [ ] Fuzz target: Ethereum decoder
+   - [ ] Fuzz target: Canonical serialization
+   - [ ] Run continuously in CI (1 hour/night)
+
+5. **Formal Verification** (Verus - foundational)
+   - [ ] Install Verus toolchain
+   - [ ] Add first annotations (Amount arithmetic)
+   - [ ] Prove panic-freedom for critical paths
+   - [ ] Document verification strategy
+
+**CI/CD Pipeline**:
+- [ ] GitHub Actions: Unit tests (every commit)
+- [ ] GitHub Actions: Property tests (every commit)
+- [ ] GitHub Actions: Integration tests (every commit)
+- [ ] GitHub Actions: Fuzz tests (nightly)
+- [ ] GitHub Actions: Coverage report (every PR, >90% threshold)
+- [ ] GitHub Actions: Verify vendored dependencies
+
+**Deliverables**:
+- Comprehensive test suite
+- CI/CD automation
+- Coverage reporting (tarpaulin)
+- Benchmark baseline (criterion)
+- Test fixture repository
+
+### Success Criteria
+
+- ✅ ≤ 5 production dependencies in core
+- ✅ hex vendored via git subtree (verifiable)
+- ✅ Blockchain libs in dev-dependencies only
+- ✅ Unit test coverage: 100% core, 90% decoders
+- ✅ 50+ property tests
+- ✅ 100+ real transaction fixtures
+- ✅ Fuzzing infrastructure operational
+- ✅ CI/CD pipeline passing
+- ✅ Verus toolchain installed and annotated
+
+**Reference Documentation**:
+- `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Executive summary
+- `docs/TESTING_STRATEGY.md` - Complete testing approach
+- `docs/GIT_SUBTREE_VENDORING.md` - Verifiable vendoring
+
+---
+
+## Phase 2: Reference Implementations (Months 2-3)
 
 **Target**: v0.1.0-beta
-**Timeline**: 2-3 weeks
-**Focus**: Prove the architecture works with real transactions
+**Timeline**: 6-8 weeks
+**Focus**: Pure Rust decoders with comprehensive testing
+**Prerequisites**: Phase 1.5 complete
 
-### 2.1: Bitcoin Decoder (Week 1)
+### 2.1: Bitcoin Decoder - Pure Rust Implementation (Weeks 1-2)
 
 **Priority**: HIGH (Reference UTXO implementation)
 
-Tasks:
+**Strategy**: Pure Rust parsing, validate against `bitcoin` crate in dev-dependencies
+
+Implementation Tasks:
 - [ ] Create `BitcoinChain` struct implementing `ChainIdentity`
+- [ ] **Implement pure Rust parsing** (NO production dependency on `bitcoin` crate)
+  - [ ] Parse version (4 bytes, little-endian)
+  - [ ] Detect and parse SegWit marker/flag
+  - [ ] Implement varint parsing
+  - [ ] Parse inputs (prev_hash, index, script_sig, sequence)
+  - [ ] Parse outputs (value, script_pubkey)
+  - [ ] Parse witness data (if SegWit)
+  - [ ] Parse locktime
 - [ ] Update `BitcoinDecoder` to use new trait API
 - [ ] Update `BitcoinTransaction::canonicalize()` to use `ChainRef`
+
+Testing Tasks:
+- [ ] Add `bitcoin = "0.31"` to `[dev-dependencies]` (validation only)
+- [ ] Create validation tests comparing with `bitcoin` crate
 - [ ] Add real Bitcoin transaction test cases
+  - [ ] Genesis block coinbase
   - [ ] Simple P2PKH transfer
   - [ ] SegWit transaction
+  - [ ] Taproot transaction
   - [ ] Multi-input/multi-output
-  - [ ] Coinbase transaction
+  - [ ] Large transaction (100+ inputs/outputs)
+- [ ] Property tests: Roundtrip parse/encode
 - [ ] Verify canonical serialization determinism
-- [ ] Update documentation and examples
+- [ ] Fuzz testing with random bytes
 
 **Validation Criteria**:
+- ✅ **Pure Rust implementation** (no `bitcoin` crate in production deps)
+- ✅ Parsing matches `bitcoin` crate behavior (validated in tests)
 - ✅ Decodes mainnet Bitcoin transactions
 - ✅ Canonical hash matches Bitcoin TXID
 - ✅ Borsh serialization is deterministic
+- ✅ Fuzz testing: No panics on any input
 - ✅ All tests passing
 
-### 2.2: Ethereum Decoder (Week 2)
+**See**: `docs/DECODER_DEPENDENCY_STRATEGY.md` for rationale
+
+### 2.2: Ethereum Decoder - Pure Rust Implementation (Weeks 3-4)
 
 **Priority**: HIGH (Reference Account implementation)
 
-Tasks:
+**Strategy**: Pure Rust RLP parsing, validate against `ethers-core` in dev-dependencies
+
+Implementation Tasks:
 - [ ] Create `EthereumChain` struct implementing `ChainIdentity`
+- [ ] **Implement pure Rust RLP parsing** (NO production dependency on `ethers-core`)
+  - [ ] RLP decoder (Recursive Length Prefix)
+  - [ ] Legacy transaction parsing (pre-EIP-1559)
+  - [ ] EIP-2930 transaction parsing (access lists)
+  - [ ] EIP-1559 transaction parsing (base fee + priority fee)
+  - [ ] Signature recovery (v, r, s)
+  - [ ] Transaction type detection (0x00, 0x01, 0x02)
 - [ ] Update `EthereumDecoder` to use new trait API
 - [ ] Update `EthereumTransaction::canonicalize()` to use `ChainRef`
+
+Testing Tasks:
+- [ ] Add `ethers-core = "2.0"` to `[dev-dependencies]` (validation only)
+- [ ] Create validation tests comparing with `ethers-core`
 - [ ] Add real Ethereum transaction test cases
   - [ ] Legacy transaction (pre-EIP-1559)
-  - [ ] EIP-1559 transaction
+  - [ ] EIP-1559 transaction (London hard fork)
   - [ ] EIP-2930 (access list)
   - [ ] Contract deployment
   - [ ] Contract call (ERC-20 transfer)
+  - [ ] Large transaction (complex contract interaction)
+- [ ] Property tests: RLP roundtrip
 - [ ] Handle RLP decoding edge cases
-- [ ] Update documentation and examples
+- [ ] Fuzz testing with random bytes
 
 **Validation Criteria**:
+- ✅ **Pure Rust implementation** (no `ethers-core` in production deps)
+- ✅ RLP parsing matches `ethers-core` behavior (validated in tests)
 - ✅ Decodes mainnet Ethereum transactions
 - ✅ Handles all transaction types (Legacy, EIP-2930, EIP-1559)
 - ✅ Canonical serialization works
 - ✅ Gas calculations correct
+- ✅ Signature recovery works
+- ✅ Fuzz testing: No panics on any input
+
+**See**: `docs/DECODER_DEPENDENCY_STRATEGY.md` for rationale
 
 ### 2.3: Integration Tests & Examples (Week 3)
 
@@ -331,6 +498,9 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-01-XX
-**Current Phase**: Phase 1 Complete ✅
-**Next Milestone**: v0.1.0-beta (Phase 2)
+**Last Updated**: 2025-01-11
+**Current Phase**: Phase 1.5 In Progress ⚡
+**Status**: Testing & dependency strategy documentation complete
+**Next Milestones**:
+  - v0.1.0-alpha+testing (Phase 1.5 complete) - 2 weeks
+  - v0.1.0-beta (Phase 2 complete) - 2-3 months
