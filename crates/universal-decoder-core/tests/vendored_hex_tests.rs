@@ -72,7 +72,7 @@ fn test_hex_encode_blockchain_hash() {
         0xde, 0xf0,
     ];
 
-    let encoded = hex::encode(&tx_hash);
+    let encoded = hex::encode(tx_hash);
     assert_eq!(
         encoded,
         "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0"
@@ -90,7 +90,7 @@ fn test_hex_encode_bitcoin_address_hash() {
         0xff, 0x00, 0x11, 0x22, 0x33,
     ];
 
-    let encoded = hex::encode(&addr_hash);
+    let encoded = hex::encode(addr_hash);
     assert_eq!(encoded, "00112233445566778899aabbccddeeff00112233");
 
     let decoded = hex::decode(&encoded).expect("Failed to decode");

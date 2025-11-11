@@ -1,7 +1,6 @@
 //! Simple decoder example demonstrating the universal blockchain decoder
 
-use decoder_bitcoin::BitcoinDecoder;
-use decoder_ethereum::EthereumDecoder;
+use universal_decoder_core::hex;
 use universal_decoder_core::prelude::*;
 
 fn main() {
@@ -54,13 +53,13 @@ fn demo_bitcoin_decoder(registry: &HookRegistry) {
             println!("  - Version: {}", tx.version());
             println!("  - Inputs: {}", tx.input_count());
             println!("  - Outputs: {}", tx.output_count());
-            println!("  - TXID: {}", hex::encode(&tx.txid()));
+            println!("  - TXID: {}", hex::encode(tx.txid()));
 
             // Canonicalize to TxIR
             match tx.canonicalize() {
                 Ok(tx_ir) => {
                     println!("✓ Successfully canonicalized to TxIR");
-                    println!("  - Chain: {:?}", tx_ir.chain_id);
+                    println!("  - Chain: {}", tx_ir.chain.name);
                     println!("  - Operations: {}", tx_ir.operations.len());
                     println!("  - Inputs consumed: {}", tx_ir.state_deltas.inputs.len());
                     println!("  - Outputs created: {}", tx_ir.state_deltas.outputs.len());
@@ -94,13 +93,13 @@ fn demo_ethereum_decoder(registry: &HookRegistry) {
             println!("  - Gas limit: {}", tx.gas_limit);
             println!("  - EIP-1559: {}", tx.is_eip1559());
             println!("  - Contract creation: {}", tx.is_contract_creation());
-            println!("  - Hash: {}", hex::encode(&tx.hash()));
+            println!("  - Hash: {}", hex::encode(tx.hash()));
 
             // Canonicalize to TxIR
             match tx.canonicalize() {
                 Ok(tx_ir) => {
                     println!("✓ Successfully canonicalized to TxIR");
-                    println!("  - Chain: {:?}", tx_ir.chain_id);
+                    println!("  - Chain: {}", tx_ir.chain.name);
                     println!("  - Operations: {}", tx_ir.operations.len());
                     println!(
                         "  - Account changes: {}",

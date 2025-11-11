@@ -2,7 +2,6 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use smallvec::SmallVec;
 
 /// Benchmark Vec vs SmallVec for common transaction parsing scenarios
-
 fn bench_vec_small_elements(c: &mut Criterion) {
     let mut group = c.benchmark_group("small_elements");
 

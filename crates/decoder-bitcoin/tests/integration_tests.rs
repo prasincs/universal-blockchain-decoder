@@ -22,18 +22,26 @@ fn test_decode_genesis_coinbase() {
     );
     assert_eq!(decoded.input_count(), 1, "Coinbase has 1 input");
     assert_eq!(decoded.output_count(), 1, "Genesis coinbase has 1 output");
-    assert!(decoded.is_coinbase(), "Should be identified as coinbase");
+    assert!(
+        decoded.inner.is_coinbase(),
+        "Should be identified as coinbase"
+    );
 
     // Verify output value (50 BTC = 5,000,000,000 satoshis)
-    let outputs = decoded.outputs();
+    let outputs = &decoded.inner.output;
     assert_eq!(outputs.len(), 1);
     assert_eq!(
-        outputs[0].value, 5_000_000_000,
+        outputs[0].value.to_sat(),
+        5_000_000_000,
         "Genesis block reward is 50 BTC"
     );
 
     // Verify locktime
-    assert_eq!(decoded.locktime(), 0, "Genesis transaction has locktime 0");
+    assert_eq!(
+        decoded.inner.lock_time.to_consensus_u32(),
+        0,
+        "Genesis transaction has locktime 0"
+    );
 }
 
 /// Test decoding simple P2PKH transaction
@@ -55,20 +63,28 @@ fn test_decode_simple_p2pkh() {
         2,
         "Has 2 outputs (payment + change)"
     );
-    assert!(!decoded.is_coinbase(), "Should not be coinbase");
+    assert!(!decoded.inner.is_coinbase(), "Should not be coinbase");
 
     // Verify outputs
-    let outputs = decoded.outputs();
+    let outputs = &decoded.inner.output;
     assert_eq!(outputs.len(), 2);
 
     // First output: 10 BTC
-    assert_eq!(outputs[0].value, 1_000_000_000, "First output is 10 BTC");
+    assert_eq!(
+        outputs[0].value.to_sat(),
+        1_000_000_000,
+        "First output is 10 BTC"
+    );
 
     // Second output: 40 BTC (change)
-    assert_eq!(outputs[1].value, 4_000_000_000, "Second output is 40 BTC");
+    assert_eq!(
+        outputs[1].value.to_sat(),
+        4_000_000_000,
+        "Second output is 40 BTC"
+    );
 
     // Verify total output value
-    let total_output: u64 = outputs.iter().map(|o| o.value).sum();
+    let total_output: u64 = outputs.iter().map(|o| o.value.to_sat()).sum();
     assert_eq!(total_output, 5_000_000_000, "Total output is 50 BTC");
 }
 
@@ -141,7 +157,7 @@ fn test_raw_bytes_preserved() {
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
     // Raw bytes should be preserved
-    let raw = decoded.raw_bytes();
+    let raw = &decoded.raw_bytes;
     assert_eq!(raw, &tx_bytes[..], "Raw bytes should match input");
 }
 
@@ -177,7 +193,7 @@ fn test_canonicalization() {
 /// Benchmark-style test: Decode multiple transactions
 #[test]
 fn test_decode_multiple_transactions() {
-    let fixtures = vec![
+    let fixtures = [
         include_str!("fixtures/btc_genesis_coinbase.hex"),
         include_str!("fixtures/btc_simple_p2pkh.hex"),
     ];
@@ -206,7 +222,7 @@ fn test_transaction_size_bounds() {
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
     // Bitcoin transactions are typically < 100 KB
-    let size = decoded.raw_bytes().len();
+    let size = decoded.raw_bytes.len();
     assert!(
         size > 0 && size < 100_000,
         "Transaction size should be reasonable: {} bytes",
