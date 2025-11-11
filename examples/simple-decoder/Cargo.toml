@@ -1,0 +1,14 @@
+[package]
+name = "simple-decoder"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+universal-decoder-core = { path = "../../crates/universal-decoder-core" }
+decoder-bitcoin = { path = "../../crates/decoder-bitcoin" }
+decoder-ethereum = { path = "../../crates/decoder-ethereum" }
+# decoder-solana = { path = "../../crates/decoder-solana" }  # Temporarily disabled
+hex = { workspace = true }
+serde_json = { workspace = true }
