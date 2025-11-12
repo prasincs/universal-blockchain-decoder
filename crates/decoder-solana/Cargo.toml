@@ -5,15 +5,22 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Solana transaction decoder for universal-decoder"
+description = "Solana transaction decoder for universal-decoder - Pure Rust implementation"
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
-solana-sdk = { workspace = true }
-solana-transaction-status = { workspace = true }
+decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
 thiserror = { workspace = true }
-hex = { workspace = true }
+# hex - Use vendored version via: use universal_decoder_core::hex;
 
 [dev-dependencies]
+# Blockchain libraries for test validation ONLY
+# Production code uses pure Rust parsing
+solana-transaction-status = "2.0"
+serde_json = { workspace = true }
 proptest = { workspace = true }
+
+# Use solana-parser from tkhq for validation testing
+# Note: This will be added as a git dependency
+# solana-parser = { git = "https://github.com/tkhq/solana-parser", branch = "main" }
