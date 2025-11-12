@@ -36,7 +36,7 @@ pub mod parsing;
 pub mod types;
 
 use parsing::*;
-use types::BitcoinTransaction;
+pub use types::BitcoinTransaction;
 
 /// Bitcoin chain identity
 #[derive(Debug, Clone, Copy)]

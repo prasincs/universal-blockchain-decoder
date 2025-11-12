@@ -1,3 +1,17 @@
+[package]
+name = "universal-blockchain-decoder"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Universal blockchain transaction decoder with CLI"
+
+[dependencies]
+universal-decoder-core = { path = "crates/universal-decoder-core" }
+decoder-bitcoin = { path = "crates/decoder-bitcoin" }
+decoder-ethereum = { path = "crates/decoder-ethereum" }
+
 [workspace]
 members = [
     "crates/universal-decoder-core",
