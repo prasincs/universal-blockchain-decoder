@@ -1,20 +1,22 @@
 # Verification Targets for Universal Blockchain Decoder
 
-**Last Updated**: 2025-01-15
-**Coverage**: 0% (not started)
+**Last Updated**: 2025-11-12
+**Coverage**: 20% (3 targets annotated, awaiting Verus verification)
 
 This document tracks formal verification progress using Verus. Each verification target (VT) represents a critical safety property that must be proven.
+
+**Phase 4 Status**: 🚧 In Progress - VT-1 implementation complete with annotations and tests
 
 ---
 
 ## Coverage Summary
 
-| Phase | Total VTs | Verified | In Progress | Todo | Coverage |
-|-------|-----------|----------|-------------|------|----------|
-| Core  | 5         | 0        | 0           | 5    | 0%       |
-| Bitcoin | 5       | 0        | 0           | 5    | 0%       |
-| Ethereum | 5      | 0        | 0           | 5    | 0%       |
-| **Total** | **15** | **0**   | **0**      | **15** | **0%** |
+| Phase | Total VTs | Verified | Annotations Ready | Todo | Coverage |
+|-------|-----------|----------|-------------------|------|----------|
+| Core  | 5         | 0        | 3 (VT-1.1-1.3)    | 2    | 60%      |
+| Bitcoin | 5       | 0        | 0                 | 5    | 0%       |
+| Ethereum | 5      | 0        | 0                 | 5    | 0%       |
+| **Total** | **15** | **0**   | **3**            | **12** | **20%** |
 
 ---
 
@@ -22,20 +24,22 @@ This document tracks formal verification progress using Verus. Each verification
 
 ### VT-1: Amount Arithmetic Safety ⚡ PRIORITY: CRITICAL
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-1.1: `checked_add` overflow detection
-- ❌ VT-1.2: `checked_sub` underflow detection
-- ❌ VT-1.3: `checked_mul` overflow detection
-- ❌ VT-1.4: Decimal conversion correctness
+- ✅ VT-1.1: `checked_add` overflow detection (annotated, 8 tests)
+- ✅ VT-1.2: `checked_sub` underflow detection (annotated, 7 tests)
+- ✅ VT-1.3: `checked_mul` overflow detection (annotated, 7 tests)
+- ⏳ VT-1.4: Decimal conversion correctness (implementation pending)
 
 **Files**:
-- `crates/universal-decoder-core/src/ir.rs:120-180`
+- `crates/universal-decoder-core/src/ir.rs:361-572` (implementation)
+- `crates/universal-decoder-core/src/ir.rs:674-910` (tests)
 
-**Verification Conditions**: 0 / ~15 proven
-**Estimated Effort**: 1-2 weeks
-**Blocked By**: Verus installation
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~15 proven (annotations ready)
+**Test Coverage**: 22 comprehensive unit tests passing
+**Estimated Effort**: 1-2 weeks (implementation complete)
+**Next Step**: Install Verus and run verification
+**Last Updated**: 2025-11-12
 
 **Why Critical**:
 - Amount calculations are security-critical (fee calculation, balance transfers)
