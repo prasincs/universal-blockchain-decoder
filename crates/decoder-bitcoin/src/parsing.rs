@@ -7,7 +7,6 @@
 
 use decoder_primitives::prelude::*;
 use std::io::Read;
-use universal_decoder_core::prelude::*;
 
 /// Maximum script size (conservative limit for safety)
 pub const MAX_SCRIPT_SIZE: usize = 10_000;

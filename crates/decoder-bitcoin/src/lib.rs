@@ -31,7 +31,6 @@
 
 use decoder_primitives::prelude::*;
 use std::io::Cursor;
-use universal_decoder_core::prelude::*;
 
 pub mod parsing;
 pub mod types;
