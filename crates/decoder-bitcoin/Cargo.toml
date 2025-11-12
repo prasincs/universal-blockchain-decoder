@@ -10,6 +10,7 @@ description = "Bitcoin transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
@@ -21,3 +22,4 @@ sha2 = { workspace = true }
 bitcoin = "0.31"
 serde_json = { workspace = true }
 proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }

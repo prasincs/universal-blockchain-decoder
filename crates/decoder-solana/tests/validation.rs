@@ -164,7 +164,7 @@ fn test_decode_and_canonicalize() {
 
 #[test]
 fn test_compact_u16_edge_cases() {
-    use decoder_solana::parsing::read_compact_u16;
+    use decoder_encodings::compact_u16::read_compact_u16;
     use std::io::Cursor;
 
     // Test boundary values
@@ -292,4 +292,40 @@ fn test_multi_instruction_transaction() {
 
     assert_eq!(instructions[2].program_id_index, 1);
     assert_eq!(instructions[2].data, vec![0xFF]);
+}
+
+// ========== Tests using decoder-test-utils ==========
+
+/// Test that decoder never panics on arbitrary input (using test-utils)
+#[test]
+fn test_decoder_never_panics_on_garbage() {
+    use decoder_test_utils::assertions::assert_decode_never_panics;
+
+    // Test with various garbage inputs
+    let test_cases = vec![
+        vec![],                        // Empty
+        vec![0xFF; 100],               // Random bytes
+        vec![0x00; 1000],              // Zeros
+        vec![0x01, 0x00, 0x00, 0x00],  // Incomplete
+        (0..255).collect::<Vec<u8>>(), // Sequential bytes
+    ];
+
+    for input in test_cases {
+        assert_decode_never_panics::<SolanaDecoder>(&input);
+    }
+}
+
+/// Test that decoder rejects empty input (using test-utils)
+#[test]
+fn test_rejects_empty_input() {
+    use decoder_test_utils::assertions::assert_rejects_empty_input;
+    assert_rejects_empty_input::<SolanaDecoder>();
+}
+
+/// Test that decoder handles oversized input (using test-utils)
+#[test]
+fn test_handles_oversized_input() {
+    use decoder_test_utils::assertions::assert_handles_oversized_input;
+    // Solana transactions have a strict size limit (1232 bytes based on MTU)
+    assert_handles_oversized_input::<SolanaDecoder>(1232);
 }

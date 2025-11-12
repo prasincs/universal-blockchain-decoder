@@ -3,7 +3,8 @@
 //! Pure Rust implementation using custom RLP decoder.
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
-use crate::{rlp::RlpItem, EthereumChain};
+use crate::EthereumChain;
+use decoder_encodings::rlp::RlpItem;
 use universal_decoder_core::prelude::*;
 
 /// Ethereum transaction type indicator (EIP-2718)

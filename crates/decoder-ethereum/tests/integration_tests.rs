@@ -293,7 +293,7 @@ mod alloy_validation {
     #[test]
     fn test_validate_rlp_parsing() {
         // Test various RLP encodings that both parsers should agree on
-        use decoder_ethereum::rlp::RlpItem;
+        use decoder_encodings::rlp::RlpItem;
 
         // Test simple string
         let data = hex!("83646f67"); // "dog"
@@ -447,4 +447,41 @@ mod real_fixtures {
     // - A contract deployment
     // - An EIP-1559 transaction
     // - An EIP-4844 blob transaction
+}
+
+// ========== Tests using decoder-test-utils ==========
+
+/// Test that decoder never panics on arbitrary input (using test-utils)
+#[test]
+fn test_decoder_never_panics_on_garbage() {
+    use decoder_test_utils::assertions::assert_decode_never_panics;
+
+    // Test with various garbage inputs
+    let test_cases = vec![
+        vec![],                        // Empty
+        vec![0xFF; 100],               // Random bytes
+        vec![0x00; 1000],              // Zeros
+        vec![0xc0],                    // Invalid RLP
+        (0..255).collect::<Vec<u8>>(), // Sequential bytes
+    ];
+
+    for input in test_cases {
+        assert_decode_never_panics::<EthereumDecoder>(&input);
+    }
+}
+
+/// Test that decoder rejects empty input (using test-utils)
+#[test]
+fn test_rejects_empty_input() {
+    use decoder_test_utils::assertions::assert_rejects_empty_input;
+    assert_rejects_empty_input::<EthereumDecoder>();
+}
+
+/// Test that decoder handles oversized input (using test-utils)
+#[test]
+fn test_handles_oversized_input() {
+    use decoder_test_utils::assertions::assert_handles_oversized_input;
+    // Ethereum transactions can be large (contract deployments)
+    // but should have reasonable limits
+    assert_handles_oversized_input::<EthereumDecoder>(10_000_000);
 }

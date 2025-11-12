@@ -70,16 +70,14 @@ impl ChainInfo {
 
     /// Format the transaction URL for the primary explorer
     pub fn tx_url(&self, tx_hash: &str) -> Option<String> {
-        self.primary_explorer().map(|explorer| {
-            format!("{}/tx/{}", explorer.url, tx_hash)
-        })
+        self.primary_explorer()
+            .map(|explorer| format!("{}/tx/{}", explorer.url, tx_hash))
     }
 
     /// Format the address URL for the primary explorer
     pub fn address_url(&self, address: &str) -> Option<String> {
-        self.primary_explorer().map(|explorer| {
-            format!("{}/address/{}", explorer.url, address)
-        })
+        self.primary_explorer()
+            .map(|explorer| format!("{}/address/{}", explorer.url, address))
     }
 }
 

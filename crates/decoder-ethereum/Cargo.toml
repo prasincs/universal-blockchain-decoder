@@ -13,6 +13,7 @@ alloy-validation = []
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;
@@ -22,6 +23,7 @@ sha3 = { workspace = true }
 # Testing utilities
 proptest = { workspace = true }
 serde_json = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }
 
 # Alloy-rs: Modern Ethereum library for VALIDATION ONLY
 # Production code uses pure Rust parsing

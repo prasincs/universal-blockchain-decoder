@@ -5,7 +5,6 @@
 
 use universal_decoder_core::prelude::*;
 
-pub mod rlp;
 pub mod types;
 
 use types::EthereumTransaction;

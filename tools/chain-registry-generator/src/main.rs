@@ -22,7 +22,11 @@ use walkdir::WalkDir;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Input directory containing chain JSON files
-    #[arg(short, long, default_value = "crates/decoder-evm/vendored/chainlist/_data/chains")]
+    #[arg(
+        short,
+        long,
+        default_value = "crates/decoder-evm/vendored/chainlist/_data/chains"
+    )]
     input: PathBuf,
 
     /// Output file for Borsh binary
@@ -30,7 +34,11 @@ struct Args {
     output: PathBuf,
 
     /// Output metadata file
-    #[arg(short, long, default_value = "crates/decoder-evm/data/chains.metadata.txt")]
+    #[arg(
+        short,
+        long,
+        default_value = "crates/decoder-evm/data/chains.metadata.txt"
+    )]
     metadata: PathBuf,
 
     /// Upstream commit hash (optional, read from VENDORED.md if not provided)
@@ -106,9 +114,11 @@ fn main() -> Result<()> {
     // Serialize to Borsh
     println!();
     println!("💾 Serializing to Borsh...");
-    let registry = ChainRegistry { chains: chains.clone() };
-    let serialized = borsh::to_vec(&registry)
-        .context("Failed to serialize chain registry to Borsh")?;
+    let registry = ChainRegistry {
+        chains: chains.clone(),
+    };
+    let serialized =
+        borsh::to_vec(&registry).context("Failed to serialize chain registry to Borsh")?;
 
     println!("   ✓ Serialized {} bytes", serialized.len());
 
@@ -119,7 +129,8 @@ fn main() -> Result<()> {
     println!("   ✓ Wrote {}", args.output.display());
 
     // Get or detect upstream commit
-    let commit = args.commit
+    let commit = args
+        .commit
         .or_else(|| detect_upstream_commit())
         .unwrap_or_else(|| "unknown".to_string());
 
@@ -135,11 +146,18 @@ fn main() -> Result<()> {
     println!();
     println!("Summary:");
     println!("  Chains: {}", chains.len());
-    println!("  Size: {} bytes ({:.2} MB)", serialized.len(), serialized.len() as f64 / 1_048_576.0);
+    println!(
+        "  Size: {} bytes ({:.2} MB)",
+        serialized.len(),
+        serialized.len() as f64 / 1_048_576.0
+    );
     println!("  Commit: {}", commit);
     println!();
     println!("Next steps:");
-    println!("  1. Review: ls -lh {}", args.output.parent().unwrap().display());
+    println!(
+        "  1. Review: ls -lh {}",
+        args.output.parent().unwrap().display()
+    );
     println!("  2. Test: cargo test -p decoder-evm");
     println!("  3. Commit: git add {}", args.output.display());
     println!();

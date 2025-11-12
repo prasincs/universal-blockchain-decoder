@@ -1,0 +1,16 @@
+[package]
+name = "decoder-encodings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Shared encoding utilities for blockchain transaction decoders"
+
+[dependencies]
+# Only dependency: core library for error types
+universal-decoder-core = { path = "../universal-decoder-core" }
+
+[dev-dependencies]
+# For testing
+serde_json = { workspace = true }

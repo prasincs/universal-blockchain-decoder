@@ -1,0 +1,21 @@
+[package]
+name = "decoder-test-utils"
+version = "0.1.0"
+edition = "2021"
+description = "Common testing utilities for blockchain decoder implementations"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/prasincs/universal-blockchain-decoder"
+
+[dependencies]
+# Core decoder types
+universal-decoder-core = { path = "../universal-decoder-core" }
+
+# Property-based testing
+proptest = "1.0"
+
+# JSON for fixture loading
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[features]
+default = []

@@ -52,8 +52,8 @@
 //! - `decoder-arbitrum-orbit` for Arbitrum and Orbit chains
 //! - `decoder-zksync-era` for zkSync Era chains
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder as BaseEthDecoder};
 use universal_decoder_core::prelude::*;
-use decoder_ethereum::{EthereumDecoder as BaseEthDecoder, types::EthereumTransaction};
 
 pub mod registry;
 pub mod types;
@@ -133,32 +133,28 @@ impl EvmDecoder {
         // Extract chain ID from transaction
         let tx_chain_id = tx.chain_id.ok_or_else(|| {
             DecoderError::invalid_structure(
-                "Transaction missing chain ID (pre-EIP-155 transactions not supported)"
+                "Transaction missing chain ID (pre-EIP-155 transactions not supported)",
             )
         })?;
 
         // Validate against expected chain ID if provided
         if let Some(expected) = expected_chain_id {
             if tx_chain_id != expected {
-                return Err(DecoderError::invalid_structure(
-                    &format!(
-                        "Chain ID mismatch: transaction has {}, expected {}",
-                        tx_chain_id, expected
-                    )
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Chain ID mismatch: transaction has {}, expected {}",
+                    tx_chain_id, expected
+                )));
             }
         }
 
         // Look up chain information
         let chain_info = self.registry.get_chain(tx_chain_id).ok_or_else(|| {
-            DecoderError::invalid_structure(
-                &format!(
-                    "Chain ID {} not found in registry. \
+            DecoderError::invalid_structure(format!(
+                "Chain ID {} not found in registry. \
                      If this is a valid EVM chain, please report it at \
                      https://github.com/ethereum-lists/chains",
-                    tx_chain_id
-                )
-            )
+                tx_chain_id
+            ))
         })?;
 
         // Warn if chain requires special decoder
