@@ -24,6 +24,8 @@
   - `CHAIN_FAMILIES_GROUPING.md` - Ecosystem-wide decoder strategy
   - `NEXT_STEPS_CHAINLIST_INTEGRATION.md` - EVM decoder implementation plan
   - `CLAUDE.md` - Updated with airgapped operation requirements
+  - `docs/VERUS_VERIFICATION_COVERAGE.md` - **NEW**: Comprehensive Verus guide & coverage tracking
+  - `docs/VERIFICATION_TARGETS.md` - **NEW**: 15 formal verification targets documented
 
 ## Phase 1: Core Architecture ✅ COMPLETE
 
@@ -163,21 +165,31 @@ sha3 = "0.10"      # Essential - Ethereum hashing
    - [ ] Add first annotations (Amount arithmetic)
    - [ ] Prove panic-freedom for critical paths
    - [ ] Document verification strategy
+   - [ ] Set up verification coverage tracking (`--output-json`)
+   - [ ] Create verification targets manifest (`docs/VERIFICATION_TARGETS.md`)
+   - [ ] Implement coverage tracking scripts (`tools/verus-coverage.sh`)
+   - [ ] Add Verus to CI/CD pipeline with coverage reporting
+   - [ ] Generate verification coverage dashboard (HTML)
+   - [ ] Add verification coverage badge to README
 
 **CI/CD Pipeline**:
 - [ ] GitHub Actions: Unit tests (every commit)
 - [ ] GitHub Actions: Property tests (every commit)
 - [ ] GitHub Actions: Integration tests (every commit)
 - [ ] GitHub Actions: Fuzz tests (nightly)
-- [ ] GitHub Actions: Coverage report (every PR, >90% threshold)
+- [ ] GitHub Actions: Test coverage report (every PR, >90% threshold)
+- [ ] GitHub Actions: Verification coverage report (Verus, every commit)
 - [ ] GitHub Actions: Verify vendored dependencies
 
 **Deliverables**:
 - Comprehensive test suite
 - CI/CD automation
-- Coverage reporting (lcov via cargo-llvm-cov)
+- Test coverage reporting (lcov via cargo-llvm-cov)
+- Verification coverage reporting (Verus --output-json)
 - Benchmark baseline (criterion)
 - Test fixture repository
+- Verification targets manifest (15 critical properties documented)
+- Coverage tracking infrastructure (scripts + dashboard)
 
 ### Success Criteria
 
@@ -839,43 +851,290 @@ let tx = decoder.decode(&tx_bytes, Some(ChainId::Numeric(56)))?; // BNB Chain
 ## Phase 4: Formal Verification (Months 3-4)
 
 **Target**: v0.3.0
-**Focus**: Mathematical proofs of correctness
+**Focus**: Mathematical proofs of correctness using Verus
+**See**: `docs/VERUS_VERIFICATION_COVERAGE.md` (comprehensive guide)
 
-### 4.1: Core Verification
+**Prerequisites**:
+- ✅ Verus installed (Phase 1.5.2)
+- ✅ Verification targets documented (`docs/VERIFICATION_TARGETS.md`)
+- ✅ Coverage tracking infrastructure (`tools/verus-coverage.sh`)
+
+---
+
+### 4.0: Verification Infrastructure & Coverage Tracking
+
+**Priority**: CRITICAL (Foundation for all verification)
+**Timeline**: Week 1-2
+
+**Tasks**:
+- [ ] ✅ Install Verus toolchain locally and in CI
+- [ ] ✅ Set up `--output-json` parsing for machine-readable output
+- [ ] ✅ Create verification targets manifest (`docs/VERIFICATION_TARGETS.md`)
+- [ ] ✅ Implement coverage tracking script (`tools/verus-coverage.sh`)
+- [ ] ✅ Implement coverage parsing script (`tools/parse-verus-coverage.py`)
+- [ ] ✅ Generate HTML dashboard (`tools/generate-dashboard.py`)
+- [ ] ✅ Add Verus to GitHub Actions (`.github/workflows/verus.yml`)
+- [ ] ✅ Create verification coverage badge (shields.io)
+- [ ] ✅ Set up pre-commit hook for verification (optional)
+
+**Coverage Tracking Strategy**:
+
+We track **4 types of verification coverage**:
+
+1. **Function Coverage**: % of functions with formal specifications
+   ```
+   Verified Functions / Total Critical Functions
+   ```
+
+2. **Property Coverage**: % of critical safety properties proven (PRIMARY METRIC)
+   ```
+   Verified Properties / Total Properties (from VERIFICATION_TARGETS.md)
+   Example: 3 properties / 15 properties = 20%
+   ```
+
+3. **VC Coverage**: % of verification conditions proven (TECHNICAL METRIC)
+   ```
+   VCs Proven / Total VCs Generated
+   Example: 235 VCs / 247 VCs = 95.1%
+   ```
+
+4. **Target Coverage**: % of verification targets completed
+   ```
+   Completed VTs / Total VTs
+   Example: VT-1, VT-2 complete → 2/15 = 13%
+   ```
+
+**Deliverables**:
+- ✅ Verus integrated into CI/CD
+- ✅ Automated coverage reports (JSON + Markdown + HTML)
+- ✅ Coverage badge in README
+- ✅ 15 verification targets documented (5 core + 5 Bitcoin + 5 Ethereum)
+- ✅ Dashboard showing verification progress
+
+**Example Output**:
+```
+=== Verus Verification Coverage ===
+Total VCs:        247
+Verified VCs:     235
+Coverage:         95.1%
+
+Property Coverage: 20% (3/15)
+  ✅ VT-1.1: Amount::checked_add overflow
+  ✅ VT-1.2: Amount::checked_sub underflow
+  ✅ VT-2.1: Canonical encoding determinism
+  ⏳ VT-2.2: Canonicalization roundtrip (in progress)
+  ❌ VT-10.1: Bitcoin varint parsing (todo)
+  ...
+```
+
+---
+
+### 4.1: Core Library Verification (VT-1 to VT-5)
 
 **Priority**: HIGH (Security critical)
+**Timeline**: Week 3-8 (6 weeks)
+**Target**: 40% core library coverage
 
-Tasks:
-- [ ] Set up Verus toolchain in CI
-- [ ] Add Verus annotations to core traits
-- [ ] Prove panic-freedom for decode path
-- [ ] Prove overflow safety in arithmetic
-- [ ] Verify canonical serialization determinism
+**Verification Targets** (see `docs/VERIFICATION_TARGETS.md`):
 
-**Key Properties**:
-- Injectivity: `encode(decode(bytes)) == bytes`
-- Panic-freedom: No unwrap(), no panics
-- Determinism: Same data → same bytes
+**VT-1: Amount Arithmetic Safety** ⚡ CRITICAL
+- [ ] VT-1.1: `checked_add` overflow detection (~5 VCs)
+- [ ] VT-1.2: `checked_sub` underflow detection (~4 VCs)
+- [ ] VT-1.3: `checked_mul` overflow detection (~6 VCs)
+- [ ] VT-1.4: Decimal conversion correctness (~5 VCs)
+- **Total**: ~20 VCs, **Effort**: 2 weeks
 
-### 4.2: Bitcoin Decoder Verification
+**VT-2: Canonicalization Determinism** ⚡ CRITICAL
+- [ ] VT-2.1: `to_canonical_bytes()` is deterministic (~8 VCs)
+- [ ] VT-2.2: Borsh encoding never panics (~6 VCs)
+- [ ] VT-2.3: Canonical bytes are bounded (~6 VCs)
+- **Total**: ~20 VCs, **Effort**: 3 weeks
+- **Blocked By**: Borsh library verification (may require trusted axioms)
+
+**VT-3: Error Propagation Safety**
+- [ ] VT-3.1: Error conversion preserves information (~4 VCs)
+- [ ] VT-3.2: Error types are exhaustive (~3 VCs)
+- [ ] VT-3.3: Error propagation never panics (~3 VCs)
+- **Total**: ~10 VCs, **Effort**: 1 week
+
+**VT-4: Hook Execution Ordering**
+- [ ] VT-4.1: Hooks execute in defined order (~5 VCs)
+- [ ] VT-4.2: Hook failures propagate correctly (~4 VCs)
+- [ ] VT-4.3: Hook state is consistent (~3 VCs)
+- **Total**: ~12 VCs, **Effort**: 2 weeks
+
+**VT-5: Version Isolation (Const Generics)**
+- [ ] VT-5.1: TxIR<V1> cannot cast to TxIR<V2> (~3 VCs)
+- [ ] VT-5.2: Version preserved through canonicalization (~2 VCs)
+- **Total**: ~5 VCs, **Effort**: 1 week
+
+**Key Properties Proven**:
+- ✅ Injectivity: `encode(decode(bytes)) == bytes`
+- ✅ Panic-freedom: No unwrap(), no panics
+- ✅ Determinism: Same data → same bytes
+- ✅ Overflow safety: All arithmetic checked
+
+**Deliverables**:
+- ~67 VCs proven across core library
+- 5 verification targets completed
+- Core library verification coverage: 40%
+
+---
+
+### 4.2: Bitcoin Decoder Verification (VT-10 to VT-14)
 
 **Priority**: MEDIUM
+**Timeline**: Week 9-16 (8 weeks)
+**Target**: 60% Bitcoin decoder coverage
 
-Tasks:
-- [ ] Verify UTXO parsing bounds
-- [ ] Prove fee calculation overflow safety
-- [ ] Verify canonicalization injectivity
-- [ ] Prove script parsing safety
+**Verification Targets**:
 
-### 4.3: Verification Documentation
+**VT-10: Varint Parsing Safety** ⚡ HIGH
+- [ ] VT-10.1: `parse_varint` never panics (bounds-checked) (~10 VCs)
+- [ ] VT-10.2: Non-canonical varints rejected (~5 VCs)
+- [ ] VT-10.3: Varint value fits in u64 (~3 VCs)
+- **Total**: ~18 VCs, **Effort**: 2 weeks
+
+**VT-11: Transaction Parsing Bounds**
+- [ ] VT-11.1: Input parsing never reads out of bounds (~20 VCs)
+- [ ] VT-11.2: Output parsing never reads out of bounds (~15 VCs)
+- [ ] VT-11.3: Witness parsing is bounds-checked (~10 VCs)
+- **Total**: ~45 VCs, **Effort**: 4-6 weeks (MAJOR)
+
+**VT-12: Fee Calculation Overflow Safety**
+- [ ] VT-12.1: Total input value doesn't overflow (~3 VCs)
+- [ ] VT-12.2: Total output value doesn't overflow (~3 VCs)
+- [ ] VT-12.3: Fee calculation handles underflow (~2 VCs)
+- **Total**: ~8 VCs, **Effort**: 1 week
+
+**VT-13: TXID Calculation Correctness**
+- [ ] VT-13.1: TXID is deterministic (~3 VCs)
+- [ ] VT-13.2: SegWit TXID excludes witness data (~2 VCs)
+- [ ] VT-13.3: Hash computation never panics (~1 VC)
+- **Total**: ~6 VCs, **Effort**: 1 week
+
+**VT-14: Bitcoin Canonicalization Injectivity** ⚡ CRITICAL
+- [ ] VT-14.1: `encode(decode(bytes)) == bytes` roundtrip (~10 VCs)
+- [ ] VT-14.2: Signature verification preserved (~5 VCs)
+- **Total**: ~15 VCs, **Effort**: 3-4 weeks
+
+**Deliverables**:
+- ~92 VCs proven across Bitcoin decoder
+- 5 verification targets completed
+- Bitcoin decoder verification coverage: 60%
+
+---
+
+### 4.3: Ethereum Decoder Verification (VT-20 to VT-24)
 
 **Priority**: MEDIUM
+**Timeline**: Week 17-24 (8 weeks)
+**Target**: 50% Ethereum decoder coverage
 
-Tasks:
-- [ ] Document proof strategies
-- [ ] Create verification examples
-- [ ] Publish verification results
-- [ ] Academic paper (optional)
+**Verification Targets**:
+
+**VT-20: RLP Parsing Safety**
+- [ ] VT-20.1: RLP decode never panics (~15 VCs)
+- [ ] VT-20.2: RLP decode rejects malformed input (~10 VCs)
+- [ ] VT-20.3: RLP length fields validated (~5 VCs)
+- **Total**: ~30 VCs, **Effort**: 3-4 weeks
+
+**VT-21: Gas Calculation Overflow Safety**
+- [ ] VT-21.1: Gas limit * gas price doesn't overflow (~4 VCs)
+- [ ] VT-21.2: EIP-1559 fee calculations safe (~4 VCs)
+- [ ] VT-21.3: Priority fee + base fee doesn't overflow (~2 VCs)
+- **Total**: ~10 VCs, **Effort**: 2 weeks
+
+**VT-22: EIP-2718 Transaction Type Detection**
+- [ ] VT-22.1: Transaction type correctly identified (~3 VCs)
+- [ ] VT-22.2: Type-specific parsing is safe (~3 VCs)
+- [ ] VT-22.3: Unknown types rejected (~2 VCs)
+- **Total**: ~8 VCs, **Effort**: 1 week
+
+**VT-23: Signature Recovery Safety**
+- [ ] VT-23.1: Recovery ID (v) validated (~4 VCs)
+- [ ] VT-23.2: Signature (r, s) in valid range (~5 VCs)
+- [ ] VT-23.3: Address recovery never panics (~3 VCs)
+- **Total**: ~12 VCs, **Effort**: 2 weeks
+
+**VT-24: Ethereum Canonicalization Determinism**
+- [ ] VT-24.1: RLP encoding is deterministic (~6 VCs)
+- [ ] VT-24.2: Transaction hash is deterministic (~4 VCs)
+- **Total**: ~10 VCs, **Effort**: 2 weeks
+
+**Deliverables**:
+- ~70 VCs proven across Ethereum decoder
+- 5 verification targets completed
+- Ethereum decoder verification coverage: 50%
+
+---
+
+### 4.4: Coverage Dashboards & Reporting
+
+**Priority**: MEDIUM
+**Timeline**: Week 25-26 (2 weeks)
+
+**Tasks**:
+- [ ] Generate comprehensive HTML dashboard with Chart.js
+- [ ] Create markdown reports for GitHub Pages
+- [ ] Add verification badge to README (shields.io)
+- [ ] Document verification process for contributors
+- [ ] Publish verification results (blog post or paper)
+- [ ] Create visualization of proof dependency graph
+- [ ] Set up coverage threshold enforcement (80% for core)
+
+**Deliverables**:
+- Interactive HTML dashboard showing:
+  - Overall verification coverage (property + VC)
+  - Per-crate breakdown
+  - Per-target status
+  - Historical trends
+  - Failed VCs with error messages
+- Automated coverage reports in CI
+- Public verification status page
+
+---
+
+### 4.5: Phase 4 Success Criteria
+
+**Coverage Goals**:
+- ✅ **Core Library**: 40% property coverage (5/5 targets, ~67 VCs)
+- ✅ **Bitcoin Decoder**: 60% property coverage (5/5 targets, ~92 VCs)
+- ✅ **Ethereum Decoder**: 50% property coverage (5/5 targets, ~70 VCs)
+- ✅ **Overall**: 50% property coverage (15/15 targets documented, ~229 VCs proven)
+
+**Infrastructure**:
+- ✅ Verus integrated into CI/CD
+- ✅ Automated coverage tracking and reporting
+- ✅ Coverage dashboard deployed
+- ✅ Coverage badge visible in README
+- ✅ All 15 verification targets documented
+
+**Documentation**:
+- ✅ `docs/VERUS_VERIFICATION_COVERAGE.md` - Comprehensive guide
+- ✅ `docs/VERIFICATION_TARGETS.md` - All 15 targets documented
+- ✅ `docs/FORMAL_VERIFICATION.md` - Implementation guide
+- ✅ Proof strategies documented
+- ✅ Verification examples published
+
+**Validation**:
+- ✅ At least 1 complete decoder verified (Bitcoin or Ethereum)
+- ✅ Zero critical bugs found through verification
+- ✅ All critical properties proven (Amount, Canonicalization)
+- ✅ Verification runs on every commit without timeout
+
+---
+
+### 4.6: Advanced Verification (Optional)
+
+**Priority**: LOW (Post-v0.3.0)
+
+**Research Directions**:
+- [ ] Prove cryptographic properties (hash preimage resistance)
+- [ ] Verify concurrent decoder composition
+- [ ] Generate ZK proofs of transaction validity
+- [ ] Cross-chain property verification
+- [ ] Academic publication (SOSP, OSDI, CAV)
 
 ## Phase 5: Production Hardening (Months 4-5)
 
