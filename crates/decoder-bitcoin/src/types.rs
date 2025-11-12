@@ -1,6 +1,7 @@
 //! Bitcoin-specific transaction types
 
 use crate::parsing::{TxInput, TxOutput, Witness};
+use crate::varint::encode_varint;
 use crate::BitcoinChain;
 use universal_decoder_core::prelude::*;
 
@@ -61,26 +62,67 @@ impl BitcoinTransaction {
     /// For SegWit transactions, this is the hash of the non-witness serialization.
     /// For legacy transactions, this is the hash of the entire transaction.
     ///
-    /// TODO: Implement proper non-witness serialization for SegWit transactions.
-    /// For now, we use the raw bytes (which is correct for legacy, but includes
-    /// witness data for SegWit transactions).
+    /// TXID excludes witness data per BIP 141:
+    /// https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
     pub fn txid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
 
-        // TODO: For SegWit, serialize without witness data
         let bytes_to_hash = if self.is_segwit() {
-            // For now, use raw bytes (this is INCORRECT for SegWit)
-            // Should serialize without marker, flag, and witness data
-            &self.raw_bytes
+            // For SegWit: serialize without marker, flag, and witness data
+            self.serialize_without_witness()
         } else {
-            &self.raw_bytes
+            // For legacy: use raw bytes
+            self.raw_bytes.clone()
         };
 
         // Double SHA-256
-        let hash1 = Sha256::digest(bytes_to_hash);
+        let hash1 = Sha256::digest(&bytes_to_hash);
         let hash2 = Sha256::digest(hash1);
 
         hash2.to_vec()
+    }
+
+    /// Serialize transaction without witness data (for TXID calculation)
+    ///
+    /// This creates the legacy serialization format:
+    /// - version (4 bytes)
+    /// - input count (varint)
+    /// - inputs (without witness)
+    /// - output count (varint)
+    /// - outputs
+    /// - locktime (4 bytes)
+    fn serialize_without_witness(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Version (4 bytes, little-endian)
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+
+        // Input count (varint)
+        encode_varint(&mut bytes, self.inputs.len() as u64);
+
+        // Inputs
+        for input in &self.inputs {
+            bytes.extend_from_slice(&input.prev_hash);
+            bytes.extend_from_slice(&input.prev_index.to_le_bytes());
+            encode_varint(&mut bytes, input.script_sig.len() as u64);
+            bytes.extend_from_slice(&input.script_sig);
+            bytes.extend_from_slice(&input.sequence.to_le_bytes());
+        }
+
+        // Output count (varint)
+        encode_varint(&mut bytes, self.outputs.len() as u64);
+
+        // Outputs
+        for output in &self.outputs {
+            bytes.extend_from_slice(&output.value.to_le_bytes());
+            encode_varint(&mut bytes, output.script_pubkey.len() as u64);
+            bytes.extend_from_slice(&output.script_pubkey);
+        }
+
+        // Locktime (4 bytes, little-endian)
+        bytes.extend_from_slice(&self.locktime.to_le_bytes());
+
+        bytes
     }
 
     /// Calculate witness transaction ID (WTXID)

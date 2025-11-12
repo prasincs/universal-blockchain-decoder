@@ -34,6 +34,7 @@ use std::io::Cursor;
 
 pub mod parsing;
 pub mod types;
+mod varint;
 
 use parsing::*;
 pub use types::BitcoinTransaction;
