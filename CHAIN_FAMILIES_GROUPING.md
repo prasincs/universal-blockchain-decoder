@@ -613,13 +613,55 @@ pub enum ChainFamily {
 }
 ```
 
-### Data Sources
+### Data Sources (Vendored for Airgapped Operation)
 
-1. **EVM Chains**: https://chainid.network/chains.json
+**CRITICAL**: All chain registries are **vendored via git subtree** to support airgapped deployments.
+
+1. **EVM Chains**: https://github.com/ethereum-lists/chains
+   - Vendored to: `crates/decoder-evm/vendored/chainlist`
+   - Contains: EIP-155 chain data for 500+ EVM chains
+   - Embedded at: Compile time via build.rs
+
 2. **Cosmos Chains**: https://github.com/cosmos/chain-registry
+   - Vendored to: `crates/decoder-cosmos-sdk/vendored/chain-registry`
+   - Contains: 100+ Cosmos SDK chain specifications
+   - Embedded at: Compile time via build.rs
+
 3. **OP Stack**: https://github.com/ethereum-optimism/superchain-registry
+   - Vendored to: `crates/decoder-op-stack/vendored/superchain-registry`
+   - Contains: All OP Stack chains (Optimism, Base, Zora, etc.)
+   - Embedded at: Compile time via build.rs
+
 4. **Arbitrum Orbit**: Manual curation
-5. **Others**: Manual curation + community submissions
+   - Hardcoded in: `crates/decoder-arbitrum-orbit/src/chains.rs`
+   - No external dependency
+
+5. **SVM Chains**: Manual curation
+   - Hardcoded in: `crates/decoder-svm/src/chains.rs`
+   - Solana, Eclipse, Pyth, etc.
+
+6. **Others**: Manual curation + community contributions
+
+**Vendoring Strategy**:
+```bash
+# Example: Vendor EVM chains
+cd /path/to/universal-blockchain-decoder
+git subtree add \
+    --prefix crates/decoder-evm/vendored/chainlist \
+    https://github.com/ethereum-lists/chains.git \
+    master \
+    --squash
+
+# Verify vendored commit
+git log --oneline crates/decoder-evm/vendored/chainlist | head -1
+```
+
+**Benefits**:
+- ✅ Works completely offline (airgapped deployments)
+- ✅ Verifiable supply chain (git commit history)
+- ✅ Reproducible builds (pinned versions)
+- ✅ No runtime network dependencies
+- ✅ Audit-friendly (all data in repository)
 
 ---
 

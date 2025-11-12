@@ -283,9 +283,65 @@ sha3 = "0.10"
 - Well-known crates have been audited
 - Can vendor all dependencies for air-gapped deployments
 
+**Airgapped Operation Requirement** 🔒:
+
+**CRITICAL**: This system **MUST** work completely offline for security-critical deployments.
+
+**Strategy**:
+1. **Vendor Rust dependencies**: Using git subtree (e.g., `hex` crate)
+2. **Vendor chain registries**: Using git subtree for all external data sources
+3. **Compile-time embedding**: All data embedded in binary at build time
+4. **No runtime network calls**: Zero network dependencies in production code
+
+**Chain Registry Vendoring**:
+```bash
+# EVM chains (500+)
+git subtree add \
+    --prefix crates/decoder-evm/vendored/chainlist \
+    https://github.com/ethereum-lists/chains.git \
+    master --squash
+
+# Cosmos chains (100+)
+git subtree add \
+    --prefix crates/decoder-cosmos-sdk/vendored/chain-registry \
+    https://github.com/cosmos/chain-registry.git \
+    master --squash
+
+# OP Stack chains
+git subtree add \
+    --prefix crates/decoder-op-stack/vendored/superchain-registry \
+    https://github.com/ethereum-optimism/superchain-registry.git \
+    main --squash
+```
+
+**Build-time Embedding**:
+```rust
+// crates/decoder-evm/build.rs
+fn main() {
+    // Embed vendored chain data at compile time
+    let chains_dir = "vendored/chainlist/_data/chains";
+    // Generate Rust code from JSON
+    // Result: Zero runtime dependencies
+}
+```
+
+**Benefits**:
+- ✅ Complete offline operation (military/government deployments)
+- ✅ Verifiable supply chain (git commit audit trail)
+- ✅ Reproducible builds (all data in repo)
+- ✅ No TOCTOU attacks (data can't change at runtime)
+- ✅ Faster startup (no network I/O)
+
+**Forbidden in Production Code**:
+- ❌ HTTP/HTTPS clients (reqwest, ureq, etc.)
+- ❌ DNS resolution
+- ❌ Runtime config fetching from URLs
+- ❌ Dynamic chain registry updates
+- ✅ All network code MUST be in dev-dependencies only (for testing)
+
 **Forbidden in Core**:
 - Complex parsing libraries (use in decoders)
-- Network libraries
+- Network libraries (violates airgapped requirement)
 - Async runtime
 - Proc macros (except derive)
 

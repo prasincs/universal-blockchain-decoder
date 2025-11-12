@@ -84,12 +84,41 @@ impl EvmDecoder {
 
 #### 2. Chain Registry (`ChainRegistry`)
 
-**Data Source**: https://chainid.network/chains.json
+**Data Source**: https://github.com/ethereum-lists/chains (vendored via git subtree)
 
-**Update Strategy**:
-- Embedded at compile time (via `include_str!`)
-- Optional runtime updates from URL
-- Version pinning for reproducible builds
+**Airgapped Operation Strategy**:
+- **Vendored data**: Use git subtree to include chainlist repository
+- **Compile-time embedding**: Embed `chains.json` via `include_str!`
+- **No runtime fetching**: All chain data bundled with the crate
+- **Verifiable supply chain**: Git subtree shows exact upstream commit
+- **Update process**: Manually update subtree when new chains are needed
+
+**Vendoring Commands**:
+```bash
+# Add chainlist as git subtree
+git subtree add \
+    --prefix crates/decoder-evm/vendored/chainlist \
+    https://github.com/ethereum-lists/chains.git \
+    master \
+    --squash
+
+# Update later (when needed)
+git subtree pull \
+    --prefix crates/decoder-evm/vendored/chainlist \
+    https://github.com/ethereum-lists/chains.git \
+    master \
+    --squash
+```
+
+**Build-time Processing**:
+```rust
+// crates/decoder-evm/build.rs
+fn main() {
+    // Read vendored chains.json at build time
+    let chains_json = include_str!("vendored/chainlist/_data/chains/eip155-*.json");
+    // Process and embed in binary
+}
+```
 
 **Schema**:
 ```rust
@@ -176,18 +205,23 @@ impl EvmDecoder {
    cargo new --lib crates/decoder-evm
    ```
 
-2. **Implement ChainRegistry**
-   - Download chains.json from chainlist.org
-   - Embed at compile time
+2. **Vendor Chainlist Data**
+   - Use git subtree to vendor ethereum-lists/chains repository
+   - Verify commit hash for supply chain security
+   - Document vendoring in docs/GIT_SUBTREE_VENDORING.md
+
+3. **Implement ChainRegistry**
+   - Read vendored chains JSON files at build time
+   - Generate Rust code or embed JSON using include_str!
    - Add parsing logic
    - Add chain lookup methods
 
-3. **Implement EvmDecoder**
+4. **Implement EvmDecoder**
    - Delegate to `EthereumDecoder::decode()`
    - Validate chain ID against registry
    - Return `(EthereumTransaction, ChainInfo)` tuple
 
-4. **Write tests**
+5. **Write tests**
    - Test with known chain IDs (1, 56, 137, etc.)
    - Test with unknown chain ID (should error)
    - Test chain listing
@@ -195,7 +229,8 @@ impl EvmDecoder {
 
 **Deliverables**:
 - [ ] `crates/decoder-evm/` created
-- [ ] `chains.json` embedded
+- [ ] Chainlist repository vendored via git subtree
+- [ ] Chain data embedded at compile time (airgapped-compatible)
 - [ ] Basic decoder working
 - [ ] 20+ unit tests
 - [ ] Documentation complete
