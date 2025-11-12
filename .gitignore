@@ -15,6 +15,7 @@ Cargo.lock
 # Test artifacts
 *.profraw
 *.profdata
+/coverage/
 
 # Documentation
 /target/doc/

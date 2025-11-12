@@ -63,7 +63,7 @@ impl BitcoinTransaction {
     /// For legacy transactions, this is the hash of the entire transaction.
     ///
     /// TXID excludes witness data per BIP 141:
-    /// https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
+    /// <https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki>
     pub fn txid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
 

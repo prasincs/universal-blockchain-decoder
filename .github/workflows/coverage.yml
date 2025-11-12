@@ -32,31 +32,36 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+      - name: Install llvm-cov
+        run: cargo install cargo-llvm-cov
 
       - name: Generate coverage report
         run: |
-          cargo tarpaulin \
-            --verbose \
+          cargo llvm-cov \
             --all-features \
             --workspace \
-            --timeout 300 \
-            --out Xml \
-            --output-dir ./coverage
+            --lcov \
+            --output-path ./coverage/lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage/cobertura.xml
+          files: ./coverage/lcov.info
           fail_ci_if_error: false  # Don't fail CI if codecov upload fails
           verbose: true
 
       - name: Check coverage threshold
         run: |
-          # Extract coverage percentage
-          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/cobertura.xml | head -1)
-          COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | xargs printf "%.0f")
+          # Extract coverage percentage from lcov.info
+          # lcov format: LH (lines hit) and LF (lines found)
+          LF=$(grep -oP '^LF:\K\d+' coverage/lcov.info | awk '{s+=$1} END {print s}')
+          LH=$(grep -oP '^LH:\K\d+' coverage/lcov.info | awk '{s+=$1} END {print s}')
+
+          if [ "$LF" -gt 0 ]; then
+            COVERAGE_PCT=$(echo "scale=0; ($LH * 100) / $LF" | bc)
+          else
+            COVERAGE_PCT=0
+          fi
 
           echo "Coverage: ${COVERAGE_PCT}%"
 
@@ -76,4 +81,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/cobertura.xml
+          path: coverage/lcov.info
