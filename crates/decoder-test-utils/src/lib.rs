@@ -63,4 +63,4 @@ pub use assertions::{
     assert_canonical_roundtrip, assert_decode_encode_roundtrip, assert_decode_never_panics,
 };
 pub use fixtures::{load_fixture, load_fixtures_dir, TestFixture};
-pub use proptest_helpers::{arb_transaction_bytes, canonical_serialization_properties};
+pub use proptest_helpers::{arbitrary_transaction_bytes, canonical_serialization_properties};

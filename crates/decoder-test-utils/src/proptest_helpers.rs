@@ -24,40 +24,43 @@ use universal_decoder_core::prelude::*;
 ///
 /// ```rust,no_run
 /// use proptest::prelude::*;
-/// use decoder_test_utils::proptest_helpers::arb_transaction_bytes;
+/// use decoder_test_utils::proptest_helpers::arbitrary_transaction_bytes;
 ///
 /// proptest! {
 ///     #[test]
-///     fn decoder_never_panics(bytes in arb_transaction_bytes(0, 10_000)) {
+///     fn decoder_never_panics(bytes in arbitrary_transaction_bytes(0, 10_000)) {
 ///         let result = MyDecoder::decode(&bytes);
 ///         // Should return Ok or Err, never panic
 ///         assert!(result.is_ok() || result.is_err());
 ///     }
 /// }
 /// ```
-pub fn arb_transaction_bytes(min_size: usize, max_size: usize) -> impl Strategy<Value = Vec<u8>> {
+pub fn arbitrary_transaction_bytes(
+    min_size: usize,
+    max_size: usize,
+) -> impl Strategy<Value = Vec<u8>> {
     prop::collection::vec(any::<u8>(), min_size..=max_size)
 }
 
 /// Generate small arbitrary byte sequences (0-1KB)
 ///
 /// Useful for quick property tests.
-pub fn arb_small_bytes() -> impl Strategy<Value = Vec<u8>> {
-    arb_transaction_bytes(0, 1024)
+pub fn arbitrary_small_bytes() -> impl Strategy<Value = Vec<u8>> {
+    arbitrary_transaction_bytes(0, 1024)
 }
 
 /// Generate medium arbitrary byte sequences (0-100KB)
 ///
 /// Useful for realistic transaction size testing.
-pub fn arb_medium_bytes() -> impl Strategy<Value = Vec<u8>> {
-    arb_transaction_bytes(0, 100_000)
+pub fn arbitrary_medium_bytes() -> impl Strategy<Value = Vec<u8>> {
+    arbitrary_transaction_bytes(0, 100_000)
 }
 
 /// Generate large arbitrary byte sequences (0-1MB)
 ///
 /// Useful for stress testing and DoS resistance.
-pub fn arb_large_bytes() -> impl Strategy<Value = Vec<u8>> {
-    arb_transaction_bytes(0, 1_000_000)
+pub fn arbitrary_large_bytes() -> impl Strategy<Value = Vec<u8>> {
+    arbitrary_transaction_bytes(0, 1_000_000)
 }
 
 /// Property: Decoder never panics on arbitrary input
@@ -74,12 +77,12 @@ pub fn arb_large_bytes() -> impl Strategy<Value = Vec<u8>> {
 /// ```rust,no_run
 /// use proptest::prelude::*;
 /// use decoder_test_utils::proptest_helpers::{
-///     arb_small_bytes, prop_decoder_never_panics
+///     arbitrary_small_bytes, prop_decoder_never_panics
 /// };
 ///
 /// proptest! {
 ///     #[test]
-///     fn test_bitcoin_never_panics(bytes in arb_small_bytes()) {
+///     fn test_bitcoin_never_panics(bytes in arbitrary_small_bytes()) {
 ///         prop_decoder_never_panics::<BitcoinDecoder>(&bytes);
 ///     }
 /// }
@@ -222,7 +225,7 @@ pub fn standard_decoder_properties<D: ChainDecoder>(test_cases: u32) {
     };
 
     // Property 1: Never panics
-    proptest!(config.clone(), |(bytes in arb_medium_bytes())| {
+    proptest!(config.clone(), |(bytes in arbitrary_medium_bytes())| {
         prop_decoder_never_panics::<D>(&bytes);
     });
 
@@ -231,27 +234,27 @@ pub fn standard_decoder_properties<D: ChainDecoder>(test_cases: u32) {
 }
 
 /// Generate arbitrary valid u64 values
-pub fn arb_u64() -> impl Strategy<Value = u64> {
+pub fn arbitrary_u64() -> impl Strategy<Value = u64> {
     any::<u64>()
 }
 
 /// Generate arbitrary valid u128 values
-pub fn arb_u128() -> impl Strategy<Value = u128> {
+pub fn arbitrary_u128() -> impl Strategy<Value = u128> {
     any::<u128>()
 }
 
 /// Generate arbitrary 20-byte addresses (Ethereum)
-pub fn arb_address() -> impl Strategy<Value = [u8; 20]> {
+pub fn arbitrary_address() -> impl Strategy<Value = [u8; 20]> {
     prop::array::uniform20(any::<u8>())
 }
 
 /// Generate arbitrary 32-byte hashes
-pub fn arb_hash() -> impl Strategy<Value = [u8; 32]> {
+pub fn arbitrary_hash() -> impl Strategy<Value = [u8; 32]> {
     prop::array::uniform32(any::<u8>())
 }
 
 /// Generate arbitrary 64-byte signatures (Ed25519)
-pub fn arb_signature() -> impl Strategy<Value = [u8; 64]> {
+pub fn arbitrary_signature() -> impl Strategy<Value = [u8; 64]> {
     any::<[u8; 64]>()
 }
 
@@ -261,8 +264,8 @@ mod tests {
     use proptest::strategy::ValueTree;
 
     #[test]
-    fn test_arb_small_bytes() {
-        let strategy = arb_small_bytes();
+    fn test_arbitrary_small_bytes() {
+        let strategy = arbitrary_small_bytes();
         let mut runner = proptest::test_runner::TestRunner::default();
         for _ in 0..10 {
             let bytes = strategy.new_tree(&mut runner).unwrap().current();
@@ -271,16 +274,16 @@ mod tests {
     }
 
     #[test]
-    fn test_arb_hash() {
-        let strategy = arb_hash();
+    fn test_arbitrary_hash() {
+        let strategy = arbitrary_hash();
         let mut runner = proptest::test_runner::TestRunner::default();
         let hash = strategy.new_tree(&mut runner).unwrap().current();
         assert_eq!(hash.len(), 32);
     }
 
     #[test]
-    fn test_arb_address() {
-        let strategy = arb_address();
+    fn test_arbitrary_address() {
+        let strategy = arbitrary_address();
         let mut runner = proptest::test_runner::TestRunner::default();
         let addr = strategy.new_tree(&mut runner).unwrap().current();
         assert_eq!(addr.len(), 20);

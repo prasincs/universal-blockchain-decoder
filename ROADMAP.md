@@ -500,11 +500,11 @@ Scaffolded Chains (17 new decoders):
    - ✅ `assert_handles_oversized_input<D: ChainDecoder>(max_size)`
 
 2. **Property Test Helpers**:
-   - ✅ `arb_transaction_bytes(min, max)` - Generate arbitrary byte sequences
-   - ✅ `arb_small_bytes()`, `arb_medium_bytes()`, `arb_large_bytes()`
+   - ✅ `arbitrary_transaction_bytes(min, max)` - Generate arbitrary byte sequences
+   - ✅ `arbitrary_small_bytes()`, `arbitrary_medium_bytes()`, `arbitrary_large_bytes()`
    - ✅ `prop_decoder_never_panics<D>(bytes)` - Standard decoder property
    - ✅ `canonical_serialization_properties<T>(value)` - Determinism property
-   - ✅ `arb_u64()`, `arb_u128()`, `arb_address()`, `arb_hash()`, `arb_signature()`
+   - ✅ `arbitrary_u64()`, `arbitrary_u128()`, `arbitrary_address()`, `arbitrary_hash()`, `arbitrary_signature()`
 
 3. **Fixture Loading**:
    - ✅ `load_fixture(path) -> TestFixture`
