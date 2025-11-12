@@ -15,12 +15,14 @@ thiserror = { workspace = true }
 sha3 = { workspace = true }
 
 [dev-dependencies]
-# Blockchain libraries for test validation ONLY
-# Production code will use pure Rust parsing (Phase 2)
-# Migration from ethers-core to alloy (modern Ethereum library)
+# Testing utilities
 proptest = { workspace = true }
 serde_json = { workspace = true }
-# ethers-core = "2.0"  # Will be removed in favor of alloy
-# alloy = "0.1"        # Modern successor to ethers
-# alloy-primitives = "0.7"
+
+# Alloy-rs: Modern Ethereum library for VALIDATION ONLY
+# Production code uses pure Rust parsing
+# NOTE: Temporarily commented out due to version conflicts
+# Can be added back later for validation tests
 # alloy-rlp = "0.3"
+# alloy-primitives = { version = "0.8", features = ["rlp"] }
+# alloy-consensus = { version = "0.8", features = ["std"] }
