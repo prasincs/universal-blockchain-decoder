@@ -326,7 +326,7 @@ fn main() {
 ```
 
 **Benefits**:
-- ✅ Complete offline operation (military/government deployments)
+- ✅ Complete offline operation (financial institutions/banks/enterprise)
 - ✅ Verifiable supply chain (git commit audit trail)
 - ✅ Reproducible builds (all data in repo)
 - ✅ No TOCTOU attacks (data can't change at runtime)

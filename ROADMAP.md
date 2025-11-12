@@ -57,7 +57,7 @@
 **Current Status**: 8 production dependencies → **Target**: 5 dependencies
 
 **CRITICAL NEW REQUIREMENT**: **Airgapped Operation** 🔒
-- System MUST work completely offline (military/government deployments)
+- System MUST work completely offline (financial institutions/banks/enterprise)
 - Zero runtime network dependencies in production code
 - All external data vendored via git subtree
 - Compile-time embedding of all chain registries
