@@ -33,7 +33,7 @@ pub struct TestFixture {
 }
 
 /// Expected properties after decoding
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExpectedProperties {
     /// Expected transaction hash (hex)
     pub tx_hash: Option<String>,
@@ -75,6 +75,25 @@ pub struct ExpectedProperties {
 
 fn default_true() -> bool {
     true
+}
+
+impl Default for ExpectedProperties {
+    fn default() -> Self {
+        Self {
+            tx_hash: None,
+            version: None,
+            num_inputs: None,
+            num_outputs: None,
+            from_address: None,
+            to_address: None,
+            value: None,
+            fee: None,
+            should_decode: true, // Default to true
+            is_segwit: None,
+            is_coinbase: None,
+            tx_type: None,
+        }
+    }
 }
 
 /// Additional fixture metadata

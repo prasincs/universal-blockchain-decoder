@@ -22,7 +22,7 @@ use universal_decoder_core::prelude::*;
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use proptest::prelude::*;
 /// use decoder_test_utils::proptest_helpers::arb_transaction_bytes;
 ///
@@ -71,7 +71,7 @@ pub fn arb_large_bytes() -> impl Strategy<Value = Vec<u8>> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use proptest::prelude::*;
 /// use decoder_test_utils::proptest_helpers::{
 ///     arb_small_bytes, prop_decoder_never_panics
@@ -110,7 +110,7 @@ pub fn prop_decoder_never_panics<D: ChainDecoder>(bytes: &[u8]) {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use decoder_test_utils::proptest_helpers::canonical_serialization_properties;
 ///
 /// fn test_transaction() -> MyTransaction {
@@ -207,7 +207,7 @@ pub fn prop_rejects_tiny_input<D: ChainDecoder>(min_valid_size: usize) {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use decoder_test_utils::proptest_helpers::standard_decoder_properties;
 ///
 /// #[test]

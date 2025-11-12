@@ -14,3 +14,4 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 [dev-dependencies]
 # For testing
 serde_json = { workspace = true }
+proptest = "1.9"

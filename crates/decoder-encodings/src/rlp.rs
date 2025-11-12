@@ -70,7 +70,9 @@ impl RlpItem {
 
                 let length = decode_length(&bytes[1..1 + length_of_length])?;
                 let data_start = 1 + length_of_length;
-                let data_end = data_start + length;
+                let data_end = data_start
+                    .checked_add(length)
+                    .ok_or_else(|| DecoderError::invalid_structure("RLP length overflow"))?;
 
                 if bytes.len() < data_end {
                     return Err(DecoderError::invalid_structure(
@@ -112,7 +114,9 @@ impl RlpItem {
 
                 let length = decode_length(&bytes[1..1 + length_of_length])?;
                 let data_start = 1 + length_of_length;
-                let data_end = data_start + length;
+                let data_end = data_start
+                    .checked_add(length)
+                    .ok_or_else(|| DecoderError::invalid_structure("RLP length overflow"))?;
 
                 if bytes.len() < data_end {
                     return Err(DecoderError::invalid_structure(
