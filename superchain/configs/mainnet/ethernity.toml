@@ -1,0 +1,51 @@
+name = "Ethernity"
+public_rpc = "https://mainnet.ethernitychain.io"
+sequencer_rpc = "https://mainnet.ethernitychain.io"
+explorer = "https://ernscan.io"
+superchain_level = 1
+governed_by_optimism = false
+superchain_time = 0
+data_availability_type = "eth-da"
+chain_id = 183
+batch_inbox_addr = "0xfF00000000000000000000000000000000000183"
+block_time = 2
+seq_window_size = 3600
+max_sequencer_drift = 600
+
+[hardforks]
+  canyon_time = 1704992401 # Thu 11 Jan 2024 17:00:01 UTC
+  delta_time = 1708560000 # Thu 22 Feb 2024 00:00:00 UTC
+  ecotone_time = 1710374401 # Thu 14 Mar 2024 00:00:01 UTC
+  fjord_time = 1720627201 # Wed 10 Jul 2024 16:00:01 UTC
+  granite_time = 1726070401 # Wed 11 Sep 2024 16:00:01 UTC
+  holocene_time = 1736445601 # Thu 9 Jan 2025 18:00:01 UTC
+  isthmus_time = 1746806401 # Fri 9 May 2025 16:00:01 UTC
+  jovian_time = 1764691201 # Tue 2 Dec 2025 16:00:01 UTC
+
+[optimism]
+  eip1559_elasticity = 20
+  eip1559_denominator = 1000
+  eip1559_denominator_canyon = 1000
+
+[genesis]
+  l2_time = 1723547735
+  [genesis.l1]
+    hash = "0xbb7ad201b0ab296465865642878e9256e0fa4a3f8d06bca1f3e5c5b54be6be90"
+    number = 20519340
+  [genesis.l2]
+    hash = "0xa5e974a6ace39285b42f92316a9e040e58f8ffc24e3aac124ff6243c28323607"
+    number = 0
+  [genesis.system_config]
+    batcherAddress = "0x43Ca061Ea80FBB4A2b5515F4be4e953b191147aF"
+    overhead = "0x00000000000000000000000000000000000000000000000000000000000000bc"
+    scalar = "0x00000000000000000000000000000000000000000000000000000000000f4240"
+    gasLimit = 30000000
+
+[roles]
+  ProxyAdminOwner = "0xB68361AAac2Bc8a4b8BFe36B8C6d0B429b5930ea"
+
+[addresses]
+  L1StandardBridgeProxy = "0x908C324c35fF36F64236A7CDa4D50f3003E9C5C3"
+  OptimismPortalProxy = "0xDA29f0B4da6c23f6c1aF273945c290C0268c4ea9"
+  SystemConfigProxy = "0x20c3035C92bdB4C461242571EeAc59EeD03Df931"
+  DisputeGameFactoryProxy = "0xFcdb270B674911D321F1014c347EaBB1c55134FB"
