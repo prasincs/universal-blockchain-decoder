@@ -184,7 +184,7 @@ fn test_compact_u16_edge_cases() {
     for (bytes, expected) in test_cases {
         let mut cursor = Cursor::new(bytes.as_slice());
         let result = read_compact_u16(&mut cursor)
-            .expect(&format!("Failed to decode compact-u16 for expected value {}", expected));
+            .unwrap_or_else(|_| panic!("Failed to decode compact-u16 for expected value {}", expected));
         assert_eq!(result, expected, "Mismatch for expected value {}", expected);
     }
 }
