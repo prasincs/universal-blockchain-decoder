@@ -1,0 +1,6 @@
+# Vendored chain data - not tracked in git
+# We only track the generated Rust code
+vendored/chainlist/_data/
+vendored/chainlist/LICENSE
+
+# The generated code (src/generated_registry.rs) is tracked instead
