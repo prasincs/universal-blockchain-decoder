@@ -10,7 +10,7 @@ description = "Generic EVM decoder supporting 500+ EVM-compatible chains"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-ethereum = { path = "../decoder-ethereum" }
-borsh = { workspace = true, features = ["derive"] }
+borsh = { version = "1.3", features = ["derive", "std"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -18,7 +18,3 @@ thiserror = { workspace = true }
 [dev-dependencies]
 # Testing utilities
 proptest = { workspace = true }
-
-[build-dependencies]
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }

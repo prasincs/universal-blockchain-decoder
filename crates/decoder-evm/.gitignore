@@ -1,6 +1,8 @@
-# Vendored chain data - not tracked in git
-# We only track the generated Rust code
+# Vendored chain JSON files (kept locally for verification, not tracked in git)
+# We use the compact Borsh binary (data/chains.borsh) instead
 vendored/chainlist/_data/
-vendored/chainlist/LICENSE
 
-# The generated code (src/generated_registry.rs) is tracked instead
+# Keep these vendored files
+!vendored/chainlist/LICENSE
+!vendored/chainlist/README.md
+!vendored/VENDORED.md

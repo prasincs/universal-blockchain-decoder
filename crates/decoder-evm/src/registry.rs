@@ -1,14 +1,22 @@
 //! Chain registry for EVM-compatible chains
 //!
 //! This module provides a registry of all known EVM-compatible chains,
-//! loaded from the ethereum-lists/chains repository at compile time.
+//! loaded from a compact Borsh-serialized binary at compile time.
 
 use crate::types::ChainInfo;
+use borsh::BorshDeserialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-// Include the generated chain registry
-include!(concat!(env!("OUT_DIR"), "/chain_registry.rs"));
+// Embed the Borsh-serialized chain data at compile time
+// This file is ~539KB instead of ~46MB of JSON files
+const CHAINS_BORSH: &[u8] = include_bytes!("../data/chains.borsh");
+
+/// Serializable wrapper for the chain registry
+#[derive(BorshDeserialize)]
+struct SerializedRegistry {
+    chains: HashMap<u64, ChainInfo>,
+}
 
 /// Global chain registry singleton
 static CHAIN_REGISTRY: OnceLock<ChainRegistry> = OnceLock::new();
@@ -23,24 +31,31 @@ impl ChainRegistry {
     /// Get the global chain registry instance
     pub fn global() -> &'static ChainRegistry {
         CHAIN_REGISTRY.get_or_init(|| {
-            Self::new()
+            Self::from_borsh(CHAINS_BORSH)
+                .expect("Failed to deserialize embedded chain registry")
+        })
+    }
+
+    /// Deserialize from Borsh bytes
+    fn from_borsh(bytes: &[u8]) -> Result<Self, borsh::io::Error> {
+        let serialized: SerializedRegistry = SerializedRegistry::try_from_slice(bytes)?;
+
+        // Build reverse index by short name
+        let by_short_name: HashMap<String, u64> = serialized.chains
+            .iter()
+            .map(|(id, info)| (info.short_name.clone(), *id))
+            .collect();
+
+        Ok(Self {
+            chains: serialized.chains,
+            by_short_name,
         })
     }
 
     /// Create a new chain registry from embedded data
     pub fn new() -> Self {
-        let chains = get_embedded_chains();
-
-        // Build reverse index by short name
-        let by_short_name: HashMap<String, u64> = chains
-            .iter()
-            .map(|(id, info)| (info.short_name.clone(), *id))
-            .collect();
-
-        Self {
-            chains,
-            by_short_name,
-        }
+        Self::from_borsh(CHAINS_BORSH)
+            .expect("Failed to deserialize embedded chain registry")
     }
 
     /// Get chain information by chain ID
