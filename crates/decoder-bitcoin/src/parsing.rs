@@ -5,9 +5,9 @@
 //!
 //! All parsing is done without external blockchain library dependencies.
 
+use decoder_primitives::prelude::*;
 use std::io::Read;
 use universal_decoder_core::prelude::*;
-use decoder_primitives::prelude::*;
 
 /// Maximum script size (conservative limit for safety)
 pub const MAX_SCRIPT_SIZE: usize = 10_000;
@@ -240,10 +240,9 @@ pub fn parse_witnesses<R: Read>(reader: &mut R, input_count: usize) -> Result<Ve
     let mut witnesses = Vec::with_capacity(input_count);
 
     for i in 0..input_count {
-        witnesses.push(
-            parse_witness(reader)
-                .map_err(|e| DecoderError::chain_decoding(format!("Failed to parse witness {}: {}", i, e)))?,
-        );
+        witnesses.push(parse_witness(reader).map_err(|e| {
+            DecoderError::chain_decoding(format!("Failed to parse witness {}: {}", i, e))
+        })?);
     }
 
     Ok(witnesses)

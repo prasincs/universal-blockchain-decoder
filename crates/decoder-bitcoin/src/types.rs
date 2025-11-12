@@ -1,8 +1,8 @@
 //! Bitcoin-specific transaction types
 
-use universal_decoder_core::prelude::*;
 use crate::parsing::{TxInput, TxOutput, Witness};
 use crate::BitcoinChain;
+use universal_decoder_core::prelude::*;
 
 /// Bitcoin-specific transaction representation
 ///
@@ -65,7 +65,7 @@ impl BitcoinTransaction {
     /// For now, we use the raw bytes (which is correct for legacy, but includes
     /// witness data for SegWit transactions).
     pub fn txid(&self) -> Vec<u8> {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         // TODO: For SegWit, serialize without witness data
         let bytes_to_hash = if self.is_segwit() {
@@ -87,7 +87,7 @@ impl BitcoinTransaction {
     ///
     /// This includes witness data (same as TXID for non-SegWit).
     pub fn wtxid(&self) -> Vec<u8> {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         // WTXID includes all data including witness
         let hash1 = Sha256::digest(&self.raw_bytes);
@@ -100,12 +100,10 @@ impl BitcoinTransaction {
     ///
     /// Returns error if overflow occurs.
     pub fn total_output_value(&self) -> Result<u64> {
-        self.outputs
-            .iter()
-            .try_fold(0u64, |acc, output| {
-                acc.checked_add(output.value)
-                    .ok_or_else(|| DecoderError::invalid_structure("Output value overflow"))
-            })
+        self.outputs.iter().try_fold(0u64, |acc, output| {
+            acc.checked_add(output.value)
+                .ok_or_else(|| DecoderError::invalid_structure("Output value overflow"))
+        })
     }
 
     /// Calculate fee (requires input values from UTXO set)
@@ -132,7 +130,10 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
         // Build metadata
         let extra = format!(
             r#"{{"version":{},"lock_time":{},"is_coinbase":{},"is_segwit":{}}}"#,
-            self.version, self.locktime, self.is_coinbase(), self.is_segwit()
+            self.version,
+            self.locktime,
+            self.is_coinbase(),
+            self.is_segwit()
         );
 
         let metadata = TxMetadata {

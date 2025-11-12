@@ -33,11 +33,7 @@ use universal_decoder_core::prelude::{DecoderError, Result};
 /// // Try to read more than max - will fail
 /// assert!(read_bytes_bounded(&mut cursor, 20, 10).is_err());
 /// ```
-pub fn read_bytes_bounded<R: Read>(
-    reader: &mut R,
-    len: usize,
-    max_len: usize,
-) -> Result<Vec<u8>> {
+pub fn read_bytes_bounded<R: Read>(reader: &mut R, len: usize, max_len: usize) -> Result<Vec<u8>> {
     if len > max_len {
         return Err(DecoderError::invalid_structure(format!(
             "Requested {} bytes, but maximum is {} (possible attack)",
@@ -46,9 +42,9 @@ pub fn read_bytes_bounded<R: Read>(
     }
 
     let mut buf = vec![0u8; len];
-    reader
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read {} bytes: {}", len, e)))?;
+    reader.read_exact(&mut buf).map_err(|e| {
+        DecoderError::chain_decoding(format!("Failed to read {} bytes: {}", len, e))
+    })?;
 
     Ok(buf)
 }
@@ -90,9 +86,9 @@ pub fn read_array<R: Read, const N: usize>(reader: &mut R) -> Result<[u8; N]> {
 /// For untrusted input, use `read_bytes_bounded` instead.
 pub fn read_remaining<R: Read>(reader: &mut R) -> Result<Vec<u8>> {
     let mut buf = Vec::new();
-    reader
-        .read_to_end(&mut buf)
-        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read remaining bytes: {}", e)))?;
+    reader.read_to_end(&mut buf).map_err(|e| {
+        DecoderError::chain_decoding(format!("Failed to read remaining bytes: {}", e))
+    })?;
     Ok(buf)
 }
 

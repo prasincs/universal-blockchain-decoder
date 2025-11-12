@@ -29,9 +29,9 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_primitives::prelude::*;
 use std::io::Cursor;
 use universal_decoder_core::prelude::*;
-use decoder_primitives::prelude::*;
 
 pub mod parsing;
 pub mod types;
@@ -291,7 +291,8 @@ mod tests {
         // Locktime: 0
         tx_bytes.extend_from_slice(&0u32.to_le_bytes());
 
-        let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode minimal transaction");
+        let decoded =
+            BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode minimal transaction");
 
         assert_eq!(decoded.version(), 1);
         assert_eq!(decoded.input_count(), 1);
@@ -310,7 +311,11 @@ mod tests {
         let tx_bytes = hex::decode(tx_hex.trim()).unwrap();
 
         let result = decode_with_hooks(&tx_bytes, &registry);
-        assert!(result.is_ok(), "decode_with_hooks failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "decode_with_hooks failed: {:?}",
+            result.err()
+        );
     }
 
     #[test]
