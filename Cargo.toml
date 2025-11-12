@@ -4,8 +4,8 @@ members = [
     "crates/decoder-primitives",
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
+    "crates/decoder-solana",
     "crates/universal-decoder-cli",
-    # "crates/decoder-solana",  # Temporarily disabled due to dependency conflicts
     "examples/simple-decoder",
 ]
 resolver = "2"
