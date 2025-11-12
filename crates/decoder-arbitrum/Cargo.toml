@@ -10,9 +10,11 @@ description = "Arbitrum transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-ethereum = { path = "../decoder-ethereum" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+# Testing utilities
 serde_json = { workspace = true }
 proptest = { workspace = true }

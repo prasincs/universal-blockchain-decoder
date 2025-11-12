@@ -5,18 +5,8 @@
 //!
 //! ## Implementation Strategy
 //!
-//! BNB Chain is EVM-compatible and uses the same transaction format as Ethereum.
-//! This decoder will **reuse the Ethereum decoder** with BNB-specific validation.
-//!
-//! ## Phase 1 (Current): Scaffolding
-//! - Chain identity implementation
-//! - Basic structure
-//! - Stub decoder
-//!
-//! ## Phase 2 (Future): Pure Rust Implementation
-//! - Reuse Ethereum RLP parser
-//! - Add BNB-specific validation (chain ID 56)
-//! - Support PoSA consensus-specific fields (if needed)
+//! BNB Chain is EVM-compatible and uses the **exact same transaction format as Ethereum**.
+//! This decoder **reuses the Ethereum decoder** with BNB-specific chain ID validation.
 //!
 //! ## Transaction Format
 //!
@@ -38,6 +28,7 @@
 //! ```
 
 use decoder_primitives::prelude::*;
+use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// BNB Chain identity
 #[derive(Debug, Clone, Copy)]
@@ -57,21 +48,13 @@ impl ChainIdentity for BnbChain {
     }
 }
 
-/// BNB Chain transaction (currently a stub, will reuse Ethereum in Phase 2)
-#[derive(Debug, Clone)]
-pub struct BnbTransaction {
-    pub chain_id: u64,
-    pub raw_bytes: Vec<u8>,
-}
-
 /// BNB Chain decoder implementing the ChainDecoder trait
 ///
-/// **Phase 1**: Stub implementation
-/// **Phase 2**: Will reuse Ethereum decoder with BNB-specific chain ID validation
+/// **Reuses Ethereum decoder** with BNB-specific chain ID validation.
 pub struct BnbDecoder;
 
 impl ChainDecoder for BnbDecoder {
-    type TxSpecific = BnbTransaction;
+    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
     type Chain = BnbChain;
 
     fn chain() -> Self::Chain {
@@ -79,31 +62,27 @@ impl ChainDecoder for BnbDecoder {
     }
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
+        // Validate format first
         Self::validate_format(raw_bytes)?;
 
-        // Phase 1: Stub implementation
-        // Phase 2: Will use Ethereum RLP decoder
-        Ok(BnbTransaction {
-            chain_id: 56,
-            raw_bytes: raw_bytes.to_vec(),
-        })
+        // Decode using Ethereum decoder (same RLP format)
+        let tx = EthereumDecoder::decode(raw_bytes)?;
+
+        // Validate chain ID is for BNB Chain
+        if let Some(chain_id) = tx.chain_id {
+            if chain_id != 56 && chain_id != 97 {
+                return Err(DecoderError::invalid_structure(
+                    format!("Invalid BNB Chain ID: {} (expected 56 for mainnet or 97 for testnet)", chain_id)
+                ));
+            }
+        }
+
+        Ok(tx)
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
-        if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure(
-                "BNB Chain transaction cannot be empty",
-            ));
-        }
-
-        if raw_bytes.len() < 10 {
-            return Err(DecoderError::invalid_structure(format!(
-                "BNB Chain transaction too small: {} bytes",
-                raw_bytes.len()
-            )));
-        }
-
-        Ok(())
+        // Use Ethereum's validation (same format)
+        EthereumDecoder::validate_format(raw_bytes)
     }
 }
 
@@ -123,55 +102,29 @@ mod tests {
 
     #[test]
     fn test_validate_format() {
+        // Empty transaction should fail
         assert!(BnbDecoder::validate_format(&[]).is_err());
+
+        // Too small should fail (minimum is 5 bytes for Ethereum)
         assert!(BnbDecoder::validate_format(&[0x01]).is_err());
-        assert!(BnbDecoder::validate_format(&vec![0u8; 100]).is_ok());
+        assert!(BnbDecoder::validate_format(&[0x01, 0x02, 0x03, 0x04]).is_err());
+
+        // Valid minimum length should pass basic validation
+        let dummy_tx = vec![0xf8, 0x6c, 0x00, 0x00, 0x00];
+        assert!(BnbDecoder::validate_format(&dummy_tx).is_ok());
     }
 
     #[test]
-    fn test_decode_stub() {
-        let dummy_tx = vec![0u8; 100];
-        let result = BnbDecoder::decode(&dummy_tx);
-        assert!(result.is_ok());
-        let tx = result.unwrap();
-        assert_eq!(tx.chain_id, 56);
-    }
-}
+    fn test_decoder_reuses_ethereum() {
+        // Verify that BnbDecoder uses EthereumTransaction type
+        use std::any::TypeId;
 
-impl<'a> Canonicalizer<'a> for BnbTransaction {
-    const VERSION: u8 = 1;
+        // This is a compile-time check that the types match
+        fn assert_same_type<T: 'static, U: 'static>() {
+            assert_eq!(TypeId::of::<T>(), TypeId::of::<U>());
+        }
 
-    fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
-        let metadata = TxMetadata {
-            tx_hash: vec![],
-            block_height: None,
-            timestamp: None,
-            size: self.raw_bytes.len(),
-            extra: String::new(),
-        };
-
-        let authorization = AuthorizationPackage {
-            signatures: vec![],
-            public_keys: vec![],
-            signature_scheme: SignatureScheme::Ecdsa,
-        };
-
-        let state_deltas = StateDeltas {
-            inputs: vec![],
-            outputs: vec![],
-            account_changes: vec![],
-        };
-
-        Ok(TxIR::new(
-            &BnbChain,
-            metadata,
-            authorization,
-            vec![],  // operations
-            state_deltas,
-        ))
-    }
-
-    fn validate(&self) -> Result<()> {
-        Ok(())
+        type BnbTxType = <BnbDecoder as ChainDecoder>::TxSpecific;
+        assert_same_type::<BnbTxType, EthereumTransaction>();
     }
 }

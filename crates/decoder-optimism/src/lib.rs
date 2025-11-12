@@ -1,7 +1,36 @@
 //! Optimism transaction decoder
+//!
+//! This module provides a decoder for Optimism transactions, transforming them
+//! from their native RLP format into the universal TxIR representation.
+//!
+//! ## Implementation Strategy
+//!
+//! Optimism is EVM-compatible and uses the **exact same transaction format as Ethereum**.
+//! This decoder **reuses the Ethereum decoder** with Optimism-specific chain ID validation.
+//!
+//! ## Transaction Format
+//!
+//! - RLP-encoded (identical to Ethereum)
+//! - EIP-2718 transaction types (legacy, EIP-2930, EIP-1559)
+//! - Chain ID: 10
+//!
+//! ## Example
+//!
+//! ```rust,ignore
+//! use decoder_optimism::*;
+//! use universal_decoder_core::prelude::*;
+//!
+//! let tx_hex = "f86c...";
+//! let tx_bytes = hex::decode(tx_hex)?;
+//!
+//! let decoded = OptimismDecoder::decode(&tx_bytes)?;
+//! let tx_ir = decoded.canonicalize()?;
+//! ```
 
 use decoder_primitives::prelude::*;
+use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
+/// Optimism chain identity
 #[derive(Debug, Clone, Copy)]
 pub struct OptimismChain;
 
@@ -19,15 +48,13 @@ impl ChainIdentity for OptimismChain {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct OptimismTransaction {
-    pub raw_bytes: Vec<u8>,
-}
-
+/// Optimism decoder implementing the ChainDecoder trait
+///
+/// **Reuses Ethereum decoder** with Optimism-specific chain ID validation.
 pub struct OptimismDecoder;
 
 impl ChainDecoder for OptimismDecoder {
-    type TxSpecific = OptimismTransaction;
+    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
     type Chain = OptimismChain;
 
     fn chain() -> Self::Chain {
@@ -35,66 +62,66 @@ impl ChainDecoder for OptimismDecoder {
     }
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
+        // Validate format first
         Self::validate_format(raw_bytes)?;
-        Ok(OptimismTransaction { raw_bytes: raw_bytes.to_vec() })
+
+        // Decode using Ethereum decoder (same RLP format)
+        let tx = EthereumDecoder::decode(raw_bytes)?;
+
+        // Validate chain ID is for Optimism
+        if let Some(chain_id) = tx.chain_id {
+            if chain_id != 10 {
+                return Err(DecoderError::invalid_structure(
+                    format!("Invalid Optimism chain ID: {} (expected 10)", chain_id)
+                ));
+            }
+        }
+
+        Ok(tx)
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
-        if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure("Optimism transaction cannot be empty"));
-        }
-        Ok(())
+        // Use Ethereum's validation (same format)
+        EthereumDecoder::validate_format(raw_bytes)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_chain_identity() {
         let chain = OptimismDecoder::chain();
         assert_eq!(chain.chain_id(), 10);
         assert_eq!(chain.chain_name(), "Optimism");
-    }
-}
-
-impl<'a> Canonicalizer<'a> for OptimismTransaction {
-    const VERSION: u8 = 1;
-
-    fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
-        let metadata = TxMetadata {
-            tx_hash: vec![],
-            block_height: None,
-            timestamp: None,
-            size: self.raw_bytes.len(),
-            extra: String::new(),
-        };
-
-        let authorization = AuthorizationPackage {
-            signatures: vec![],
-            public_keys: vec![],
-            signature_scheme: SignatureScheme::Ecdsa,
-        };
-
-        let state_deltas = StateDeltas {
-            inputs: vec![],
-            outputs: vec![],
-            account_changes: vec![],
-        };
-
-        Ok(TxIR::new(
-            &OptimismChain,
-            metadata,
-            authorization,
-            vec![],  // operations
-            state_deltas,
-        ))
+        assert_eq!(chain.chain_family(), ChainFamily::Account);
     }
 
-    fn validate(&self) -> Result<()> {
-        Ok(())
+    #[test]
+    fn test_validate_format() {
+        // Empty transaction should fail
+        assert!(OptimismDecoder::validate_format(&[]).is_err());
+
+        // Too small should fail (minimum is 5 bytes for Ethereum)
+        assert!(OptimismDecoder::validate_format(&[0x01]).is_err());
+        assert!(OptimismDecoder::validate_format(&[0x01, 0x02, 0x03, 0x04]).is_err());
+
+        // Valid minimum length should pass basic validation
+        let dummy_tx = vec![0xf8, 0x6c, 0x00, 0x00, 0x00];
+        assert!(OptimismDecoder::validate_format(&dummy_tx).is_ok());
+    }
+
+    #[test]
+    fn test_decoder_reuses_ethereum() {
+        // Verify that OptimismDecoder uses EthereumTransaction type
+        use std::any::TypeId;
+
+        fn assert_same_type<T: 'static, U: 'static>() {
+            assert_eq!(TypeId::of::<T>(), TypeId::of::<U>());
+        }
+
+        type OptimismTxType = <OptimismDecoder as ChainDecoder>::TxSpecific;
+        assert_same_type::<OptimismTxType, EthereumTransaction>();
     }
 }

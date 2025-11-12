@@ -10,6 +10,7 @@ description = "BNB Chain (BSC) transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-ethereum = { path = "../decoder-ethereum" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 
