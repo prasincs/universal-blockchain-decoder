@@ -50,12 +50,12 @@
 4. **Zero-cost abstractions**: Static dispatch
 5. **Formally verifiable**: Verus-ready
 
-## Phase 1.5: Testing & Dependency Infrastructure ✅ COMPLETE
+## Phase 1.5: Testing & Dependency Infrastructure ⚠️ PARTIALLY COMPLETE
 
 **Target**: v0.1.0-alpha+testing
 **Timeline**: 2 weeks
 **Focus**: Establish comprehensive testing strategy and minimal TCB
-**Status**: Complete - decoder-primitives crate extracted, dependencies minimized
+**Status**: Phase 1.5.1 complete, Phase 1.5.1b (Borsh transformation) is next priority
 **See**: `docs/ARCHITECTURE_REFACTORING.md` for extraction rationale
 
 ### 1.5.1: Dependency Minimization + Airgapped Operation (Week 1)
@@ -129,6 +129,59 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 - ✅ docs/VENDORING_GUIDE.md
 - ✅ docs/GIT_SUBTREE_VENDORING.md
 - ✅ docs/USING_VENDORED_DEPS.md
+- ✅ docs/BORSH_TRANSFORMATION_PLAN.md
+
+### 1.5.1b: Borsh Transformation (Registry Size Optimization) ⭐ NEXT
+
+**Priority**: HIGH (Size optimization for git repository)
+**Timeline**: ~6 hours focused work
+**Status**: Planned (implementation guide complete)
+
+**Goal**: Transform vendored JSON registries to compact Borsh binary format
+- **Current**: 14.5MB raw JSON (cosmos 7.4MB + superchain 7.1MB)
+- **Target**: 1.3MB Borsh binaries (cosmos ~1MB + superchain ~200KB)
+- **Reduction**: 91% size reduction (13.2MB saved)
+
+**Implementation Steps**:
+
+1. **Refactor registry-generator tool** (~2h)
+   - Add subcommand structure (evm | cosmos | superchain)
+   - Reuse existing EVM tool patterns
+   - See: `docs/BORSH_TRANSFORMATION_PLAN.md` for details
+
+2. **Cosmos registry transformation** (~2h)
+   - Create `CosmosChainInfo` Borsh types
+   - Parse 406 chain.json files from vendored/chain-registry/
+   - Generate `data/cosmos-chains.borsh` (~1MB)
+   - Remove JSON files, keep LICENSE + VENDORED.md
+
+3. **Superchain registry transformation** (~1h)
+   - Create `SuperchainInfo` Borsh types
+   - Parse chainList.json (35+ OP Stack chains)
+   - Generate `data/op-chains.borsh` (~200KB)
+   - Remove JSON files, keep LICENSE + VENDORED.md
+
+4. **Integration & testing** (~1h)
+   - Update decoder-cosmos to load Borsh at compile-time
+   - Update decoder-optimism to load Borsh at compile-time
+   - Verify all tests pass
+   - Measure size reduction
+
+**Deliverables**:
+- [ ] Unified `registry-generator` tool with subcommands
+- [ ] `crates/decoder-cosmos/data/cosmos-chains.borsh` (~1MB)
+- [ ] `crates/decoder-optimism/data/op-chains.borsh` (~200KB)
+- [ ] Vendored directories cleaned up (14.5MB → ~100KB docs only)
+- [ ] All decoder tests passing
+- [ ] Total repo size reduced by ~13MB
+
+**Benefits**:
+- ✅ Faster git clone/pull operations
+- ✅ Consistent format across all registries (EVM already uses Borsh)
+- ✅ Faster decoder load time (Borsh vs JSON parsing)
+- ✅ Compile-time embedding (zero runtime I/O)
+
+**Reference**: See `docs/BORSH_TRANSFORMATION_PLAN.md` for detailed 8-phase implementation guide
 
 ### 1.5.2: Testing Infrastructure (Week 2)
 
@@ -1056,10 +1109,14 @@ See `CONTRIBUTING.md` for:
   - ✅ Phase 1.5.1: Chain registry vendoring (cosmos + superchain, 14.5MB)
 
 **Next Milestones**:
-  - **Registry Borsh transformation (14.5MB → <2MB) - 1 week** ⭐ IMMEDIATE PRIORITY
+  - **Phase 1.5.1b: Borsh Transformation (14.5MB → <2MB) - 1 week** ⭐ IMMEDIATE NEXT PRIORITY
+    - Status: Planned (see `docs/BORSH_TRANSFORMATION_PLAN.md`)
     - Create unified `registry-generator` tool with subcommands
     - Transform cosmos chains: 7.4MB JSON → ~1MB Borsh
     - Transform superchain: 7.1MB JSON → ~200KB Borsh
+    - Remove raw JSON files, keep only Borsh binaries + LICENSE
+    - Expected: 91% size reduction (14.5MB → 1.3MB)
+  - Phase 1.5.2: Testing Infrastructure (unit + property + integration + fuzz + CI/CD) - 2 weeks
   - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
