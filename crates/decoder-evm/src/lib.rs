@@ -370,8 +370,8 @@ mod tests {
         let mainnets = decoder.list_mainnets();
         let testnets = decoder.list_testnets();
 
-        assert!(mainnets.len() > 0);
-        assert!(testnets.len() > 0);
+        assert!(!mainnets.is_empty());
+        assert!(!testnets.is_empty());
         assert_eq!(mainnets.len() + testnets.len(), decoder.count());
     }
 
@@ -380,11 +380,11 @@ mod tests {
         let decoder = EvmDecoder::new();
 
         let eth_results = decoder.search("ethereum");
-        assert!(eth_results.len() > 0);
+        assert!(!eth_results.is_empty());
         assert!(eth_results.iter().any(|c| c.chain_id == 1));
 
         let polygon_results = decoder.search("polygon");
-        assert!(polygon_results.len() > 0);
+        assert!(!polygon_results.is_empty());
     }
 
     #[test]
