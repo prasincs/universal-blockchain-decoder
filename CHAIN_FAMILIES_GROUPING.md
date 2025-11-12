@@ -323,7 +323,141 @@ impl CosmosSDKDecoder {
 
 ---
 
-### 7. Move-Based Chains
+### 7. Solana VM (SVM) Chains
+
+**Technology**: Solana Virtual Machine (SVM)
+**Chains**: Solana, Eclipse, Pyth, Drift, etc.
+**Decoder**: `decoder-svm`
+**Status**: ✅ **Solana Implemented**
+
+**Format**: Bincode serialization (compact binary)
+
+**Chain List** (SVM ecosystem):
+| Chain | Chain ID | Type | Notes |
+|-------|----------|------|-------|
+| Solana | 101 | L1 | Main SVM chain ✅ |
+| Eclipse | TBD | L2 | SVM on Ethereum |
+| Pyth Network | pyth | Oracle | Solana-based oracle |
+| Drift | drift | App | Trading protocol |
+| Jito | jito | Infra | MEV infrastructure |
+
+**Implementation**:
+```rust
+// decoder-svm/src/lib.rs (extends existing decoder-solana)
+
+pub struct SvmDecoder {
+    solana: SolanaDecoder,
+    svm_chains: HashSet<u64>,
+}
+
+impl SvmDecoder {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            solana: SolanaDecoder,
+            svm_chains: HashSet::from([
+                101,  // Solana mainnet
+                102,  // Solana testnet
+                103,  // Solana devnet
+                // Add SVM-based chains
+            ]),
+        })
+    }
+
+    pub fn decode(&self, raw_bytes: &[u8], chain_id: Option<u64>) -> Result<SvmTransaction> {
+        // All SVM chains use same transaction format as Solana
+        let tx = SolanaDecoder::decode(raw_bytes)?;
+
+        // Validate chain ID if provided
+        if let Some(cid) = chain_id {
+            if !self.svm_chains.contains(&cid) {
+                return Err(DecoderError::invalid_structure(
+                    format!("Chain {} is not an SVM chain", cid)
+                ));
+            }
+        }
+
+        Ok(SvmTransaction { tx, chain_id })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SvmTransaction {
+    pub tx: SolanaTransaction,
+    pub chain_id: Option<u64>,
+}
+
+// Reuse existing Solana types
+pub use decoder_solana::{
+    SolanaTransaction,
+    Message,
+    MessageHeader,
+    CompiledInstruction,
+};
+```
+
+**Key Features**:
+- **Compact-u16 encoding**: Variable-length integers
+- **Account-based model**: Instructions reference account indices
+- **Program execution**: Each instruction calls a program
+- **Signature verification**: Ed25519 signatures
+- **Versioned transactions**: v0 (legacy) and v1 (with address lookups)
+
+**Transaction Structure**:
+```rust
+pub struct SolanaTransaction {
+    pub signatures: Vec<[u8; 64]>,  // Ed25519 signatures
+    pub message: Message,
+}
+
+pub struct Message {
+    pub header: MessageHeader,
+    pub account_keys: Vec<[u8; 32]>,
+    pub recent_blockhash: [u8; 32],
+    pub instructions: Vec<CompiledInstruction>,
+}
+
+pub struct MessageHeader {
+    pub num_required_signatures: u8,
+    pub num_readonly_signed_accounts: u8,
+    pub num_readonly_unsigned_accounts: u8,
+}
+
+pub struct CompiledInstruction {
+    pub program_id_index: u8,
+    pub accounts: Vec<u8>,      // Account indices
+    pub data: Vec<u8>,          // Program-specific data
+}
+```
+
+**SVM Ecosystem Chains**:
+
+1. **Solana** (101) - Main L1 ✅ Implemented
+   - Proof of Stake + Proof of History
+   - ~400ms block time
+   - ~50k TPS
+
+2. **Eclipse** - SVM on Ethereum
+   - Uses Solana runtime
+   - Settles to Ethereum
+   - Same transaction format as Solana
+
+3. **Pyth Network** - Price oracle
+   - Runs on Solana
+   - Provides price feeds
+   - Crosschain via Wormhole
+
+4. **Nitro SVM** - SVM rollup framework
+   - Offchain Labs technology
+   - SVM execution, Ethereum settlement
+
+**Benefits of SVM Decoder**:
+- Support all SVM-based chains with single decoder
+- Reuse Solana parser (already implemented)
+- Auto-detect SVM transactions by format
+
+---
+
+### 8. Move-Based Chains
 
 **Technology**: Move VM
 **Chains**: Aptos, Sui, Movement, etc.
@@ -395,11 +529,11 @@ crates/
 ├── decoder-zksync-era/       # zkSync ecosystem
 ├── decoder-polygon-cdk/      # Polygon CDK chains
 ├── decoder-cosmos-sdk/       # 100+ Cosmos chains
+├── decoder-svm/              # Solana VM chains (Solana, Eclipse, etc.) ✅
 ├── decoder-move/             # Aptos, Sui, Movement
-├── decoder-bitcoin/          # Bitcoin
+├── decoder-bitcoin/          # Bitcoin ✅
 ├── decoder-bitcoin-forks/    # Dogecoin, Litecoin, etc.
 ├── decoder-substrate/        # Polkadot, Kusama, parachains
-├── decoder-solana/           # Solana, Pyth, etc.
 └── decoder-specialized/      # XRP, Cardano, Stellar, etc.
 ```
 
@@ -408,18 +542,22 @@ crates/
 **Before** (individual chain approach):
 - 500+ EVM chains = 500 crates
 - 10 OP Stack chains = 10 crates
+- 5 Arbitrum Orbit chains = 5 crates
 - 100 Cosmos chains = 100 crates
-- **Total**: 610+ crates
+- 5 SVM chains = 5 crates
+- **Total**: 620+ crates
 
 **After** (family approach):
 - EVM: 1 crate
 - OP Stack: 1 crate
 - Arbitrum Orbit: 1 crate
-- zkSync: 1 crate
+- zkSync Era: 1 crate
+- Polygon CDK: 1 crate
 - Cosmos SDK: 1 crate
+- SVM: 1 crate ✅
 - Move: 1 crate
 - Specialized: ~10 crates
-- **Total**: ~16 crates (97% reduction!)
+- **Total**: ~18 crates (97% reduction!)
 
 ---
 
@@ -467,10 +605,10 @@ pub enum ChainFamily {
     ZkSyncEra,
     PolygonCdk,
     CosmosSdk,
+    Svm,           // Solana Virtual Machine
     Move,
     Bitcoin,
     Substrate,
-    Solana,
     Specialized,
 }
 ```
@@ -498,6 +636,9 @@ pub struct UniversalDecoder {
     arbitrum_orbit: ArbitrumOrbitDecoder,
     zksync: ZkSyncEraDecoder,
     cosmos: CosmosSDKDecoder,
+    svm: SvmDecoder,
+    move_vm: MoveDecoder,
+    bitcoin: BitcoinDecoder,
     // ... other family decoders
 }
 
@@ -523,6 +664,14 @@ impl UniversalDecoder {
                 let tx = self.cosmos.decode(raw_bytes, chain_hint.as_string())?;
                 Ok(Transaction::Cosmos(tx))
             }
+            ChainFamily::Svm => {
+                let tx = self.svm.decode(raw_bytes, chain_hint.as_numeric())?;
+                Ok(Transaction::Svm(tx))
+            }
+            ChainFamily::Move => {
+                let tx = self.move_vm.decode(raw_bytes)?;
+                Ok(Transaction::Move(tx))
+            }
             // ... other families
         }
     }
@@ -537,17 +686,46 @@ impl UniversalDecoder {
         // Auto-detect from format
         // EVM: starts with RLP list (0xf8+) or typed tx (0x01-0x03)
         // Cosmos: starts with Protobuf tag
+        // Solana: Compact-u16 length prefix + signatures
         // Bitcoin: specific structure
         // etc.
 
+        // Check for Solana (SVM) format
+        // Solana starts with compact-u16 for signature count, typically 0x01 or 0x02
+        // Followed by 64-byte signatures
+        if self.detect_solana_format(raw_bytes) {
+            return Ok(ChainFamily::Svm);
+        }
+
         match raw_bytes.first() {
             Some(0xf8..=0xff) => Ok(ChainFamily::Evm),  // RLP list
-            Some(0x01..=0x03) => Ok(ChainFamily::Evm),  // Typed tx
+            Some(0x01..=0x03) => Ok(ChainFamily::Evm),  // Typed tx (if not Solana)
             Some(0x7E) => Ok(ChainFamily::OpStack),     // Deposit tx
             Some(0x71) => Ok(ChainFamily::ZkSyncEra),   // EIP-712
             Some(0x0a) => Ok(ChainFamily::CosmosSdk),   // Protobuf
             _ => Err(DecoderError::unknown_format()),
         }
+    }
+
+    fn detect_solana_format(&self, raw_bytes: &[u8]) -> bool {
+        // Solana format detection:
+        // - Starts with compact-u16 length (1-3 bytes)
+        // - Followed by N × 64-byte Ed25519 signatures
+        // - Typically has 1-2 signatures
+
+        if raw_bytes.len() < 66 {  // Minimum: 1 byte length + 1 signature (64 bytes)
+            return false;
+        }
+
+        // Check if first byte is valid compact-u16 length (1-4 typically)
+        let first_byte = raw_bytes[0];
+        if first_byte > 10 {  // Solana txs rarely have >10 signatures
+            return false;
+        }
+
+        // Heuristic: If length is 1-4 and total size matches signature pattern
+        // This is a simplified check - actual implementation would be more robust
+        true  // Placeholder - proper implementation in actual code
     }
 }
 
@@ -557,6 +735,7 @@ pub enum Transaction {
     ArbitrumOrbit(ArbitrumTransaction),
     ZkSyncEra(ZkSyncTransaction),
     Cosmos(CosmosTx),
+    Svm(SvmTransaction),
     Move(MoveTransaction),
     Bitcoin(BitcoinTransaction),
     // ... others
@@ -586,6 +765,11 @@ match tx {
     Transaction::Cosmos(tx) => {
         println!("Cosmos chain: {}", tx.chain_id);
     }
+    Transaction::Svm(tx) => {
+        println!("Solana VM chain");
+        println!("Signatures: {}", tx.tx.signatures.len());
+        println!("Instructions: {}", tx.tx.message.instructions.len());
+    }
     _ => {}
 }
 
@@ -606,12 +790,15 @@ let tx = decoder.decode(&tx_bytes, Some(ChainId::Numeric(10)))?;  // Optimism
 - `decoder-zksync-era` - zkSync ecosystem
 - `decoder-polygon-cdk` - Polygon CDK chains
 
-### Phase 3: Other Ecosystems (Week 5-8)
+### Phase 3: VM Ecosystems (Week 5-7)
+- `decoder-svm` - Solana VM chains ✅ (Base already implemented)
 - `decoder-cosmos-sdk` - 100+ Cosmos chains
 - `decoder-move` - Aptos, Sui
-- `decoder-bitcoin-forks` - Dogecoin, Litecoin, etc.
 
-### Phase 4: Integration (Week 9-10)
+### Phase 4: Bitcoin Ecosystem (Week 8)
+- `decoder-bitcoin-forks` - Dogecoin, Litecoin, etc. (reuse Bitcoin)
+
+### Phase 5: Integration (Week 9-10)
 - `UniversalDecoder` - Unified interface
 - Auto-detection logic
 - Comprehensive testing
@@ -621,23 +808,27 @@ let tx = decoder.decode(&tx_bytes, Some(ChainId::Numeric(10)))?;  // Optimism
 ## Benefits Summary
 
 **Scalability**:
-- 610+ chains → 16 decoders (97% reduction)
+- 620+ chains → 18 decoders (97% reduction)
 - New chain in family: 0 code changes (just registry update)
+- SVM chains automatically supported via Solana decoder
 
 **Maintainability**:
 - Update once, affects entire family
 - Shared testing infrastructure
 - Common bug fixes
+- Solana decoder improvements benefit all SVM chains
 
 **User Experience**:
 - Single import for all chains
 - Auto-detection of chain family
 - Consistent API across families
+- Seamless SVM chain support
 
 **Performance**:
 - No overhead vs chain-specific decoders
 - O(1) chain family lookup
 - Lazy loading of family decoders
+- Solana's compact encoding already optimized
 
 ---
 
