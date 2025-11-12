@@ -36,28 +36,18 @@ impl ChainDecoder for StellarDecoder {
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         Self::validate_format(raw_bytes)?;
-        Ok(StellarTransaction { raw_bytes: raw_bytes.to_vec() })
+        Ok(StellarTransaction {
+            raw_bytes: raw_bytes.to_vec(),
+        })
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
         if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure("Stellar transaction cannot be empty"));
+            return Err(DecoderError::invalid_structure(
+                "Stellar transaction cannot be empty",
+            ));
         }
         Ok(())
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_chain_identity() {
-        let chain = StellarDecoder::chain();
-        assert_eq!(chain.chain_id(), 144);
-        assert_eq!(chain.chain_name(), "Stellar");
     }
 }
 
@@ -89,12 +79,24 @@ impl<'a> Canonicalizer<'a> for StellarTransaction {
             &StellarChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = StellarDecoder::chain();
+        assert_eq!(chain.chain_id(), 144);
+        assert_eq!(chain.chain_name(), "Stellar");
     }
 }

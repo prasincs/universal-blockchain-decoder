@@ -137,28 +137,6 @@ impl ChainDecoder for XrpDecoder {
     }
 }
 
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_chain_identity() {
-        let chain = XrpDecoder::chain();
-        assert_eq!(chain.chain_id(), 144);
-        assert_eq!(chain.chain_name(), "XRP Ledger");
-        assert_eq!(chain.chain_family(), ChainFamily::Account);
-    }
-
-    #[test]
-    fn test_validate_format() {
-        assert!(XrpDecoder::validate_format(&[]).is_err());
-        assert!(XrpDecoder::validate_format(&[0x12]).is_err());
-        assert!(XrpDecoder::validate_format(&vec![0u8; 100]).is_ok());
-    }
-}
-
 impl<'a> Canonicalizer<'a> for XrpTransaction {
     const VERSION: u8 = 1;
 
@@ -187,12 +165,32 @@ impl<'a> Canonicalizer<'a> for XrpTransaction {
             &XrpChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = XrpDecoder::chain();
+        assert_eq!(chain.chain_id(), 144);
+        assert_eq!(chain.chain_name(), "XRP Ledger");
+        assert_eq!(chain.chain_family(), ChainFamily::Account);
+    }
+
+    #[test]
+    fn test_validate_format() {
+        assert!(XrpDecoder::validate_format(&[]).is_err());
+        assert!(XrpDecoder::validate_format(&[0x12]).is_err());
+        assert!(XrpDecoder::validate_format(&[0u8; 100]).is_ok());
     }
 }

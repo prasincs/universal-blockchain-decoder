@@ -33,7 +33,9 @@
 use std::io::{Cursor, Read};
 use universal_decoder_core::prelude::DecoderError;
 
-use crate::types::{CompiledInstruction, Message, MessageHeader, SolanaBlockhash, SolanaPubkey, SolanaSignature};
+use crate::types::{
+    CompiledInstruction, Message, MessageHeader, SolanaBlockhash, SolanaPubkey, SolanaSignature,
+};
 
 /// Maximum transaction size (Solana's limit based on MTU)
 pub const MAX_TRANSACTION_SIZE: usize = 1232;
@@ -74,9 +76,9 @@ type Result<T> = std::result::Result<T, DecoderError>;
 /// - 0xFF 0x7F -> 16383 (0xFF & 0x7F = 127, (127 << 7) | 127 = 16383)
 pub fn read_compact_u16(cursor: &mut Cursor<&[u8]>) -> Result<u16> {
     let mut buf = [0u8; 1];
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read compact-u16: {}", e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to read compact-u16: {}", e))
+    })?;
 
     let first_byte = buf[0];
 
@@ -86,9 +88,9 @@ pub fn read_compact_u16(cursor: &mut Cursor<&[u8]>) -> Result<u16> {
     }
 
     // High bit is set, need to read second byte
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read second byte of compact-u16: {}", e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to read second byte of compact-u16: {}", e))
+    })?;
 
     let second_byte = buf[0];
 
@@ -101,9 +103,9 @@ pub fn read_compact_u16(cursor: &mut Cursor<&[u8]>) -> Result<u16> {
 /// Read a fixed-size byte array
 pub fn read_bytes<const N: usize>(cursor: &mut Cursor<&[u8]>) -> Result<[u8; N]> {
     let mut buf = [0u8; N];
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read {} bytes: {}", N, e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to read {} bytes: {}", N, e))
+    })?;
     Ok(buf)
 }
 
@@ -120,9 +122,12 @@ pub fn read_u8(cursor: &mut Cursor<&[u8]>) -> Result<u8> {
 pub fn read_compact_array(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u8>> {
     let len = read_compact_u16(cursor)?;
     let mut buf = vec![0u8; len as usize];
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read compact array of {} bytes: {}", len, e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!(
+            "Failed to read compact array of {} bytes: {}",
+            len, e
+        ))
+    })?;
     Ok(buf)
 }
 

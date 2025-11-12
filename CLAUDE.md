@@ -515,6 +515,89 @@ git push -u origin phase1.5/move-serde-json
 
 ---
 
+## Git Workflow & Quality Checks
+
+### Pre-Commit Requirements (MANDATORY)
+
+**CRITICAL**: Before every `git commit` and `git push`, you MUST run the following checks:
+
+```bash
+# 1. Format all code
+cargo fmt --all
+
+# 2. Run clippy with warnings as errors
+cargo clippy --all --all-targets --all-features -- -D warnings
+
+# 3. Run tests (optional but recommended)
+cargo test --all
+```
+
+**Workflow**:
+```bash
+# Make your changes
+# ...
+
+# STEP 1: Format
+cargo fmt --all
+
+# STEP 2: Lint
+cargo clippy --all --all-targets --all-features -- -D warnings
+
+# STEP 3: Fix any warnings/errors from clippy
+# (repeat STEP 1 & 2 until clean)
+
+# STEP 4: Commit
+git add .
+git commit -m "Your commit message"
+
+# STEP 5: Push
+git push -u origin your-branch-name
+```
+
+### Why This Matters
+
+1. **CI/CD Pipeline**: GitHub Actions runs these checks automatically. Failing to run them locally means your PR will fail CI.
+
+2. **Code Quality**: Consistent formatting and linting ensures:
+   - Readable code
+   - Catches common bugs
+   - Maintains project standards
+   - Makes code review easier
+
+3. **Time Savings**: Catching issues locally is faster than waiting for CI to fail.
+
+### Common Clippy Fixes
+
+```rust
+// ❌ BAD: Borrowed expression implements required traits
+Err(DecoderError::invalid_structure(&format!("error: {}", x)))
+
+// ✅ GOOD: Direct ownership
+Err(DecoderError::invalid_structure(format!("error: {}", x)))
+
+// ❌ BAD: Length comparison to zero
+if vec.len() > 0 { }
+
+// ✅ GOOD: Use is_empty()
+if !vec.is_empty() { }
+
+// ❌ BAD: Useless vec! for single element
+let items = vec!["single"];
+
+// ✅ GOOD: Use array
+let items = ["single"];
+```
+
+### Documentation Updates
+
+When adding new features or making significant changes:
+1. Update relevant documentation in `docs/`
+2. Update `ROADMAP.md` to mark tasks complete
+3. Add/update code comments for public APIs
+4. Update examples if behavior changes
+
+---
+
 ## Quick Start: Phase 1.5 Implementation
 
 ### PR #1: Vendor `hex` using Git Subtree

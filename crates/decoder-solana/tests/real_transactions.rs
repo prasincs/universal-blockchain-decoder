@@ -21,11 +21,14 @@ fn test_real_sol_transfer_transaction() {
     let tx_bytes = decode_base64_tx(tx_base64);
 
     println!("Transaction size: {} bytes", tx_bytes.len());
-    println!("First 20 bytes: {:02x?}", &tx_bytes[..20.min(tx_bytes.len())]);
+    println!(
+        "First 20 bytes: {:02x?}",
+        &tx_bytes[..20.min(tx_bytes.len())]
+    );
 
     // Decode with our parser
-    let decoded = SolanaDecoder::decode(&tx_bytes)
-        .expect("Failed to decode real SOL transfer transaction");
+    let decoded =
+        SolanaDecoder::decode(&tx_bytes).expect("Failed to decode real SOL transfer transaction");
 
     // Verify structure
     println!("Decoded transaction:");
@@ -35,21 +38,40 @@ fn test_real_sol_transfer_transaction() {
     println!("  Header: {:?}", decoded.message.header);
 
     // Basic assertions
-    assert!(decoded.num_signatures() > 0, "Should have at least one signature");
-    assert!(decoded.message.num_account_keys() >= 3, "Should have at least 3 accounts (payer, recipient, system program)");
-    assert_eq!(decoded.message.num_instructions(), 1, "Simple transfer should have 1 instruction");
+    assert!(
+        decoded.num_signatures() > 0,
+        "Should have at least one signature"
+    );
+    assert!(
+        decoded.message.num_account_keys() >= 3,
+        "Should have at least 3 accounts (payer, recipient, system program)"
+    );
+    assert_eq!(
+        decoded.message.num_instructions(),
+        1,
+        "Simple transfer should have 1 instruction"
+    );
 
     // Verify the transaction is valid
-    assert!(decoded.is_valid(), "Transaction should be structurally valid");
+    assert!(
+        decoded.is_valid(),
+        "Transaction should be structurally valid"
+    );
 
     // Check instruction details
     let instruction = &decoded.message.instructions[0];
-    println!("  Instruction program_id_index: {}", instruction.program_id_index);
+    println!(
+        "  Instruction program_id_index: {}",
+        instruction.program_id_index
+    );
     println!("  Instruction accounts: {:?}", instruction.accounts);
     println!("  Instruction data length: {}", instruction.data.len());
 
     // SOL transfer instruction should have data (transfer amount)
-    assert!(!instruction.data.is_empty(), "Transfer instruction should have data");
+    assert!(
+        !instruction.data.is_empty(),
+        "Transfer instruction should have data"
+    );
 }
 
 #[test]
@@ -60,7 +82,10 @@ fn test_real_token_transfer_transaction() {
 
     let tx_bytes = decode_base64_tx(tx_base64);
 
-    println!("\nToken transfer transaction size: {} bytes", tx_bytes.len());
+    println!(
+        "\nToken transfer transaction size: {} bytes",
+        tx_bytes.len()
+    );
 
     // Decode with our parser
     let result = SolanaDecoder::decode(&tx_bytes);
@@ -77,7 +102,10 @@ fn test_real_token_transfer_transaction() {
         Err(e) => {
             // Token transfers might use versioned transactions or other features
             // we haven't implemented yet, so we'll just log the error
-            println!("Token transfer decode error (expected for versioned tx): {:?}", e);
+            println!(
+                "Token transfer decode error (expected for versioned tx): {:?}",
+                e
+            );
             // This is OK - we're focused on basic transactions for now
         }
     }
@@ -89,12 +117,13 @@ fn test_transaction_canonicalization_real_data() {
     let tx_base64 = "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1zTVICVf7+to6zQ/+XautpF+KSSoZ7ESTxv3rg8xPqyXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/ORj/WtXHGLCh9wC0eGkf26qTFR5x3nCqwXXmoVtZb0BAgIAAQwCAAAAAMUBWgIAAAA=";
 
     let tx_bytes = decode_base64_tx(tx_base64);
-    let decoded = SolanaDecoder::decode(&tx_bytes)
-        .expect("Failed to decode for canonicalization test");
+    let decoded =
+        SolanaDecoder::decode(&tx_bytes).expect("Failed to decode for canonicalization test");
 
     // Test canonicalization to TxIR
     use universal_decoder_core::prelude::Canonicalizer;
-    let tx_ir = decoded.canonicalize()
+    let tx_ir = decoded
+        .canonicalize()
         .expect("Failed to canonicalize real transaction");
 
     println!("\nCanonical TxIR:");
@@ -106,16 +135,26 @@ fn test_transaction_canonicalization_real_data() {
     // Verify TxIR structure
     assert_eq!(tx_ir.chain.name, "Solana");
     assert_eq!(tx_ir.chain.id, 101);
-    assert!(tx_ir.operations.len() > 0, "Should have operations");
-    assert!(tx_ir.authorization.signatures.len() > 0, "Should have signatures");
+    assert!(!tx_ir.operations.is_empty(), "Should have operations");
+    assert!(
+        !tx_ir.authorization.signatures.is_empty(),
+        "Should have signatures"
+    );
 
     // Verify operation type
     use universal_decoder_core::prelude::Operation;
     match &tx_ir.operations[0] {
         Operation::ContractCall(call) => {
-            println!("  Contract call to program: {} bytes", call.contract.bytes.len());
+            println!(
+                "  Contract call to program: {} bytes",
+                call.contract.bytes.len()
+            );
             println!("  Data length: {}", call.data.len());
-            assert_eq!(call.contract.bytes.len(), 32, "Solana program ID is 32 bytes");
+            assert_eq!(
+                call.contract.bytes.len(),
+                32,
+                "Solana program ID is 32 bytes"
+            );
         }
         _ => panic!("Expected ContractCall operation for Solana instruction"),
     }
@@ -127,8 +166,7 @@ fn test_transaction_roundtrip() {
     let tx_base64 = "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1zTVICVf7+to6zQ/+XautpF+KSSoZ7ESTxv3rg8xPqyXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/ORj/WtXHGLCh9wC0eGkf26qTFR5x3nCqwXXmoVtZb0BAgIAAQwCAAAAAMUBWgIAAAA=";
 
     let original_bytes = decode_base64_tx(tx_base64);
-    let decoded = SolanaDecoder::decode(&original_bytes)
-        .expect("Failed to decode");
+    let decoded = SolanaDecoder::decode(&original_bytes).expect("Failed to decode");
 
     // Get canonical bytes
     use universal_decoder_core::prelude::TxHashable;
@@ -148,7 +186,7 @@ fn test_transaction_roundtrip() {
 #[test]
 fn test_multiple_real_transactions() {
     // Test a variety of real transaction patterns
-    let transactions = vec![
+    let transactions = [
         // SOL transfer
         "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1zTVICVf7+to6zQ/+XautpF+KSSoZ7ESTxv3rg8xPqyXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/ORj/WtXHGLCh9wC0eGkf26qTFR5x3nCqwXXmoVtZb0BAgIAAQwCAAAAAMUBWgIAAAA=",
     ];
@@ -161,7 +199,8 @@ fn test_multiple_real_transactions() {
         match SolanaDecoder::decode(&tx_bytes) {
             Ok(decoded) => {
                 println!("Transaction {}: ✓ decoded successfully", i + 1);
-                println!("  Sigs: {}, Accounts: {}, Instructions: {}",
+                println!(
+                    "  Sigs: {}, Accounts: {}, Instructions: {}",
                     decoded.num_signatures(),
                     decoded.message.num_account_keys(),
                     decoded.message.num_instructions()
@@ -176,5 +215,8 @@ fn test_multiple_real_transactions() {
     }
 
     println!("\nResults: {} successful, {} failed", successful, failed);
-    assert!(successful > 0, "Should decode at least some real transactions");
+    assert!(
+        successful > 0,
+        "Should decode at least some real transactions"
+    );
 }

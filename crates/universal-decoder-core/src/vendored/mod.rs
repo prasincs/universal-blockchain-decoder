@@ -277,9 +277,7 @@ pub mod hex {
         // Optimized decoding using chunks (from vendored hex/src/lib.rs:197-199)
         data.chunks(2)
             .enumerate()
-            .map(|(i, pair)| {
-                Ok(val(pair[0], 2 * i)? << 4 | val(pair[1], 2 * i + 1)?)
-            })
+            .map(|(i, pair)| Ok(val(pair[0], 2 * i)? << 4 | val(pair[1], 2 * i + 1)?))
             .collect()
     }
 
@@ -303,10 +301,7 @@ pub mod hex {
     /// hex::decode_to_slice("6b697769", &mut bytes).unwrap();
     /// assert_eq!(&bytes, b"kiwi");
     /// ```
-    pub fn decode_to_slice<T: AsRef<[u8]>>(
-        data: T,
-        out: &mut [u8],
-    ) -> Result<(), FromHexError> {
+    pub fn decode_to_slice<T: AsRef<[u8]>>(data: T, out: &mut [u8]) -> Result<(), FromHexError> {
         let data = data.as_ref();
 
         if data.len() % 2 != 0 {
@@ -340,18 +335,12 @@ pub mod hex {
 
         #[test]
         fn test_decode() {
-            assert_eq!(
-                decode("48656c6c6f20776f726c6421").unwrap(),
-                b"Hello world!"
-            );
+            assert_eq!(decode("48656c6c6f20776f726c6421").unwrap(), b"Hello world!");
         }
 
         #[test]
         fn test_decode_upper() {
-            assert_eq!(
-                decode("48656C6C6F20776F726C6421").unwrap(),
-                b"Hello world!"
-            );
+            assert_eq!(decode("48656C6C6F20776F726C6421").unwrap(), b"Hello world!");
         }
 
         #[test]

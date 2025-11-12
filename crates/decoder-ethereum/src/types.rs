@@ -3,8 +3,8 @@
 //! Pure Rust implementation using custom RLP decoder.
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
+use crate::{rlp::RlpItem, EthereumChain};
 use universal_decoder_core::prelude::*;
-use crate::{EthereumChain, rlp::RlpItem};
 
 /// Ethereum transaction type indicator (EIP-2718)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,9 +26,10 @@ impl TxType {
             1 => Ok(TxType::Eip2930),
             2 => Ok(TxType::Eip1559),
             3 => Ok(TxType::Eip4844),
-            _ => Err(DecoderError::invalid_structure(
-                &format!("Unknown transaction type: {}", byte)
-            )),
+            _ => Err(DecoderError::invalid_structure(format!(
+                "Unknown transaction type: {}",
+                byte
+            ))),
         }
     }
 }
@@ -90,9 +91,7 @@ impl EthereumTransaction {
     /// Create from raw RLP-encoded bytes
     pub fn from_raw_bytes(raw_bytes: &[u8]) -> Result<Self> {
         if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure(
-                "Empty transaction bytes"
-            ));
+            return Err(DecoderError::invalid_structure("Empty transaction bytes"));
         }
 
         // Check if it's a typed transaction (EIP-2718)
@@ -116,9 +115,10 @@ impl EthereumTransaction {
         // Legacy transaction has 9 fields:
         // [nonce, gasPrice, gasLimit, to, value, data, v, r, s]
         if items.len() != 9 {
-            return Err(DecoderError::invalid_structure(
-                &format!("Legacy transaction must have 9 fields, got {}", items.len())
-            ));
+            return Err(DecoderError::invalid_structure(format!(
+                "Legacy transaction must have 9 fields, got {}",
+                items.len()
+            )));
         }
 
         let nonce = items[0].as_u64()?;
@@ -135,7 +135,7 @@ impl EthereumTransaction {
             Some(addr)
         } else {
             return Err(DecoderError::invalid_structure(
-                "Invalid address length (must be 20 bytes or empty)"
+                "Invalid address length (must be 20 bytes or empty)",
             ));
         };
 
@@ -151,11 +151,7 @@ impl EthereumTransaction {
         let s = parse_signature_component(s_data, "s")?;
 
         // Extract chain_id from v (EIP-155)
-        let chain_id = if v >= 35 {
-            Some((v - 35) / 2)
-        } else {
-            None
-        };
+        let chain_id = if v >= 35 { Some((v - 35) / 2) } else { None };
 
         Ok(Self {
             tx_type: TxType::Legacy,
@@ -186,7 +182,7 @@ impl EthereumTransaction {
             TxType::Eip1559 => Self::parse_eip1559(items, raw_bytes),
             TxType::Eip4844 => Self::parse_eip4844(items, raw_bytes),
             TxType::Legacy => Err(DecoderError::invalid_structure(
-                "Legacy type should not be in typed transaction"
+                "Legacy type should not be in typed transaction",
             )),
         }
     }
@@ -195,9 +191,10 @@ impl EthereumTransaction {
     fn parse_eip2930(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
         // EIP-2930: [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, signatureYParity, signatureR, signatureS]
         if items.len() != 11 {
-            return Err(DecoderError::invalid_structure(
-                &format!("EIP-2930 transaction must have 11 fields, got {}", items.len())
-            ));
+            return Err(DecoderError::invalid_structure(format!(
+                "EIP-2930 transaction must have 11 fields, got {}",
+                items.len()
+            )));
         }
 
         let chain_id = items[0].as_u64()?;
@@ -235,9 +232,10 @@ impl EthereumTransaction {
     fn parse_eip1559(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
         // EIP-1559: [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, signatureYParity, signatureR, signatureS]
         if items.len() != 12 {
-            return Err(DecoderError::invalid_structure(
-                &format!("EIP-1559 transaction must have 12 fields, got {}", items.len())
-            ));
+            return Err(DecoderError::invalid_structure(format!(
+                "EIP-1559 transaction must have 12 fields, got {}",
+                items.len()
+            )));
         }
 
         let chain_id = items[0].as_u64()?;
@@ -277,9 +275,10 @@ impl EthereumTransaction {
         // EIP-4844: Similar to EIP-1559 but with additional blob fields
         // For minimal implementation, we'll parse the core fields
         if items.len() < 12 {
-            return Err(DecoderError::invalid_structure(
-                &format!("EIP-4844 transaction must have at least 12 fields, got {}", items.len())
-            ));
+            return Err(DecoderError::invalid_structure(format!(
+                "EIP-4844 transaction must have at least 12 fields, got {}",
+                items.len()
+            )));
         }
 
         // Parse similar to EIP-1559 (blob fields can be ignored for basic decoding)
@@ -307,13 +306,7 @@ impl EthereumTransaction {
 
     /// Get effective gas price
     pub fn effective_gas_price(&self) -> u128 {
-        if let Some(gas_price) = self.gas_price {
-            gas_price
-        } else if let Some(max_fee) = self.max_fee_per_gas {
-            max_fee
-        } else {
-            0
-        }
+        self.gas_price.or(self.max_fee_per_gas).unwrap_or_default()
     }
 }
 
@@ -329,7 +322,7 @@ fn parse_address_field(item: &RlpItem) -> Result<Option<[u8; 20]>> {
         Ok(Some(addr))
     } else {
         Err(DecoderError::invalid_structure(
-            "Invalid address length (must be 20 bytes or empty)"
+            "Invalid address length (must be 20 bytes or empty)",
         ))
     }
 }
@@ -337,9 +330,10 @@ fn parse_address_field(item: &RlpItem) -> Result<Option<[u8; 20]>> {
 /// Parse signature component (r or s) from RLP data
 fn parse_signature_component(data: &[u8], name: &str) -> Result<[u8; 32]> {
     if data.len() > 32 {
-        return Err(DecoderError::invalid_structure(
-            &format!("Signature component {} too large (max 32 bytes)", name)
-        ));
+        return Err(DecoderError::invalid_structure(format!(
+            "Signature component {} too large (max 32 bytes)",
+            name
+        )));
     }
 
     let mut component = [0u8; 32];
@@ -359,14 +353,14 @@ fn parse_access_list(item: &RlpItem) -> Result<Vec<AccessListItem>> {
         let entry_items = entry.as_list()?;
         if entry_items.len() != 2 {
             return Err(DecoderError::invalid_structure(
-                "Access list entry must have 2 fields [address, storageKeys]"
+                "Access list entry must have 2 fields [address, storageKeys]",
             ));
         }
 
         let addr_data = entry_items[0].as_data()?;
         if addr_data.len() != 20 {
             return Err(DecoderError::invalid_structure(
-                "Access list address must be 20 bytes"
+                "Access list address must be 20 bytes",
             ));
         }
 
@@ -380,7 +374,7 @@ fn parse_access_list(item: &RlpItem) -> Result<Vec<AccessListItem>> {
             let key_data = key_item.as_data()?;
             if key_data.len() != 32 {
                 return Err(DecoderError::invalid_structure(
-                    "Storage key must be 32 bytes"
+                    "Storage key must be 32 bytes",
                 ));
             }
 
@@ -471,7 +465,9 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             operations.push(Operation::ContractCall(ContractCall {
                 contract: Address {
                     bytes: self.to.map(|a| a.to_vec()).unwrap_or_default(),
-                    human_readable: self.to.map(|a| format!("0x{}", universal_decoder_core::hex::encode(a))),
+                    human_readable: self
+                        .to
+                        .map(|a| format!("0x{}", universal_decoder_core::hex::encode(a))),
                 },
                 method,
                 data: self.data.clone(),
@@ -493,7 +489,9 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                 },
                 to: Address {
                     bytes: self.to.map(|a| a.to_vec()).unwrap_or_default(),
-                    human_readable: self.to.map(|a| format!("0x{}", universal_decoder_core::hex::encode(a))),
+                    human_readable: self
+                        .to
+                        .map(|a| format!("0x{}", universal_decoder_core::hex::encode(a))),
                 },
                 amount: Amount {
                     value: self.value,
@@ -504,23 +502,24 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         }
 
         // Build state deltas
-        let mut account_changes = vec![
-            AccountChange {
-                address: Address {
-                    bytes: vec![],
-                    human_readable: None,
-                },
-                nonce: Some(self.nonce),
-                balance_change: -(self.value as i128),
-                storage_changes: vec![],
+        let mut account_changes = vec![AccountChange {
+            address: Address {
+                bytes: vec![],
+                human_readable: None,
             },
-        ];
+            nonce: Some(self.nonce),
+            balance_change: -(self.value as i128),
+            storage_changes: vec![],
+        }];
 
         if let Some(recipient) = self.to {
             account_changes.push(AccountChange {
                 address: Address {
                     bytes: recipient.to_vec(),
-                    human_readable: Some(format!("0x{}", universal_decoder_core::hex::encode(recipient))),
+                    human_readable: Some(format!(
+                        "0x{}",
+                        universal_decoder_core::hex::encode(recipient)
+                    )),
                 },
                 nonce: None,
                 balance_change: self.value as i128,

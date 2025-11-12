@@ -36,28 +36,18 @@ impl ChainDecoder for PolkadotDecoder {
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         Self::validate_format(raw_bytes)?;
-        Ok(PolkadotTransaction { raw_bytes: raw_bytes.to_vec() })
+        Ok(PolkadotTransaction {
+            raw_bytes: raw_bytes.to_vec(),
+        })
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
         if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure("Polkadot transaction cannot be empty"));
+            return Err(DecoderError::invalid_structure(
+                "Polkadot transaction cannot be empty",
+            ));
         }
         Ok(())
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_chain_identity() {
-        let chain = PolkadotDecoder::chain();
-        assert_eq!(chain.chain_id(), 0);
-        assert_eq!(chain.chain_name(), "Polkadot");
     }
 }
 
@@ -89,12 +79,24 @@ impl<'a> Canonicalizer<'a> for PolkadotTransaction {
             &PolkadotChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = PolkadotDecoder::chain();
+        assert_eq!(chain.chain_id(), 0);
+        assert_eq!(chain.chain_name(), "Polkadot");
     }
 }

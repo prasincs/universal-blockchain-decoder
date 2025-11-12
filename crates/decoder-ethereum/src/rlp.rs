@@ -21,7 +21,7 @@ impl RlpItem {
 
         if consumed != bytes.len() {
             return Err(DecoderError::invalid_structure(
-                "RLP decoding did not consume all bytes"
+                "RLP decoding did not consume all bytes",
             ));
         }
 
@@ -38,9 +38,7 @@ impl RlpItem {
 
         match prefix {
             // Single byte in [0x00, 0x7f]
-            0x00..=0x7f => {
-                Ok((RlpItem::Data(vec![prefix]), 1))
-            }
+            0x00..=0x7f => Ok((RlpItem::Data(vec![prefix]), 1)),
 
             // String 0-55 bytes: [0x80, 0xb7]
             0x80..=0xb7 => {
@@ -52,7 +50,7 @@ impl RlpItem {
 
                 if bytes.len() < 1 + length {
                     return Err(DecoderError::invalid_structure(
-                        "RLP string length exceeds available data"
+                        "RLP string length exceeds available data",
                     ));
                 }
 
@@ -66,7 +64,7 @@ impl RlpItem {
 
                 if bytes.len() < 1 + length_of_length {
                     return Err(DecoderError::invalid_structure(
-                        "RLP long string length encoding incomplete"
+                        "RLP long string length encoding incomplete",
                     ));
                 }
 
@@ -76,7 +74,7 @@ impl RlpItem {
 
                 if bytes.len() < data_end {
                     return Err(DecoderError::invalid_structure(
-                        "RLP long string data incomplete"
+                        "RLP long string data incomplete",
                     ));
                 }
 
@@ -94,7 +92,7 @@ impl RlpItem {
 
                 if bytes.len() < 1 + length {
                     return Err(DecoderError::invalid_structure(
-                        "RLP list length exceeds available data"
+                        "RLP list length exceeds available data",
                     ));
                 }
 
@@ -108,7 +106,7 @@ impl RlpItem {
 
                 if bytes.len() < 1 + length_of_length {
                     return Err(DecoderError::invalid_structure(
-                        "RLP long list length encoding incomplete"
+                        "RLP long list length encoding incomplete",
                     ));
                 }
 
@@ -118,7 +116,7 @@ impl RlpItem {
 
                 if bytes.len() < data_end {
                     return Err(DecoderError::invalid_structure(
-                        "RLP long list data incomplete"
+                        "RLP long list data incomplete",
                     ));
                 }
 
@@ -133,7 +131,7 @@ impl RlpItem {
         match self {
             RlpItem::Data(data) => Ok(data),
             RlpItem::List(_) => Err(DecoderError::invalid_structure(
-                "Expected RLP data, found list"
+                "Expected RLP data, found list",
             )),
         }
     }
@@ -143,7 +141,7 @@ impl RlpItem {
         match self {
             RlpItem::List(list) => Ok(list),
             RlpItem::Data(_) => Err(DecoderError::invalid_structure(
-                "Expected RLP list, found data"
+                "Expected RLP list, found data",
             )),
         }
     }
@@ -158,20 +156,21 @@ impl RlpItem {
 
         if data.len() > 8 {
             return Err(DecoderError::invalid_structure(
-                "RLP data too large for u64"
+                "RLP data too large for u64",
             ));
         }
 
         // Check for leading zeros (non-canonical encoding)
         if data.len() > 1 && data[0] == 0 {
             return Err(DecoderError::invalid_structure(
-                "RLP integer has leading zeros"
+                "RLP integer has leading zeros",
             ));
         }
 
         let mut result = 0u64;
         for &byte in data {
-            result = result.checked_shl(8)
+            result = result
+                .checked_shl(8)
                 .ok_or_else(|| DecoderError::invalid_structure("Integer overflow in RLP"))?;
             result |= byte as u64;
         }
@@ -189,20 +188,21 @@ impl RlpItem {
 
         if data.len() > 16 {
             return Err(DecoderError::invalid_structure(
-                "RLP data too large for u128"
+                "RLP data too large for u128",
             ));
         }
 
         // Check for leading zeros (non-canonical encoding)
         if data.len() > 1 && data[0] == 0 {
             return Err(DecoderError::invalid_structure(
-                "RLP integer has leading zeros"
+                "RLP integer has leading zeros",
             ));
         }
 
         let mut result = 0u128;
         for &byte in data {
-            result = result.checked_shl(8)
+            result = result
+                .checked_shl(8)
                 .ok_or_else(|| DecoderError::invalid_structure("Integer overflow in RLP"))?;
             result |= byte as u128;
         }
@@ -220,22 +220,24 @@ fn decode_length(bytes: &[u8]) -> Result<usize> {
     // Check for leading zeros (non-canonical)
     if bytes.len() > 1 && bytes[0] == 0 {
         return Err(DecoderError::invalid_structure(
-            "Length encoding has leading zeros"
+            "Length encoding has leading zeros",
         ));
     }
 
     let mut length = 0usize;
     for &byte in bytes {
-        length = length.checked_shl(8)
+        length = length
+            .checked_shl(8)
             .ok_or_else(|| DecoderError::invalid_structure("Length overflow"))?;
-        length = length.checked_add(byte as usize)
+        length = length
+            .checked_add(byte as usize)
             .ok_or_else(|| DecoderError::invalid_structure("Length overflow"))?;
     }
 
     // Check that the length encoding was necessary (canonical form)
     if length < 56 {
         return Err(DecoderError::invalid_structure(
-            "Length should have used short form encoding"
+            "Length should have used short form encoding",
         ));
     }
 
@@ -317,7 +319,8 @@ mod tests {
     #[test]
     fn test_as_u128() {
         // Large value
-        let item = RlpItem::decode(&[0x88, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]).unwrap();
+        let item =
+            RlpItem::decode(&[0x88, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]).unwrap();
         assert_eq!(item.as_u128().unwrap(), 0x0102030405060708u128);
     }
 
@@ -330,7 +333,13 @@ mod tests {
 
         // But converting to integer should fail due to leading zero
         let item = result.unwrap();
-        assert!(item.as_u64().is_err(), "Should reject integer with leading zeros");
-        assert!(item.as_u128().is_err(), "Should reject integer with leading zeros");
+        assert!(
+            item.as_u64().is_err(),
+            "Should reject integer with leading zeros"
+        );
+        assert!(
+            item.as_u128().is_err(),
+            "Should reject integer with leading zeros"
+        );
     }
 }

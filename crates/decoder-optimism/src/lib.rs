@@ -27,8 +27,8 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
-use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// Optimism chain identity
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +54,7 @@ impl ChainIdentity for OptimismChain {
 pub struct OptimismDecoder;
 
 impl ChainDecoder for OptimismDecoder {
-    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
+    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
     type Chain = OptimismChain;
 
     fn chain() -> Self::Chain {
@@ -71,9 +71,10 @@ impl ChainDecoder for OptimismDecoder {
         // Validate chain ID is for Optimism
         if let Some(chain_id) = tx.chain_id {
             if chain_id != 10 {
-                return Err(DecoderError::invalid_structure(
-                    format!("Invalid Optimism chain ID: {} (expected 10)", chain_id)
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Invalid Optimism chain ID: {} (expected 10)",
+                    chain_id
+                )));
             }
         }
 

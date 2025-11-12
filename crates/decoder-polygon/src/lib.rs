@@ -27,8 +27,8 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
-use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// Polygon chain identity
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +54,7 @@ impl ChainIdentity for PolygonChain {
 pub struct PolygonDecoder;
 
 impl ChainDecoder for PolygonDecoder {
-    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
+    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
     type Chain = PolygonChain;
 
     fn chain() -> Self::Chain {
@@ -71,9 +71,10 @@ impl ChainDecoder for PolygonDecoder {
         // Validate chain ID is for Polygon
         if let Some(chain_id) = tx.chain_id {
             if chain_id != 137 {
-                return Err(DecoderError::invalid_structure(
-                    format!("Invalid Polygon chain ID: {} (expected 137)", chain_id)
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Invalid Polygon chain ID: {} (expected 137)",
+                    chain_id
+                )));
             }
         }
 

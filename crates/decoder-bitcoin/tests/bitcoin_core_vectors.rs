@@ -266,10 +266,13 @@ fn test_specific_segwit_transaction() {
 fn test_bip341_taproot_transactions() {
     // Load BIP 341 Taproot test vectors
     let json_data = include_str!("fixtures/bitcoin-core/bip341_wallet_vectors.json");
-    let tests: Value = serde_json::from_str(json_data).expect("Failed to parse bip341_wallet_vectors.json");
+    let tests: Value =
+        serde_json::from_str(json_data).expect("Failed to parse bip341_wallet_vectors.json");
 
     // Test keyPathSpending transactions (Taproot key path spends)
-    let key_path_spending = tests["keyPathSpending"].as_array().expect("Expected keyPathSpending array");
+    let key_path_spending = tests["keyPathSpending"]
+        .as_array()
+        .expect("Expected keyPathSpending array");
 
     let mut passed = 0;
     let mut failed = 0;
@@ -294,7 +297,10 @@ fn test_bip341_taproot_transactions() {
             Ok(decoded) => {
                 // Basic validation - should have inputs and outputs
                 assert!(!decoded.inputs.is_empty(), "Taproot tx should have inputs");
-                assert!(!decoded.outputs.is_empty(), "Taproot tx should have outputs");
+                assert!(
+                    !decoded.outputs.is_empty(),
+                    "Taproot tx should have outputs"
+                );
 
                 // Validate against bitcoin crate
                 match validate_against_bitcoin_crate(&tx_bytes, &decoded) {
