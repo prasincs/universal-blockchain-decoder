@@ -36,28 +36,18 @@ impl ChainDecoder for AlgorandDecoder {
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         Self::validate_format(raw_bytes)?;
-        Ok(AlgorandTransaction { raw_bytes: raw_bytes.to_vec() })
+        Ok(AlgorandTransaction {
+            raw_bytes: raw_bytes.to_vec(),
+        })
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
         if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure("Algorand transaction cannot be empty"));
+            return Err(DecoderError::invalid_structure(
+                "Algorand transaction cannot be empty",
+            ));
         }
         Ok(())
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_chain_identity() {
-        let chain = AlgorandDecoder::chain();
-        assert_eq!(chain.chain_id(), 4160);
-        assert_eq!(chain.chain_name(), "Algorand");
     }
 }
 
@@ -89,12 +79,24 @@ impl<'a> Canonicalizer<'a> for AlgorandTransaction {
             &AlgorandChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = AlgorandDecoder::chain();
+        assert_eq!(chain.chain_id(), 4160);
+        assert_eq!(chain.chain_name(), "Algorand");
     }
 }

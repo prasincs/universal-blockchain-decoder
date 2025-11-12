@@ -4,8 +4,8 @@
 //! optimized lookup tables performs significantly better than the
 //! naive format!-based approach.
 
-use universal_decoder_core::hex;
 use std::time::Instant;
+use universal_decoder_core::hex;
 
 /// Test that verifies the hex encoding doesn't have obvious performance issues.
 /// This is a smoke test, not a full benchmark.

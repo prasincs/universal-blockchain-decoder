@@ -27,8 +27,8 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
-use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// BNB Chain identity
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +54,7 @@ impl ChainIdentity for BnbChain {
 pub struct BnbDecoder;
 
 impl ChainDecoder for BnbDecoder {
-    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
+    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
     type Chain = BnbChain;
 
     fn chain() -> Self::Chain {
@@ -71,9 +71,10 @@ impl ChainDecoder for BnbDecoder {
         // Validate chain ID is for BNB Chain
         if let Some(chain_id) = tx.chain_id {
             if chain_id != 56 && chain_id != 97 {
-                return Err(DecoderError::invalid_structure(
-                    format!("Invalid BNB Chain ID: {} (expected 56 for mainnet or 97 for testnet)", chain_id)
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Invalid BNB Chain ID: {} (expected 56 for mainnet or 97 for testnet)",
+                    chain_id
+                )));
             }
         }
 
@@ -85,8 +86,6 @@ impl ChainDecoder for BnbDecoder {
         EthereumDecoder::validate_format(raw_bytes)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

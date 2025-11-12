@@ -27,8 +27,8 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
-use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// Avalanche chain identity
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +54,7 @@ impl ChainIdentity for AvalancheChain {
 pub struct AvalancheDecoder;
 
 impl ChainDecoder for AvalancheDecoder {
-    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
+    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
     type Chain = AvalancheChain;
 
     fn chain() -> Self::Chain {
@@ -71,9 +71,10 @@ impl ChainDecoder for AvalancheDecoder {
         // Validate chain ID is for Avalanche
         if let Some(chain_id) = tx.chain_id {
             if chain_id != 43114 {
-                return Err(DecoderError::invalid_structure(
-                    format!("Invalid Avalanche chain ID: {} (expected 43114)", chain_id)
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Invalid Avalanche chain ID: {} (expected 43114)",
+                    chain_id
+                )));
             }
         }
 

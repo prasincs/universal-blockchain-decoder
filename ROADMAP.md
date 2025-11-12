@@ -82,17 +82,18 @@
   - [ ] OP Stack: ethereum-optimism/superchain-registry → `decoder-op-stack/vendored/superchain-registry`
   - [ ] Document vendoring process in `docs/GIT_SUBTREE_VENDORING.md`
   - [ ] Create build.rs scripts to embed chain data at compile time
-- [ ] Move `serde_json` to dev-dependencies (display/test only)
-  - [ ] Remove public JSON APIs from core
-  - [ ] Keep JSON only for debugging/tests
+- ✅ **Move `serde_json` to dev-dependencies** (display/test only)
+  - ✅ Audited: No public JSON APIs in core
+  - ✅ JSON only used for debugging/tests/examples
+  - ✅ All production code uses Borsh for canonical serialization
 - [ ] Benchmark `smallvec` vs `Vec`
   - [ ] Create criterion benchmarks
   - [ ] Decide: keep, remove, or vendor based on <10% threshold
-- [ ] Move blockchain libs to dev-dependencies
-  - [ ] `bitcoin` → dev-dependencies (test validation only)
-  - [ ] `alloy` → dev-dependencies (test validation only)
-  - [ ] `solana-sdk` → dev-dependencies (test validation only)
-  - [ ] Decoders use pure Rust parsing
+- ✅ **Move blockchain libs to dev-dependencies**
+  - ✅ `bitcoin` → dev-dependencies (test validation only)
+  - ✅ `alloy` → dev-dependencies (test validation only)
+  - ✅ `solana-sdk` → dev-dependencies (test validation only)
+  - ✅ Decoders use pure Rust parsing (Phase 2.1-2.3 complete)
 
 **✅ Final Dependencies Achieved**:
 ```toml

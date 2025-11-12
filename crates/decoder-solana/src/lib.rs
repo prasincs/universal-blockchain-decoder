@@ -216,7 +216,8 @@ mod tests {
         // - data: empty (compact-u16 = 0x00)
         tx_bytes.push(0x00);
 
-        let decoded = SolanaDecoder::decode(&tx_bytes).expect("Failed to decode minimal transaction");
+        let decoded =
+            SolanaDecoder::decode(&tx_bytes).expect("Failed to decode minimal transaction");
 
         assert_eq!(decoded.num_signatures(), 1);
         assert_eq!(decoded.message.num_account_keys(), 2);

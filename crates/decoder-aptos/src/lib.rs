@@ -36,28 +36,18 @@ impl ChainDecoder for AptosDecoder {
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
         Self::validate_format(raw_bytes)?;
-        Ok(AptosTransaction { raw_bytes: raw_bytes.to_vec() })
+        Ok(AptosTransaction {
+            raw_bytes: raw_bytes.to_vec(),
+        })
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
         if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure("Aptos transaction cannot be empty"));
+            return Err(DecoderError::invalid_structure(
+                "Aptos transaction cannot be empty",
+            ));
         }
         Ok(())
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_chain_identity() {
-        let chain = AptosDecoder::chain();
-        assert_eq!(chain.chain_id(), 1);
-        assert_eq!(chain.chain_name(), "Aptos");
     }
 }
 
@@ -89,12 +79,24 @@ impl<'a> Canonicalizer<'a> for AptosTransaction {
             &AptosChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = AptosDecoder::chain();
+        assert_eq!(chain.chain_id(), 1);
+        assert_eq!(chain.chain_name(), "Aptos");
     }
 }

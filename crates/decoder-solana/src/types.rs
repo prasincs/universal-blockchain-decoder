@@ -135,8 +135,7 @@ impl Message {
 
     /// Get the program ID for an instruction by resolving the index
     pub fn program_id(&self, instruction: &CompiledInstruction) -> Option<&SolanaPubkey> {
-        self.account_keys
-            .get(instruction.program_id_index as usize)
+        self.account_keys.get(instruction.program_id_index as usize)
     }
 
     /// Get account keys referenced by an instruction
@@ -225,15 +224,19 @@ impl<'a> Canonicalizer<'a> for SolanaTransaction {
         #[derive(Debug, Clone, Copy)]
         struct SolanaChain;
         impl ChainIdentity for SolanaChain {
-            fn chain_id(&self) -> u64 { 101 }
-            fn chain_name(&self) -> &str { "Solana" }
-            fn chain_family(&self) -> ChainFamily { ChainFamily::Account }
+            fn chain_id(&self) -> u64 {
+                101
+            }
+            fn chain_name(&self) -> &str {
+                "Solana"
+            }
+            fn chain_family(&self) -> ChainFamily {
+                ChainFamily::Account
+            }
         }
 
         // Create metadata
-        let tx_hash = self.signature()
-            .map(|sig| sig.to_vec())
-            .unwrap_or_default();
+        let tx_hash = self.signature().map(|sig| sig.to_vec()).unwrap_or_default();
 
         let metadata = TxMetadata {
             tx_hash,
@@ -282,7 +285,9 @@ impl<'a> Canonicalizer<'a> for SolanaTransaction {
         let mut operations = Vec::new();
         for instruction in self.message.instructions.iter() {
             // Get program ID
-            let program_id = self.message.program_id(instruction)
+            let program_id = self
+                .message
+                .program_id(instruction)
                 .map(|pk| pk.to_vec())
                 .unwrap_or_default();
 
@@ -297,7 +302,7 @@ impl<'a> Canonicalizer<'a> for SolanaTransaction {
                 value: None, // Solana transfers are done via system program instructions
                 resource_limits: ResourceLimits {
                     max_units: 200_000, // Default compute unit limit for Solana instructions
-                    unit_price: 0, // We don't parse priority fees in minimal decoder
+                    unit_price: 0,      // We don't parse priority fees in minimal decoder
                     resource_type: ResourceType::ComputeUnits,
                 },
             }));
@@ -319,7 +324,7 @@ impl<'a> Canonicalizer<'a> for SolanaTransaction {
                         bytes: pubkey.to_vec(),
                         human_readable: None,
                     },
-                    nonce: None, // We don't parse nonces in minimal decoder
+                    nonce: None,       // We don't parse nonces in minimal decoder
                     balance_change: 0, // We don't parse balance changes in minimal decoder
                     storage_changes: vec![],
                 });
@@ -354,9 +359,7 @@ impl TxHashable for SolanaTransaction {
 
     fn compute_hash(&self) -> Vec<u8> {
         // Solana uses the first signature as the transaction ID
-        self.signature()
-            .map(|sig| sig.to_vec())
-            .unwrap_or_default()
+        self.signature().map(|sig| sig.to_vec()).unwrap_or_default()
     }
 }
 

@@ -27,8 +27,8 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
-use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
 
 /// Arbitrum chain identity
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +54,7 @@ impl ChainIdentity for ArbitrumChain {
 pub struct ArbitrumDecoder;
 
 impl ChainDecoder for ArbitrumDecoder {
-    type TxSpecific = EthereumTransaction;  // Reuse Ethereum transaction type
+    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
     type Chain = ArbitrumChain;
 
     fn chain() -> Self::Chain {
@@ -71,9 +71,10 @@ impl ChainDecoder for ArbitrumDecoder {
         // Validate chain ID is for Arbitrum
         if let Some(chain_id) = tx.chain_id {
             if chain_id != 42161 {
-                return Err(DecoderError::invalid_structure(
-                    format!("Invalid Arbitrum chain ID: {} (expected 42161)", chain_id)
-                ));
+                return Err(DecoderError::invalid_structure(format!(
+                    "Invalid Arbitrum chain ID: {} (expected 42161)",
+                    chain_id
+                )));
             }
         }
 

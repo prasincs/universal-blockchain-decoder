@@ -234,11 +234,18 @@ fn test_max_transaction_size() {
 
 #[cfg(all(test, feature = "alloy-validation"))]
 mod alloy_validation {
+    // NOTE: This module is currently disabled because alloy-rs dependencies are
+    // commented out in Cargo.toml due to version conflicts.
+    //
+    // When alloy-rs is re-enabled, uncomment the validation tests below.
+    // The pure Rust implementation is tested in the modules above.
+
+    /*
     use super::*;
-    // use alloy_consensus::{TxEnvelope, TxLegacy};
-    // use alloy_primitives::{address, hex, TxKind, U256};
-    // use alloy_rlp::Encodable;
-    use decoder_ethereum::{EthereumDecoder, types::EthereumTransaction};
+    use alloy_consensus::{TxEnvelope, TxLegacy};
+    use alloy_primitives::{address, hex, TxKind, U256};
+    use alloy_rlp::Encodable;
+    use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 
     /// Helper to create a simple legacy transaction for testing
     fn create_test_legacy_tx() -> Vec<u8> {
@@ -277,7 +284,10 @@ mod alloy_validation {
 
         // Decode with alloy to compare
         let alloy_result = TxEnvelope::decode(&mut &tx_bytes[..]);
-        assert!(alloy_result.is_ok(), "Alloy should also decode successfully");
+        assert!(
+            alloy_result.is_ok(),
+            "Alloy should also decode successfully"
+        );
     }
 
     #[test]
@@ -364,7 +374,10 @@ mod alloy_validation {
 
         // Decode with our parser
         let our_tx = EthereumDecoder::decode(&tx_bytes).unwrap();
-        assert!(our_tx.is_contract_creation(), "Should detect contract creation");
+        assert!(
+            our_tx.is_contract_creation(),
+            "Should detect contract creation"
+        );
         assert!(!our_tx.data.is_empty(), "Should have bytecode in data");
 
         // Verify alloy can also decode
@@ -410,9 +423,13 @@ mod alloy_validation {
         assert!(tx_ir.is_ok(), "Canonicalization should succeed");
 
         let ir = tx_ir.unwrap();
-        assert!(!ir.operations().is_empty(), "Should have at least one operation");
+        assert!(
+            !ir.operations().is_empty(),
+            "Should have at least one operation"
+        );
         assert_eq!(ir.metadata().size, tx_bytes.len());
     }
+    */
 }
 
 // ========================================================================

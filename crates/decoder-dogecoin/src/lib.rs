@@ -53,24 +53,11 @@ impl ChainDecoder for DogecoinDecoder {
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
         if raw_bytes.is_empty() || raw_bytes.len() < 10 {
-            return Err(DecoderError::invalid_structure("Invalid Dogecoin transaction"));
+            return Err(DecoderError::invalid_structure(
+                "Invalid Dogecoin transaction",
+            ));
         }
         Ok(())
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_chain_identity() {
-        let chain = DogecoinDecoder::chain();
-        assert_eq!(chain.chain_id(), 3);
-        assert_eq!(chain.chain_name(), "Dogecoin");
-        assert_eq!(chain.chain_family(), ChainFamily::Utxo);
     }
 }
 
@@ -102,12 +89,25 @@ impl<'a> Canonicalizer<'a> for DogecoinTransaction {
             &DogecoinChain,
             metadata,
             authorization,
-            vec![],  // operations
+            vec![], // operations
             state_deltas,
         ))
     }
 
     fn validate(&self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_identity() {
+        let chain = DogecoinDecoder::chain();
+        assert_eq!(chain.chain_id(), 3);
+        assert_eq!(chain.chain_name(), "Dogecoin");
+        assert_eq!(chain.chain_family(), ChainFamily::Utxo);
     }
 }
