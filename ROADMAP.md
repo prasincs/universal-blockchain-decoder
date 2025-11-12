@@ -1,18 +1,21 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 2.3 Complete ✅ + Chain Family Strategy Established)
+## Current Status: v0.1.0-alpha (Phase 2.4 Complete ✅ + Common Crates Analysis Done)
 
-**Latest**: Top 20 chains scaffolded + Chain family grouping strategy
-**Branch**: `claude/scaffold-top-20-chains-011CV3K3Ugiof7Qys68xorJC`
+**Latest**: Common crates extraction strategy established
+**Branch**: `claude/incomplete-description-011CV3mXj9gKRHKbricouhm9`
 **Completed**:
   - ✅ Pure Rust Bitcoin decoder (186 tests passing)
   - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types)
   - ✅ Pure Rust Solana decoder (compact-u16 + instruction model)
   - ✅ Top 20 chains scaffolded (17 new decoder crates)
   - ✅ Chain family grouping strategy (EVM, OP Stack, SVM, Cosmos, etc.)
+  - ✅ Common crates analysis (decoder-encodings, decoder-test-utils)
   - ✅ Airgapped operation requirement documented
   - ✅ Chain registry vendoring strategy via git subtree
 **See**:
+  - `COMMON_CRATES_ANALYSIS.md` - Comprehensive shared functionality analysis
+  - `docs/SHARED_CRATES_STRATEGY.md` - Quick reference for code reuse
   - `CHAIN_FAMILIES_GROUPING.md` - Ecosystem-wide decoder strategy
   - `NEXT_STEPS_CHAINLIST_INTEGRATION.md` - EVM decoder implementation plan
   - `CLAUDE.md` - Updated with airgapped operation requirements
@@ -409,7 +412,156 @@ Scaffolded Chains (17 new decoders):
 
 ---
 
-### 2.5: Integration Tests & Examples
+### 2.5: Common Crates Extraction - Shared Functionality 🆕
+
+**Priority**: HIGH (Enables scalability)
+**Timeline**: 2 weeks
+**Status**: Planned (Analysis complete ✅)
+**See**: `COMMON_CRATES_ANALYSIS.md` and `docs/SHARED_CRATES_STRATEGY.md`
+
+**Context**: After implementing Bitcoin, Ethereum, and Solana decoders, significant code duplication has been identified. This phase extracts common functionality to enable rapid addition of new chains.
+
+**Key Findings**:
+- 510 LOC of encoding logic duplicated across decoders
+- RLP implementation needed by 7+ EVM chains
+- Address formatting needed by 15+ chains
+- Test utilities can reduce boilerplate by ~30%
+
+#### 2.5.1: decoder-encodings Crate (Week 1)
+
+**Priority**: CRITICAL (Used by 10+ chains)
+**LOC**: ~800 (moved from existing decoders)
+**Dependencies**: Zero (vendored if needed)
+
+**What to Extract**:
+
+1. **Variable-Length Encodings**:
+   - ✅ VarInt (Bitcoin) - Currently in `decoder-bitcoin/src/varint.rs` (70 LOC)
+   - ✅ Compact-u16 (Solana) - Currently in `decoder-solana/src/parsing.rs` (100 LOC)
+   - ✅ RLP (Ethereum) - Currently in `decoder-ethereum/src/rlp.rs` (340 LOC)
+   - [ ] LEB128 (for NEAR, Polkadot, future chains)
+
+2. **Address Encodings** (Week 2):
+   - [ ] Base58 (Bitcoin, Solana, Stellar, Cardano) - Vendor `bs58` crate via git subtree
+   - [ ] Base58Check (Bitcoin addresses) - Build on base58
+   - [ ] Bech32 (Bitcoin SegWit, Cosmos chains) - Vendor `bech32` crate via git subtree
+   - [ ] EIP-55 (Ethereum checksummed hex) - Pure Rust implementation
+   - [ ] SS58 (Polkadot, Substrate chains) - For future use
+
+**Implementation Tasks**:
+- [ ] Create `decoder-encodings` crate skeleton
+- [ ] Move VarInt from `decoder-bitcoin` → `decoder-encodings/src/varint.rs`
+- [ ] Update Bitcoin decoder to import from `decoder-encodings`
+- [ ] Move compact-u16 from `decoder-solana` → `decoder-encodings/src/compact_u16.rs`
+- [ ] Update Solana decoder to import from `decoder-encodings`
+- [ ] Move RLP from `decoder-ethereum` → `decoder-encodings/src/rlp/`
+- [ ] Update Ethereum decoder to import from `decoder-encodings`
+- [ ] Update all EVM-family decoders (BNB, Polygon, Arbitrum, Optimism, Avalanche) to use shared RLP
+- [ ] Vendor `bs58` crate using git subtree (see `docs/GIT_SUBTREE_VENDORING.md`)
+- [ ] Vendor `bech32` crate using git subtree
+- [ ] Add address formatting APIs
+- [ ] Comprehensive testing (existing tests + new integration tests)
+
+**Validation**:
+- [ ] All 186 Bitcoin tests still pass
+- [ ] All Ethereum tests still pass
+- [ ] All Solana tests still pass
+- [ ] EVM family decoders use shared RLP
+- [ ] Zero production dependencies (vendored only)
+- [ ] Cargo tree shows `decoder-encodings` used by 10+ decoders
+
+**Impact**:
+- 430 LOC reduction (-13%) across existing decoders
+- Future EVM chains need 42% less code (RLP reuse)
+- Single source of truth for critical encoding logic
+- Better testing through shared code
+
+#### 2.5.2: decoder-test-utils Crate (Week 2)
+
+**Priority**: MEDIUM (Quality improvement)
+**LOC**: ~300
+**Dependencies**: proptest (dev-only)
+
+**What to Extract**:
+
+1. **Common Test Assertions**:
+   - `assert_decode_never_panics<D: ChainDecoder>(bytes)`
+   - `assert_canonical_roundtrip<T: Canonicalizer>(tx)`
+   - `assert_decode_encode_roundtrip(bytes)`
+
+2. **Property Test Helpers**:
+   - `standard_decoder_properties<D>() -> Strategy<Vec<u8>>`
+   - `canonical_serialization_properties<T>()`
+
+3. **Fixture Loading**:
+   - `load_fixture(path) -> TestFixture`
+   - `load_fixtures_dir(dir) -> Vec<TestFixture>`
+
+**Implementation Tasks**:
+- [ ] Create `decoder-test-utils` crate
+- [ ] Extract common test assertions from Bitcoin/Ethereum/Solana
+- [ ] Add standard property test generators
+- [ ] Create fixture loading utilities
+- [ ] Add fuzzing helpers
+- [ ] Update decoder tests to use shared utilities
+- [ ] Documentation and examples
+
+**Impact**:
+- ~30% reduction in test boilerplate
+- Standardized testing patterns across all decoders
+- Easier to add comprehensive tests for new chains
+
+#### 2.5.3: Code Metrics & Validation
+
+**Before Extraction**:
+| Metric | Value |
+|--------|-------|
+| Decoder-specific LOC | 3,200 |
+| Encoding LOC (duplicated) | 510 |
+| Production dependencies | 5 |
+| Test utilities | Duplicated |
+
+**After Extraction**:
+| Metric | Value | Delta |
+|--------|-------|-------|
+| Decoder-specific LOC | 2,770 | **-430 (-13%)** |
+| Shared encoding LOC | 510 | **+510 (reusable)** |
+| Production dependencies | 5 | **0 change** ✅ |
+| Test utilities | Shared | **Standardized** |
+
+**Success Criteria**:
+- ✅ `decoder-encodings` created with zero external dependencies
+- ✅ VarInt, compact-u16, RLP moved and working
+- ✅ All EVM decoders use shared RLP
+- ✅ Base58 and Bech32 vendored via git subtree
+- ✅ `decoder-test-utils` provides common test patterns
+- ✅ All existing tests pass (186 Bitcoin + Ethereum + Solana)
+- ✅ No increase in core TCB
+- ✅ Future EVM chain implementation takes ~50% less code
+
+**Deliverables**:
+- `decoder-encodings` crate (~800 LOC, 0 deps)
+- `decoder-test-utils` crate (~300 LOC, proptest dev-dep)
+- Updated decoders using shared code
+- Comprehensive documentation
+- Migration guide for future decoders
+
+**Documentation**:
+- ✅ `COMMON_CRATES_ANALYSIS.md` - Detailed 10-section analysis
+- ✅ `docs/SHARED_CRATES_STRATEGY.md` - Quick reference guide
+- [ ] `docs/DECODER_ENCODINGS_API.md` - API documentation
+- [ ] `docs/TEST_UTILS_GUIDE.md` - Testing utilities guide
+
+**Why This Matters**:
+- **Scalability**: RLP shared by 7+ EVM chains → massive reuse
+- **Maintainability**: Fix encoding bugs once, benefit all chains
+- **Speed**: Future chains need significantly less code
+- **Quality**: Shared testing utilities improve consistency
+- **Security**: Focused testing on shared critical code
+
+---
+
+### 2.6: Integration Tests & Examples
 
 **Priority**: MEDIUM
 
@@ -435,6 +587,8 @@ Tasks:
 **Prerequisites**:
 - ✅ Phase 2 complete (Bitcoin, Ethereum, Solana decoders)
 - ✅ Chain family grouping strategy (CHAIN_FAMILIES_GROUPING.md)
+- ✅ Common crates analysis (COMMON_CRATES_ANALYSIS.md)
+- [ ] Phase 2.5: decoder-encodings extracted (provides shared RLP for EVM chains)
 - [ ] Chain registries vendored via git subtree (Phase 1.5.1)
 
 ### 3.1: EVM Family Decoder (Week 1-2)
@@ -813,10 +967,13 @@ Tasks:
 - ✅ 3 core decoders (Bitcoin, Ethereum, Solana)
 - ✅ All 3 models (UTXO, Account, Instruction) proven
 - ✅ 17 top chains scaffolded
+- ✅ Common crates analysis complete
+- [ ] Phase 2.5: decoder-encodings and decoder-test-utils extracted
 - [ ] 8 chain family decoders implemented
 - [ ] 620+ chains supported via family approach
 - [ ] Airgapped operation verified
 - [ ] Real transaction test coverage > 80%
+- [ ] 430 LOC reduction (-13%) from code extraction
 
 ### v0.3.0 (Verification)
 - [ ] Core fully verified in Verus
@@ -850,20 +1007,22 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-01-12
-**Current Phase**: Phase 2.4 Complete ✅ (Top 20 Chains Scaffolded)
-**Status**: Chain family strategy established, airgapped operation requirement documented
-**Branch**: `claude/scaffold-top-20-chains-011CV3K3Ugiof7Qys68xorJC`
+**Last Updated**: 2025-11-12
+**Current Phase**: Phase 2.4 Complete ✅ (Common Crates Analysis)
+**Status**: Shared functionality extraction strategy established
+**Branch**: `claude/incomplete-description-011CV3mXj9gKRHKbricouhm9`
 
 **Completed Milestones**:
   - ✅ Phase 2.1: Bitcoin decoder (pure Rust, 186 tests)
   - ✅ Phase 2.2: Ethereum decoder (pure Rust, RLP + EIP-2718)
   - ✅ Phase 2.3: Solana decoder (pure Rust, compact-u16 + instruction model)
   - ✅ Phase 2.4: Top 20 chains scaffolding (17 new decoders, chain family strategy)
+  - ✅ Phase 2.x: Common crates analysis (510 LOC duplication identified, extraction strategy)
 
 **Next Milestones**:
+  - **Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils) - 2 weeks** ⭐ NEXT
   - Phase 1.5.1: Vendor chain registries (ethereum-lists/chains, cosmos/chain-registry, etc.) - 1 week
-  - Phase 3.1: EVM family decoder (500+ chains) - 2 weeks
+  - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
   - Phase 3.8: Universal decoder integration - 1 week
