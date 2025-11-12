@@ -98,7 +98,10 @@ fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Universal Blockchain Transaction Decoder ===\n");
     println!("Chain:                  {}", chain.to_uppercase());
     println!("Raw transaction size:   {} bytes", tx_bytes.len());
-    println!("Hex preview:            {}...\n", &tx_hex[..tx_hex.len().min(64)]);
+    println!(
+        "Hex preview:            {}...\n",
+        &tx_hex[..tx_hex.len().min(64)]
+    );
 
     // Decode based on chain
     match chain.as_str() {
@@ -116,11 +119,7 @@ fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
             return Err("Ethereum decoder support coming soon!".into());
         }
         _ => {
-            return Err(format!(
-                "Unsupported chain: {}. Supported: bitcoin",
-                chain
-            )
-            .into());
+            return Err(format!("Unsupported chain: {}. Supported: bitcoin", chain).into());
         }
     }
 
@@ -191,9 +190,15 @@ fn print_bitcoin_transaction(tx: &BitcoinTransaction) {
     for (i, output) in tx.outputs.iter().enumerate() {
         let btc_value = output.value as f64 / 100_000_000.0;
         println!("Output #{}:", i);
-        println!("  Value:          {} satoshis ({:.8} BTC)", output.value, btc_value);
+        println!(
+            "  Value:          {} satoshis ({:.8} BTC)",
+            output.value, btc_value
+        );
         println!("  Script Length:  {} bytes", output.script_pubkey.len());
-        println!("  Script Type:    {}", guess_bitcoin_script_type(&output.script_pubkey));
+        println!(
+            "  Script Type:    {}",
+            guess_bitcoin_script_type(&output.script_pubkey)
+        );
         println!();
     }
 
@@ -202,7 +207,10 @@ fn print_bitcoin_transaction(tx: &BitcoinTransaction) {
         Ok(total_output) => {
             let btc_total = total_output as f64 / 100_000_000.0;
             println!("=== Summary ===");
-            println!("Total Output:   {} satoshis ({:.8} BTC)", total_output, btc_total);
+            println!(
+                "Total Output:   {} satoshis ({:.8} BTC)",
+                total_output, btc_total
+            );
 
             if !tx.is_coinbase() {
                 println!("\nNote: Fee calculation requires input values from the blockchain");
@@ -214,14 +222,18 @@ fn print_bitcoin_transaction(tx: &BitcoinTransaction) {
     }
 }
 
-fn print_canonical_ir<'a>(tx_ir: &TxIR<'a, 1>) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn print_canonical_ir<'a>(
+    tx_ir: &TxIR<'a, 1>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Canonical IR Representation ===");
 
     println!("Version:        {}", tx_ir.version());
     println!("Operations:     {}", tx_ir.operations.len());
-    println!("State Deltas:   {} inputs, {} outputs",
+    println!(
+        "State Deltas:   {} inputs, {} outputs",
         tx_ir.state_deltas.inputs.len(),
-        tx_ir.state_deltas.outputs.len());
+        tx_ir.state_deltas.outputs.len()
+    );
 
     // Canonical hash
     let canonical_hash = tx_ir.canonical_hash()?;
@@ -245,7 +257,10 @@ fn print_canonical_ir<'a>(tx_ir: &TxIR<'a, 1>) -> std::result::Result<(), Box<dy
                 } else {
                     transfer.amount.value as f64
                 };
-                println!("  Amount:   {} (decimals: {})", display_value, transfer.amount.decimals);
+                println!(
+                    "  Amount:   {} (decimals: {})",
+                    display_value, transfer.amount.decimals
+                );
             }
             universal_decoder_core::ir::Operation::ContractCall(call) => {
                 println!("  Type:     ContractCall");
