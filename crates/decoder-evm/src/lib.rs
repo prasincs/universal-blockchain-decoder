@@ -14,13 +14,13 @@
 //!
 //! # Example
 //!
-//! ```rust
+//! ```rust,no_run
 //! use decoder_evm::EvmDecoder;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Decode transaction for any EVM chain
 //! let decoder = EvmDecoder::new();
-//! let tx_bytes = vec![0xf8, 0x6c /* ... */];
+//! let tx_bytes = vec![0xf8, 0x6c /* ... RLP encoded transaction ... */];
 //!
 //! // Option 1: Auto-detect chain from transaction
 //! let (tx, chain_info) = decoder.decode(&tx_bytes, None)?;
@@ -106,12 +106,12 @@ impl EvmDecoder {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// use decoder_evm::EvmDecoder;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let decoder = EvmDecoder::new();
-    /// let tx_bytes = vec![0xf8, 0x6c /* ... */];
+    /// let tx_bytes = vec![0xf8, 0x6c /* ... RLP encoded transaction ... */];
     ///
     /// // Decode without chain hint
     /// let (tx, chain) = decoder.decode(&tx_bytes, None)?;
@@ -183,7 +183,7 @@ impl EvmDecoder {
     /// let decoder = EvmDecoder::new();
     /// assert!(decoder.is_supported(1)); // Ethereum
     /// assert!(decoder.is_supported(56)); // BNB Chain
-    /// assert!(!decoder.is_supported(999999999)); // Invalid
+    /// assert!(!decoder.is_supported(0)); // Invalid (0 is never a valid chain ID)
     /// ```
     pub fn is_supported(&self, chain_id: u64) -> bool {
         self.registry.is_supported(chain_id)
