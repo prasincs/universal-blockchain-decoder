@@ -1,9 +1,9 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 2.5.1 Complete ✅ - decoder-encodings Extracted)
+## Current Status: v0.1.0-alpha (Phase 1.5.1 Complete ✅ - Chain Registries Vendored)
 
-**Latest**: decoder-encodings crate successfully extracted and integrated
-**Branch**: `claude/implement-phase-2-5-011CV3p72bKajmuhsgEViR75`
+**Latest**: Chain registries vendored via git subtree (cosmos + superchain)
+**Branch**: `claude/review-roadmap-next-task-011CV3siyh3rLRUTTL97jV8d`
 **Completed**:
   - ✅ Pure Rust Bitcoin decoder (47 tests passing)
   - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types, 6 tests passing)
@@ -95,9 +95,10 @@
   - ✅ Audited: No public JSON APIs in core
   - ✅ JSON only used for debugging/tests/examples
   - ✅ All production code uses Borsh for canonical serialization
-- [ ] Benchmark `smallvec` vs `Vec`
-  - [ ] Create criterion benchmarks
-  - [ ] Decide: keep, remove, or vendor based on <10% threshold
+- ✅ **Benchmark `smallvec` vs `Vec`** (Already complete)
+  - ✅ Comprehensive benchmarks in `crates/universal-decoder-core/benches/vec_vs_smallvec.rs`
+  - ✅ Decision: **KEEP** smallvec for 15-20% allocation speedup and 26% faster iteration
+  - ✅ See `crates/universal-decoder-core/SMALLVEC_DECISION.md` for detailed analysis
 - ✅ **Move blockchain libs to dev-dependencies**
   - ✅ `bitcoin` → dev-dependencies (test validation only)
   - ✅ `alloy` → dev-dependencies (test validation only)
@@ -185,15 +186,20 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 
 ### Success Criteria
 
+**Phase 1.5.1 (Dependency Minimization + Airgapped Operation)**:
 - ✅ ≤ 5 production dependencies in core
 - ✅ hex vendored via git subtree (verifiable)
 - ✅ Blockchain libs in dev-dependencies only
-- ✅ Unit test coverage: 100% core, 90% decoders
-- ✅ 50+ property tests
-- ✅ 100+ real transaction fixtures
-- ✅ Fuzzing infrastructure operational
-- ✅ CI/CD pipeline passing
-- ✅ Verus toolchain installed and annotated
+- ✅ Chain registries vendored via git subtree (cosmos + superchain)
+- ⚠️ Borsh transformation pending (14.5MB → <2MB target)
+
+**Phase 1.5.2 (Testing Infrastructure)** - Not Started:
+- [ ] Unit test coverage: 100% core, 90% decoders
+- [ ] 50+ property tests
+- [ ] 100+ real transaction fixtures
+- [ ] Fuzzing infrastructure operational
+- [ ] CI/CD pipeline passing
+- [ ] Verus toolchain installed and annotated
 
 **Reference Documentation**:
 - `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Executive summary
@@ -1037,20 +1043,23 @@ See `CONTRIBUTING.md` for:
 ---
 
 **Last Updated**: 2025-11-12
-**Current Phase**: Phase 2.4 Complete ✅ (Common Crates Analysis)
-**Status**: Shared functionality extraction strategy established
-**Branch**: `claude/incomplete-description-011CV3mXj9gKRHKbricouhm9`
+**Current Phase**: Phase 1.5.1 Complete ✅ (Chain Registries Vendored)
+**Status**: Airgapped operation requirements met, Borsh transformation is next priority
+**Branch**: `claude/review-roadmap-next-task-011CV3siyh3rLRUTTL97jV8d`
 
 **Completed Milestones**:
   - ✅ Phase 2.1: Bitcoin decoder (pure Rust, 186 tests)
   - ✅ Phase 2.2: Ethereum decoder (pure Rust, RLP + EIP-2718)
   - ✅ Phase 2.3: Solana decoder (pure Rust, compact-u16 + instruction model)
   - ✅ Phase 2.4: Top 20 chains scaffolding (17 new decoders, chain family strategy)
-  - ✅ Phase 2.x: Common crates analysis (510 LOC duplication identified, extraction strategy)
+  - ✅ Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils)
+  - ✅ Phase 1.5.1: Chain registry vendoring (cosmos + superchain, 14.5MB)
 
 **Next Milestones**:
-  - **Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils) - 2 weeks** ⭐ NEXT
-  - Phase 1.5.1: Vendor chain registries (ethereum-lists/chains, cosmos/chain-registry, etc.) - 1 week
+  - **Registry Borsh transformation (14.5MB → <2MB) - 1 week** ⭐ IMMEDIATE PRIORITY
+    - Create unified `registry-generator` tool with subcommands
+    - Transform cosmos chains: 7.4MB JSON → ~1MB Borsh
+    - Transform superchain: 7.1MB JSON → ~200KB Borsh
   - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
