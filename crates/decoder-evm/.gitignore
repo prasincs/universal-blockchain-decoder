@@ -1,0 +1,8 @@
+# Vendored chain JSON files (kept locally for verification, not tracked in git)
+# We use the compact Borsh binary (data/chains.borsh) instead
+vendored/chainlist/_data/
+
+# Keep these vendored files
+!vendored/chainlist/LICENSE
+!vendored/chainlist/README.md
+!vendored/VENDORED.md

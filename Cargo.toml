@@ -5,6 +5,7 @@ members = [
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     "crates/decoder-solana",
+    "crates/decoder-evm",           # Generic EVM decoder for 2000+ chains
     "crates/universal-decoder-cli",
 
     # Top 20 chains scaffolding (Phase 1 - Scaffolding complete)
@@ -28,6 +29,9 @@ members = [
     "crates/decoder-aptos",         # Aptos - Move-based with BCS
 
     "examples/simple-decoder",
+
+    # Tools
+    "tools/chain-registry-generator",
 ]
 resolver = "2"
 
