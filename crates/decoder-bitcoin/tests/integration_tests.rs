@@ -22,26 +22,18 @@ fn test_decode_genesis_coinbase() {
     );
     assert_eq!(decoded.input_count(), 1, "Coinbase has 1 input");
     assert_eq!(decoded.output_count(), 1, "Genesis coinbase has 1 output");
-    assert!(
-        decoded.inner.is_coinbase(),
-        "Should be identified as coinbase"
-    );
+    assert!(decoded.is_coinbase(), "Should be identified as coinbase");
 
     // Verify output value (50 BTC = 5,000,000,000 satoshis)
-    let outputs = &decoded.inner.output;
+    let outputs = &decoded.outputs;
     assert_eq!(outputs.len(), 1);
     assert_eq!(
-        outputs[0].value.to_sat(),
-        5_000_000_000,
+        outputs[0].value, 5_000_000_000,
         "Genesis block reward is 50 BTC"
     );
 
     // Verify locktime
-    assert_eq!(
-        decoded.inner.lock_time.to_consensus_u32(),
-        0,
-        "Genesis transaction has locktime 0"
-    );
+    assert_eq!(decoded.locktime, 0, "Genesis transaction has locktime 0");
 }
 
 /// Test decoding simple P2PKH transaction
@@ -63,28 +55,20 @@ fn test_decode_simple_p2pkh() {
         2,
         "Has 2 outputs (payment + change)"
     );
-    assert!(!decoded.inner.is_coinbase(), "Should not be coinbase");
+    assert!(!decoded.is_coinbase(), "Should not be coinbase");
 
     // Verify outputs
-    let outputs = &decoded.inner.output;
+    let outputs = &decoded.outputs;
     assert_eq!(outputs.len(), 2);
 
     // First output: 10 BTC
-    assert_eq!(
-        outputs[0].value.to_sat(),
-        1_000_000_000,
-        "First output is 10 BTC"
-    );
+    assert_eq!(outputs[0].value, 1_000_000_000, "First output is 10 BTC");
 
     // Second output: 40 BTC (change)
-    assert_eq!(
-        outputs[1].value.to_sat(),
-        4_000_000_000,
-        "Second output is 40 BTC"
-    );
+    assert_eq!(outputs[1].value, 4_000_000_000, "Second output is 40 BTC");
 
     // Verify total output value
-    let total_output: u64 = outputs.iter().map(|o| o.value.to_sat()).sum();
+    let total_output: u64 = outputs.iter().map(|o| o.value).sum();
     assert_eq!(total_output, 5_000_000_000, "Total output is 50 BTC");
 }
 
