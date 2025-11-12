@@ -41,11 +41,11 @@
 //! let item = RlpItem::decode(&rlp_data).unwrap();
 //! ```
 
-pub mod varint;
 pub mod compact_u16;
 pub mod rlp;
+pub mod varint;
 
 // Re-export commonly used types
-pub use varint::encode_varint;
 pub use compact_u16::read_compact_u16;
 pub use rlp::RlpItem;
+pub use varint::encode_varint;

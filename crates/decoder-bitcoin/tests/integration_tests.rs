@@ -213,3 +213,55 @@ fn test_transaction_size_bounds() {
         size
     );
 }
+
+// ========== Tests using decoder-test-utils ==========
+
+/// Test that decoder never panics on arbitrary input (using test-utils)
+#[test]
+fn test_decoder_never_panics_on_garbage() {
+    use decoder_test_utils::assertions::assert_decode_never_panics;
+
+    // Test with various garbage inputs
+    let test_cases = vec![
+        vec![],                        // Empty
+        vec![0xFF; 100],               // Random bytes
+        vec![0x00; 1000],              // Zeros
+        vec![0x01, 0x00, 0x00, 0x00],  // Incomplete
+        (0..255).collect::<Vec<u8>>(), // Sequential bytes
+    ];
+
+    for input in test_cases {
+        assert_decode_never_panics::<BitcoinDecoder>(&input);
+    }
+}
+
+/// Test canonical roundtrip property (using test-utils)
+#[test]
+fn test_canonical_roundtrip_property() {
+    use decoder_test_utils::assertions::assert_canonical_roundtrip;
+
+    let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
+    let tx_bytes =
+        universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
+
+    let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
+    let tx_ir = decoded.canonicalize().expect("Failed to canonicalize");
+
+    // Verify canonical serialization is deterministic
+    assert_canonical_roundtrip(&tx_ir);
+}
+
+/// Test that decoder rejects empty input (using test-utils)
+#[test]
+fn test_rejects_empty_input() {
+    use decoder_test_utils::assertions::assert_rejects_empty_input;
+    assert_rejects_empty_input::<BitcoinDecoder>();
+}
+
+/// Test that decoder handles oversized input (using test-utils)
+#[test]
+fn test_handles_oversized_input() {
+    use decoder_test_utils::assertions::assert_handles_oversized_input;
+    // Bitcoin transactions should be < 1MB
+    assert_handles_oversized_input::<BitcoinDecoder>(1_000_000);
+}

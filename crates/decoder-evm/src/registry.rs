@@ -31,8 +31,7 @@ impl ChainRegistry {
     /// Get the global chain registry instance
     pub fn global() -> &'static ChainRegistry {
         CHAIN_REGISTRY.get_or_init(|| {
-            Self::from_borsh(CHAINS_BORSH)
-                .expect("Failed to deserialize embedded chain registry")
+            Self::from_borsh(CHAINS_BORSH).expect("Failed to deserialize embedded chain registry")
         })
     }
 
@@ -41,7 +40,8 @@ impl ChainRegistry {
         let serialized: SerializedRegistry = SerializedRegistry::try_from_slice(bytes)?;
 
         // Build reverse index by short name
-        let by_short_name: HashMap<String, u64> = serialized.chains
+        let by_short_name: HashMap<String, u64> = serialized
+            .chains
             .iter()
             .map(|(id, info)| (info.short_name.clone(), *id))
             .collect();
@@ -54,8 +54,7 @@ impl ChainRegistry {
 
     /// Create a new chain registry from embedded data
     pub fn new() -> Self {
-        Self::from_borsh(CHAINS_BORSH)
-            .expect("Failed to deserialize embedded chain registry")
+        Self::from_borsh(CHAINS_BORSH).expect("Failed to deserialize embedded chain registry")
     }
 
     /// Get chain information by chain ID
@@ -91,22 +90,14 @@ impl ChainRegistry {
 
     /// Get mainnet chains only (excludes testnets)
     pub fn mainnet_chains(&self) -> Vec<&ChainInfo> {
-        let mut chains: Vec<&ChainInfo> = self
-            .chains
-            .values()
-            .filter(|c| !c.is_testnet)
-            .collect();
+        let mut chains: Vec<&ChainInfo> = self.chains.values().filter(|c| !c.is_testnet).collect();
         chains.sort_by_key(|c| c.chain_id);
         chains
     }
 
     /// Get testnet chains only
     pub fn testnet_chains(&self) -> Vec<&ChainInfo> {
-        let mut chains: Vec<&ChainInfo> = self
-            .chains
-            .values()
-            .filter(|c| c.is_testnet)
-            .collect();
+        let mut chains: Vec<&ChainInfo> = self.chains.values().filter(|c| c.is_testnet).collect();
         chains.sort_by_key(|c| c.chain_id);
         chains
     }
@@ -134,9 +125,9 @@ impl ChainRegistry {
             .chains
             .values()
             .filter(|c| {
-                c.name.to_lowercase().contains(&query_lower) ||
-                c.short_name.to_lowercase().contains(&query_lower) ||
-                c.chain.to_lowercase().contains(&query_lower)
+                c.name.to_lowercase().contains(&query_lower)
+                    || c.short_name.to_lowercase().contains(&query_lower)
+                    || c.chain.to_lowercase().contains(&query_lower)
             })
             .collect();
         results.sort_by_key(|c| c.chain_id);
@@ -317,11 +308,17 @@ mod tests {
         // Optimism (has custom tx types)
         let optimism = registry.get_chain(10).expect("Optimism not found");
         assert_eq!(optimism.chain_id, 10);
-        assert!(optimism.has_custom_tx_types, "Optimism should have custom tx types");
+        assert!(
+            optimism.has_custom_tx_types,
+            "Optimism should have custom tx types"
+        );
 
         // Arbitrum (has custom tx types)
         let arbitrum = registry.get_chain(42161).expect("Arbitrum not found");
         assert_eq!(arbitrum.chain_id, 42161);
-        assert!(arbitrum.has_custom_tx_types, "Arbitrum should have custom tx types");
+        assert!(
+            arbitrum.has_custom_tx_types,
+            "Arbitrum should have custom tx types"
+        );
     }
 }

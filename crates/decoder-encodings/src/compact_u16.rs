@@ -23,9 +23,9 @@ type Result<T> = std::result::Result<T, DecoderError>;
 /// - 0xFF 0x7F -> 16383 (0xFF & 0x7F = 127, (127 << 7) | 127 = 16383)
 pub fn read_compact_u16(cursor: &mut Cursor<&[u8]>) -> Result<u16> {
     let mut buf = [0u8; 1];
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read compact-u16: {}", e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to read compact-u16: {}", e))
+    })?;
 
     let first_byte = buf[0];
 
@@ -35,9 +35,9 @@ pub fn read_compact_u16(cursor: &mut Cursor<&[u8]>) -> Result<u16> {
     }
 
     // High bit is set, need to read second byte
-    cursor
-        .read_exact(&mut buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Failed to read second byte of compact-u16: {}", e)))?;
+    cursor.read_exact(&mut buf).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to read second byte of compact-u16: {}", e))
+    })?;
 
     let second_byte = buf[0];
 

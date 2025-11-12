@@ -30,9 +30,9 @@
 //!   - data: compact-u16 length + bytes
 //! ```
 
+use decoder_encodings::compact_u16::read_compact_u16;
 use std::io::{Cursor, Read};
 use universal_decoder_core::prelude::DecoderError;
-use decoder_encodings::compact_u16::read_compact_u16;
 
 use crate::types::{
     CompiledInstruction, Message, MessageHeader, SolanaBlockhash, SolanaPubkey, SolanaSignature,

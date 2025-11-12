@@ -22,6 +22,7 @@ solana-transaction-status = "2.0"
 serde_json = { workspace = true }
 proptest = { workspace = true }
 base64 = "0.22"
+decoder-test-utils = { path = "../decoder-test-utils" }
 
 # Use solana-parser from tkhq for validation testing
 # Note: This will be added as a git dependency

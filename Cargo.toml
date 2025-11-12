@@ -3,6 +3,7 @@ members = [
     "crates/universal-decoder-core",
     "crates/decoder-primitives",
     "crates/decoder-encodings",     # Shared encoding utilities (Phase 2.5)
+    "crates/decoder-test-utils",    # Test utilities (Phase 2.5.2)
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     "crates/decoder-solana",
