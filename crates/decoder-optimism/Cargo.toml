@@ -1,0 +1,20 @@
+[package]
+name = "decoder-optimism"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Optimism transaction decoder for universal-decoder"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-ethereum = { path = "../decoder-ethereum" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# Testing utilities
+serde_json = { workspace = true }
+proptest = { workspace = true }

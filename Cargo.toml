@@ -6,6 +6,27 @@ members = [
     "crates/decoder-ethereum",
     "crates/decoder-solana",
     "crates/universal-decoder-cli",
+
+    # Top 20 chains scaffolding (Phase 1 - Scaffolding complete)
+    # Phase 2 (Pure Rust implementations) - In progress
+    "crates/decoder-bnb",           # BNB Chain (BSC) - EVM-compatible
+    "crates/decoder-xrp",           # XRP Ledger - Binary codec
+    "crates/decoder-cardano",       # Cardano - eUTXO with CBOR
+    "crates/decoder-dogecoin",      # Dogecoin - Bitcoin fork (no SegWit)
+    "crates/decoder-tron",          # Tron - Protobuf encoding
+    "crates/decoder-polygon",       # Polygon - EVM-compatible L2
+    "crates/decoder-avalanche",     # Avalanche C-Chain - EVM-compatible
+    "crates/decoder-polkadot",      # Polkadot - SCALE encoding
+    "crates/decoder-litecoin",      # Litecoin - Bitcoin fork (with SegWit)
+    "crates/decoder-near",          # NEAR Protocol - Borsh encoding
+    "crates/decoder-cosmos",        # Cosmos Hub - Protobuf + Tendermint
+    "crates/decoder-stellar",       # Stellar - XDR encoding
+    "crates/decoder-algorand",      # Algorand - MessagePack encoding
+    "crates/decoder-optimism",      # Optimism - EVM L2 (Optimistic rollup)
+    "crates/decoder-arbitrum",      # Arbitrum - EVM L2 (Optimistic rollup)
+    "crates/decoder-sui",           # Sui - Move-based with BCS
+    "crates/decoder-aptos",         # Aptos - Move-based with BCS
+
     "examples/simple-decoder",
 ]
 resolver = "2"
