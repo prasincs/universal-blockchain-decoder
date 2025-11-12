@@ -81,12 +81,16 @@
     - Added decode_to_slice functionality
     - 5 performance validation tests
     - All 186 tests passing
-- [ ] **Vendor chain registries using git subtree** (~4 hours)
-  - [ ] EVM chains: ethereum-lists/chains → `decoder-evm/vendored/chainlist`
-  - [ ] Cosmos chains: cosmos/chain-registry → `decoder-cosmos-sdk/vendored/chain-registry`
-  - [ ] OP Stack: ethereum-optimism/superchain-registry → `decoder-op-stack/vendored/superchain-registry`
-  - [ ] Document vendoring process in `docs/GIT_SUBTREE_VENDORING.md`
-  - [ ] Create build.rs scripts to embed chain data at compile time
+- ✅ **Vendor chain registries using git subtree** (commit 66915f965)
+  - ✅ EVM chains: ethereum-lists/chains → Already complete (551KB Borsh)
+  - ✅ Cosmos chains: cosmos/chain-registry → `decoder-cosmos/vendored/chain-registry` (7.4MB, 406 chains)
+  - ✅ OP Stack: ethereum-optimism/superchain-registry → `decoder-optimism/vendored/superchain-registry` (7.1MB, 35+ chains)
+  - ✅ Document vendoring in VENDORED.md for each registry
+  - ⚠️ **Next Priority**: Borsh transformation (14.5MB → <2MB target)
+    - [ ] Create unified `registry-generator` tool with subcommands
+    - [ ] Transform cosmos: 7.4MB JSON → ~1MB Borsh
+    - [ ] Transform superchain: 7.1MB JSON → ~200KB Borsh
+    - [ ] Remove raw JSON files after transformation
 - ✅ **Move `serde_json` to dev-dependencies** (display/test only)
   - ✅ Audited: No public JSON APIs in core
   - ✅ JSON only used for debugging/tests/examples
