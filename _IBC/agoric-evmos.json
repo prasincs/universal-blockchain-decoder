@@ -1,0 +1,33 @@
+{
+  "$schema": "../ibc_data.schema.json",
+  "chain_1": {
+    "chain_name": "agoric",
+    "chain_id": "agoric-3",
+    "client_id": "07-tendermint-72",
+    "connection_id": "connection-66"
+  },
+  "chain_2": {
+    "chain_name": "evmos",
+    "chain_id": "evmos_9001-2",
+    "client_id": "07-tendermint-116",
+    "connection_id": "connection-70"
+  },
+  "channels": [
+    {
+      "chain_1": {
+        "channel_id": "channel-57",
+        "port_id": "transfer"
+      },
+      "chain_2": {
+        "channel_id": "channel-85",
+        "port_id": "transfer"
+      },
+      "ordering": "unordered",
+      "version": "ics20-1",
+      "tags": {
+        "preferred": true,
+        "status": "ACTIVE"
+      }
+    }
+  ]
+}
