@@ -29,6 +29,9 @@ members = [
     "crates/decoder-aptos",         # Aptos - Move-based with BCS
 
     "examples/simple-decoder",
+
+    # Tools
+    "tools/chain-registry-generator",
 ]
 resolver = "2"
 

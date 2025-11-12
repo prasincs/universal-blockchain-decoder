@@ -1,9 +1,10 @@
 //! EVM chain types and metadata
 
+use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
 /// Information about an EVM-compatible chain
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct ChainInfo {
     /// Chain ID (EIP-155)
     pub chain_id: u64,
@@ -30,7 +31,7 @@ pub struct ChainInfo {
 }
 
 /// Native currency information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct CurrencyInfo {
     /// Currency name (e.g., "Ether")
     pub name: String,
@@ -41,7 +42,7 @@ pub struct CurrencyInfo {
 }
 
 /// Block explorer information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct ExplorerInfo {
     /// Explorer name (e.g., "etherscan")
     pub name: String,
