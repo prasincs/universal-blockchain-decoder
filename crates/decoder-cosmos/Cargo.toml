@@ -11,6 +11,7 @@ description = "Cosmos transaction decoder for universal-decoder"
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
+borsh = { version = "1.3", default-features = true, features = ["derive", "std"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]

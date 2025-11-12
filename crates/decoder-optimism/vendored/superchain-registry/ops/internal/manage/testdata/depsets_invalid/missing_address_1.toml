@@ -1,9 +1,0 @@
-name = "Test Chain 2"
-chain_id = 902
-
-[hardforks]
-interop_time = 4424
-
-[interop]
-dependencies."902" = {}
-dependencies."904" = {}

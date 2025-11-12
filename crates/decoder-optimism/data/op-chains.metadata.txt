@@ -1,0 +1,27 @@
+Chain Registry Binary Data
+=========================
+
+Format: Borsh (Binary Object Representation Serializer for Hashing)
+Source: ethereum-optimism/superchain-registry
+Repository: https://github.com/ethereum-optimism/superchain-registry
+Upstream Commit: main
+Chain Count: 63
+Generated: 2025-11-12 14:53:18 UTC
+
+File Size: 0.01 MB (6920 bytes)
+
+Verification:
+1. Clone upstream: git clone https://github.com/ethereum-optimism/superchain-registry.git /tmp/superchain-registry
+2. Checkout: cd /tmp/superchain-registry && git checkout main
+3. Regenerate: cargo run -p registry-generator -- superchain
+4. Compare: diff crates/decoder-optimism/data/op-chains.borsh (should be identical)
+
+This binary file is embedded at compile time via include_bytes!() and
+deserialized on first use using borsh::BorshDeserialize.
+
+Benefits:
+- ✅ Compact: Borsh binary vs JSON (85-95% size reduction)
+- ✅ Fast builds: No JSON parsing at build time
+- ✅ Fast runtime: Deserialize once, cache forever
+- ✅ Verifiable: Git commit hash provides full audit trail
+- ✅ Airgapped: Compile-time embedding, zero runtime network I/O

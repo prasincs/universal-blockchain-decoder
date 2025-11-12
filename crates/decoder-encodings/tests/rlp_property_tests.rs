@@ -2,8 +2,8 @@
 //!
 //! Tests for decoder implementations and encoding/decoding logic.
 
-use proptest::prelude::*;
 use decoder_encodings::rlp::RlpItem;
+use proptest::prelude::*;
 
 /// Generate arbitrary RLP data items (non-list)
 fn arb_rlp_data() -> impl Strategy<Value = Vec<u8>> {

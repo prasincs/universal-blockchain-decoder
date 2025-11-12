@@ -2,6 +2,8 @@
 
 use decoder_primitives::prelude::*;
 
+pub mod registry;
+
 #[derive(Debug, Clone, Copy)]
 pub struct CosmosChain;
 

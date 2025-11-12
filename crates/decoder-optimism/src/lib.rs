@@ -30,6 +30,8 @@
 use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
 use decoder_primitives::prelude::*;
 
+pub mod registry;
+
 /// Optimism chain identity
 #[derive(Debug, Clone, Copy)]
 pub struct OptimismChain;
