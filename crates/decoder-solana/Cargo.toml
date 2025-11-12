@@ -10,6 +10,7 @@ description = "Solana transaction decoder for universal-decoder - Pure Rust impl
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;

@@ -4,7 +4,8 @@
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
 use universal_decoder_core::prelude::*;
-use crate::{EthereumChain, rlp::RlpItem};
+use decoder_encodings::rlp::RlpItem;
+use crate::EthereumChain;
 
 /// Ethereum transaction type indicator (EIP-2718)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

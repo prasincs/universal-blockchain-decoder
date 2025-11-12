@@ -9,6 +9,7 @@ description = "Ethereum transaction decoder for universal-decoder"
 
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 # hex - Use vendored version via: use universal_decoder_core::hex;
