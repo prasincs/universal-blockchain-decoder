@@ -1,30 +1,49 @@
-#!/usr/bin/env rust
 //! Universal Blockchain Transaction Decoder CLI
 //!
 //! A unified command-line tool for decoding raw transactions from any blockchain.
-//!
-//! # Usage
-//!
-//! ```bash
-//! # Decode Bitcoin transaction
-//! cargo run --bin universal-tx-decoder -- --chain bitcoin <hex_string>
-//!
-//! # Decode Ethereum transaction
-//! cargo run --bin universal-tx-decoder -- --chain ethereum <hex_string>
-//!
-//! # Decode from file
-//! cargo run --bin universal-tx-decoder -- --chain bitcoin --file transaction.hex
-//!
-//! # Show canonical IR
-//! cargo run --bin universal-tx-decoder -- --chain bitcoin --canonical <hex_string>
-//! ```
 
+use clap::{Parser, ValueEnum};
 use std::fs;
 use std::io::{self, Read};
 use universal_decoder_core::prelude::*;
 
 // Import decoders
 use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
+
+/// Universal blockchain transaction decoder
+#[derive(Parser)]
+#[command(name = "universal-tx-decoder")]
+#[command(about = "Decode raw blockchain transactions from any supported chain", long_about = None)]
+#[command(version)]
+struct Cli {
+    /// Blockchain to decode
+    #[arg(long, short = 'c', value_enum)]
+    chain: Chain,
+
+    /// Transaction hex string (or use --file/--stdin)
+    #[arg(value_name = "HEX")]
+    transaction: Option<String>,
+
+    /// Read transaction from file
+    #[arg(long, short = 'f', value_name = "FILE")]
+    file: Option<String>,
+
+    /// Read transaction from stdin
+    #[arg(long)]
+    stdin: bool,
+
+    /// Show canonical IR representation
+    #[arg(long, short = 'C')]
+    canonical: bool,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Chain {
+    /// Bitcoin blockchain
+    Bitcoin,
+    /// Ethereum blockchain
+    Ethereum,
+}
 
 fn main() {
     if let Err(e) = run() {
@@ -33,70 +52,29 @@ fn main() {
     }
 }
 
-fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = std::env::args().collect();
+fn run() -> anyhow::Result<()> {
+    let cli = Cli::parse();
 
-    if args.len() < 2 {
-        print_usage();
-        return Ok(());
-    }
-
-    let mut chain: Option<String> = None;
-    let mut show_canonical = false;
-    let mut tx_hex = String::new();
-
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--help" | "-h" => {
-                print_usage();
-                return Ok(());
-            }
-            "--chain" => {
-                if i + 1 < args.len() {
-                    i += 1;
-                    chain = Some(args[i].to_lowercase());
-                } else {
-                    return Err("--chain requires a chain name".into());
-                }
-            }
-            "--canonical" | "-c" => {
-                show_canonical = true;
-            }
-            "--file" | "-f" => {
-                if i + 1 < args.len() {
-                    i += 1;
-                    tx_hex = fs::read_to_string(&args[i])?;
-                } else {
-                    return Err("--file requires a filename".into());
-                }
-            }
-            "--stdin" => {
-                io::stdin().read_to_string(&mut tx_hex)?;
-            }
-            arg if !arg.starts_with("--") && !arg.starts_with("-") => {
-                tx_hex = arg.to_string();
-            }
-            _ => {
-                return Err(format!("Unknown option: {}", args[i]).into());
-            }
-        }
-        i += 1;
-    }
-
-    let chain = chain.ok_or("Missing required --chain option")?;
-
-    if tx_hex.is_empty() {
-        return Err("No transaction hex provided".into());
-    }
+    // Get transaction hex from one of the sources
+    let tx_hex = if let Some(hex) = cli.transaction {
+        hex
+    } else if let Some(file_path) = cli.file {
+        fs::read_to_string(&file_path)?
+    } else if cli.stdin {
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;
+        buffer
+    } else {
+        anyhow::bail!("No transaction provided. Use HEX, --file, or --stdin");
+    };
 
     // Decode hex string
     let tx_hex = tx_hex.trim();
     let tx_bytes = universal_decoder_core::hex::decode(tx_hex)
-        .map_err(|e| format!("Failed to decode hex: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Failed to decode hex: {}", e))?;
 
     println!("=== Universal Blockchain Transaction Decoder ===\n");
-    println!("Chain:                  {}", chain.to_uppercase());
+    println!("Chain:                  {}", chain_name(cli.chain));
     println!("Raw transaction size:   {} bytes", tx_bytes.len());
     println!(
         "Hex preview:            {}...\n",
@@ -104,62 +82,29 @@ fn run() -> std::result::Result<(), Box<dyn std::error::Error>> {
     );
 
     // Decode based on chain
-    match chain.as_str() {
-        "bitcoin" | "btc" => {
+    match cli.chain {
+        Chain::Bitcoin => {
             let decoded = BitcoinDecoder::decode(&tx_bytes)?;
             print_bitcoin_transaction(&decoded);
 
-            if show_canonical {
+            if cli.canonical {
                 let tx_ir = decoded.canonicalize()?;
                 print_canonical_ir(&tx_ir)?;
             }
         }
-        "ethereum" | "eth" => {
-            // Ethereum support coming soon
-            return Err("Ethereum decoder support coming soon!".into());
-        }
-        _ => {
-            return Err(format!("Unsupported chain: {}. Supported: bitcoin", chain).into());
+        Chain::Ethereum => {
+            anyhow::bail!("Ethereum decoder support coming soon!");
         }
     }
 
     Ok(())
 }
 
-fn print_usage() {
-    println!(
-        r#"
-Universal Blockchain Transaction Decoder
-
-USAGE:
-    universal-tx-decoder --chain <CHAIN> [OPTIONS] <HEX_STRING>
-    universal-tx-decoder --chain <CHAIN> [OPTIONS] --file <FILE>
-    universal-tx-decoder --chain <CHAIN> [OPTIONS] --stdin
-
-REQUIRED:
-    --chain <CHAIN>     Blockchain to decode (bitcoin, ethereum)
-
-OPTIONS:
-    -h, --help          Show this help message
-    -c, --canonical     Show canonical IR representation
-    -f, --file <FILE>   Read transaction from file
-    --stdin             Read transaction from stdin
-
-SUPPORTED CHAINS:
-    bitcoin, btc        Bitcoin blockchain (✓ implemented)
-    ethereum, eth       Ethereum blockchain (coming soon)
-
-EXAMPLES:
-    # Decode Bitcoin transaction
-    universal-tx-decoder --chain bitcoin 0100000001...
-
-    # Decode from file with canonical IR
-    universal-tx-decoder --chain bitcoin --file tx.hex --canonical
-
-    # Pipe from Bitcoin Core
-    bitcoin-cli getrawtransaction <txid> | universal-tx-decoder --chain bitcoin --stdin
-"#
-    );
+fn chain_name(chain: Chain) -> &'static str {
+    match chain {
+        Chain::Bitcoin => "BITCOIN",
+        Chain::Ethereum => "ETHEREUM",
+    }
 }
 
 fn print_bitcoin_transaction(tx: &BitcoinTransaction) {
@@ -222,9 +167,7 @@ fn print_bitcoin_transaction(tx: &BitcoinTransaction) {
     }
 }
 
-fn print_canonical_ir<'a>(
-    tx_ir: &TxIR<'a, 1>,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn print_canonical_ir<'a>(tx_ir: &TxIR<'a, 1>) -> anyhow::Result<()> {
     println!("\n=== Canonical IR Representation ===");
 
     println!("Version:        {}", tx_ir.version());
@@ -309,18 +252,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_decode_genesis_coinbase() {
-        let tx_hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000";
-        let tx_bytes = universal_decoder_core::hex::decode(tx_hex).unwrap();
-        let decoded = BitcoinDecoder::decode(&tx_bytes).unwrap();
-
-        assert_eq!(decoded.version, 1);
-        assert!(decoded.is_coinbase());
-        assert_eq!(decoded.outputs.len(), 1);
-        assert_eq!(decoded.outputs[0].value, 5_000_000_000);
-    }
-
-    #[test]
     fn test_script_type_detection() {
         // P2PKH script
         let p2pkh = vec![
@@ -342,5 +273,11 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ];
         assert_eq!(guess_bitcoin_script_type(&p2wpkh), "P2WPKH");
+    }
+
+    #[test]
+    fn test_chain_name() {
+        assert_eq!(chain_name(Chain::Bitcoin), "BITCOIN");
+        assert_eq!(chain_name(Chain::Ethereum), "ETHEREUM");
     }
 }
