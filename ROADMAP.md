@@ -132,7 +132,7 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 **Deliverables**:
 - Comprehensive test suite
 - CI/CD automation
-- Coverage reporting (tarpaulin)
+- Coverage reporting (lcov via cargo-llvm-cov)
 - Benchmark baseline (criterion)
 - Test fixture repository
 

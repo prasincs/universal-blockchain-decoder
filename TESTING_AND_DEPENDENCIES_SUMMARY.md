@@ -263,7 +263,7 @@ jobs:
 
 ```bash
 # Install testing tools
-cargo install cargo-tarpaulin  # Coverage
+cargo install cargo-llvm-cov    # Coverage (lcov format)
 cargo install cargo-fuzz        # Fuzzing
 cargo install criterion         # Benchmarking
 
@@ -285,8 +285,11 @@ cargo test --all
 # Property tests with extended iterations
 PROPTEST_CASES=10000 cargo test
 
-# Coverage report
-cargo tarpaulin --all --out Html
+# Coverage report (generates lcov.info)
+cargo llvm-cov --all-features --workspace --lcov --output-path coverage/lcov.info
+
+# Coverage report (HTML format for local viewing)
+cargo llvm-cov --all-features --workspace --html
 
 # Benchmarks
 cargo bench

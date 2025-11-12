@@ -600,9 +600,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-tarpaulin
-      - run: cargo tarpaulin --all --out Xml
-      - uses: codecov/codecov-action@v3
+      - run: cargo install cargo-llvm-cov
+      - run: cargo llvm-cov --all-features --workspace --lcov --output-path coverage/lcov.info
+      - uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
 
   # Job 6: Formal verification (weekly)
   formal-verification:
@@ -921,8 +923,11 @@ cargo test --all
 # Property tests with more iterations
 PROPTEST_CASES=10000 cargo test --test property_tests
 
-# Run with coverage
-cargo tarpaulin --all --out Html
+# Run with coverage (generates lcov.info)
+cargo llvm-cov --all-features --workspace --lcov --output-path coverage/lcov.info
+
+# Run with coverage (HTML for local viewing)
+cargo llvm-cov --all-features --workspace --html
 
 # Benchmarks
 cargo bench
@@ -972,10 +977,12 @@ cargo test --test '*integration*'
 cargo bench -- --save-baseline pr-baseline
 
 # Coverage report
-cargo tarpaulin --all --out Xml --output-dir ./coverage
+cargo llvm-cov --all-features --workspace --lcov --output-path coverage/lcov.info
 
 # Check coverage threshold
-COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/cobertura.xml | head -1)
+LF=$(grep -oP '^LF:\K\d+' coverage/lcov.info | awk '{s+=$1} END {print s}')
+LH=$(grep -oP '^LH:\K\d+' coverage/lcov.info | awk '{s+=$1} END {print s}')
+COVERAGE=$(echo "scale=2; $LH / $LF" | bc)
 if (( $(echo "$COVERAGE < 0.90" | bc -l) )); then
     echo "Coverage below 90%: $COVERAGE"
     exit 1
