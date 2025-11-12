@@ -20,6 +20,7 @@ thiserror = { workspace = true }
 solana-transaction-status = "2.0"
 serde_json = { workspace = true }
 proptest = { workspace = true }
+base64 = "0.22"
 
 # Use solana-parser from tkhq for validation testing
 # Note: This will be added as a git dependency
