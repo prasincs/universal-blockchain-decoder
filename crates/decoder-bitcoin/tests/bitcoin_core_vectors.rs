@@ -36,11 +36,9 @@ fn parse_test_case(test: &Value) -> Option<String> {
 fn test_bitcoin_core_valid_transactions() {
     // Load Bitcoin Core's valid transaction test vectors
     let json_data = include_str!("fixtures/bitcoin-core/tx_valid.json");
-    let tests: Value = serde_json::from_str(json_data)
-        .expect("Failed to parse tx_valid.json");
+    let tests: Value = serde_json::from_str(json_data).expect("Failed to parse tx_valid.json");
 
-    let test_cases = tests.as_array()
-        .expect("Expected array of test cases");
+    let test_cases = tests.as_array().expect("Expected array of test cases");
 
     let mut passed = 0;
     let mut skipped = 0;
@@ -118,17 +116,15 @@ fn test_bitcoin_core_valid_transactions() {
 fn test_bitcoin_core_invalid_transactions() {
     // Load Bitcoin Core's invalid transaction test vectors
     let json_data = include_str!("fixtures/bitcoin-core/tx_invalid.json");
-    let tests: Value = serde_json::from_str(json_data)
-        .expect("Failed to parse tx_invalid.json");
+    let tests: Value = serde_json::from_str(json_data).expect("Failed to parse tx_invalid.json");
 
-    let test_cases = tests.as_array()
-        .expect("Expected array of test cases");
+    let test_cases = tests.as_array().expect("Expected array of test cases");
 
     let mut correctly_rejected = 0;
     let mut incorrectly_accepted = 0;
     let mut skipped = 0;
 
-    for (_i, test) in test_cases.iter().enumerate() {
+    for test in test_cases.iter() {
         let tx_hex = match parse_test_case(test) {
             Some(hex) => hex,
             None => {
@@ -166,7 +162,10 @@ fn test_bitcoin_core_invalid_transactions() {
     println!("\n=== Bitcoin Core tx_invalid.json Results ===");
     println!("Total tests:          {}", test_cases.len());
     println!("Correctly rejected:   {} ✓", correctly_rejected);
-    println!("Incorrectly accepted: {} (may be script-only invalid)", incorrectly_accepted);
+    println!(
+        "Incorrectly accepted: {} (may be script-only invalid)",
+        incorrectly_accepted
+    );
     println!("Skipped:              {} (comments)", skipped);
 
     // Success: We should reject at least some invalid transactions
