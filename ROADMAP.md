@@ -1,9 +1,15 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 2.1 Complete ✅)
+## Current Status: v0.1.0-alpha (Phase 2.1 Complete ✅ + PRs #2-3 Complete ✅)
 
-**Latest**: Pure Rust Bitcoin decoder + decoder-primitives crate
-**Branch**: `claude/phase-2-learn-mea-011CV2ySRxpHH3dokEGzFiEe`
+**Latest**: Bitcoin decoder with comprehensive testing, CLI, and documentation
+**Branch**: `claude/bitcoin-test-fix-011CV357YqjYv4EizExGuZvW`
+**Completed**:
+  - ✅ Pure Rust Bitcoin decoder (186 tests passing)
+  - ✅ Bitcoin Core test vectors (121/121 valid + 1 Taproot)
+  - ✅ CLI tool (universal-tx-decoder)
+  - ✅ Library documentation (LIBRARY_USAGE.md)
+  - ✅ SegWit TXID calculation fixed (BIP 141 compliant)
 **See**: `docs/PHASE_2_STATUS_AND_FOLLOWUP_PLAN.md` for detailed status and next PRs
 
 ## Phase 1: Core Architecture ✅ COMPLETE
@@ -184,12 +190,16 @@ Implementation Tasks:
 - ✅ Update `BitcoinTransaction::canonicalize()` to use `ChainRef`
 - ✅ **Extract decoder-primitives crate** (prevents 600 LOC duplication)
 
-Testing Tasks (56 tests passing):
+Testing Tasks (186 tests passing):
 - ✅ Add `bitcoin = "0.31"` to `[dev-dependencies]` (validation only)
 - ✅ Unit tests for all parsing functions (30 tests)
 - ✅ Unit tests for transaction types (7 tests)
 - ✅ Integration tests (9 tests)
-- ⏳ Bitcoin Core test vectors (500+ transactions) - PR #3
+- ✅ Bitcoin Core test vectors - 121 valid + 1 Taproot (PR #3 COMPLETE)
+  - ✅ tx_valid.json: 121/121 (100% pass rate)
+  - ✅ tx_invalid.json: Validates structural errors
+  - ✅ bip341_wallet_vectors.json: 1/1 Taproot transaction
+  - ✅ SegWit TXID calculation fixed (BIP 141 compliant)
 - ⏳ Property tests with proptest - PR #4
 - ⏳ Fuzz testing with cargo-fuzz - PR #5
 
@@ -200,7 +210,10 @@ Testing Tasks (56 tests passing):
   - Big-endian readers (Ethereum, Cosmos)
   - Bounds-checked byte operations
 - ✅ **BitcoinTransaction type** (507 LOC)
-- ✅ **56 passing tests** (47 unit + 9 integration)
+- ✅ **186 passing tests** (63 unit + 123 integration)
+- ✅ **Bitcoin Core test vectors** (121 valid + 1 Taproot)
+- ✅ **CLI tool** (universal-tx-decoder with clap)
+- ✅ **Library documentation** (LIBRARY_USAGE.md with examples)
 - ✅ **Zero production dependencies** on blockchain libraries
 - ✅ **All CI checks passing** (format, lint, minimal-versions)
 
@@ -213,12 +226,17 @@ Testing Tasks (56 tests passing):
 - ✅ TXID calculation (double SHA-256)
 
 **Follow-up PRs** (see `docs/PHASE_2_STATUS_AND_FOLLOWUP_PLAN.md`):
-- PR #2: Move bitcoin crate to dev-dependencies (HIGH priority, 1h)
-- PR #3: Bitcoin Core test vectors - 500+ transactions (HIGH priority, 8-12h)
+- ✅ PR #2: Move bitcoin crate to dev-dependencies (COMPLETE)
+- ✅ PR #3: Bitcoin Core test vectors + CLI + docs (COMPLETE)
+  - 121 Bitcoin Core valid transaction tests (100% pass rate)
+  - 1 BIP 341 Taproot transaction test
+  - CLI tool with clap (universal-tx-decoder)
+  - Comprehensive library documentation (LIBRARY_USAGE.md)
+  - SegWit TXID calculation fixed
 - PR #4: Property-based testing with proptest (MEDIUM priority, 6-8h)
 - PR #5: Fuzzing infrastructure with cargo-fuzz (MEDIUM priority, 4-6h)
 - PR #6: Performance benchmarking (LOW priority, 4-6h)
-- PR #7: Documentation and examples (MEDIUM priority, 4-6h)
+- PR #7: Additional documentation and advanced examples (LOW priority, 2-4h)
 
 ---
 
@@ -517,9 +535,11 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-01-11
-**Current Phase**: Phase 1.5 In Progress ⚡
-**Status**: Testing & dependency strategy documentation complete
+**Last Updated**: 2025-01-12
+**Current Phase**: Phase 2.1 Complete + PRs #2-3 Complete ✅
+**Status**: Bitcoin decoder fully tested with Core vectors, CLI, and documentation
 **Next Milestones**:
-  - v0.1.0-alpha+testing (Phase 1.5 complete) - 2 weeks
+  - PR #4: Property-based testing (proptest) - 1 week
+  - PR #5: Fuzzing infrastructure (cargo-fuzz) - 1 week
+  - Phase 2.2: Ethereum decoder (pure Rust) - 3-4 weeks
   - v0.1.0-beta (Phase 2 complete) - 2-3 months

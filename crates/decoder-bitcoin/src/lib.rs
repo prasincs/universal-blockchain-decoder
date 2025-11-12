@@ -34,9 +34,10 @@ use std::io::Cursor;
 
 pub mod parsing;
 pub mod types;
+mod varint;
 
 use parsing::*;
-use types::BitcoinTransaction;
+pub use types::BitcoinTransaction;
 
 /// Bitcoin chain identity
 #[derive(Debug, Clone, Copy)]
