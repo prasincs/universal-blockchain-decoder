@@ -1,4 +1,6 @@
 //! VarInt encoding utilities
+//!
+//! Bitcoin-style variable-length integer encoding used by Bitcoin and related chains.
 
 /// Encode a variable-length integer (VarInt) used in Bitcoin protocol
 ///

@@ -164,7 +164,7 @@ fn test_decode_and_canonicalize() {
 
 #[test]
 fn test_compact_u16_edge_cases() {
-    use decoder_solana::parsing::read_compact_u16;
+    use decoder_encodings::compact_u16::read_compact_u16;
     use std::io::Cursor;
 
     // Test boundary values

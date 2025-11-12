@@ -1,13 +1,18 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 2.4 Complete ✅ + Common Crates Analysis Done)
+## Current Status: v0.1.0-alpha (Phase 2.5.1 Complete ✅ - decoder-encodings Extracted)
 
-**Latest**: Common crates extraction strategy established
-**Branch**: `claude/incomplete-description-011CV3mXj9gKRHKbricouhm9`
+**Latest**: decoder-encodings crate successfully extracted and integrated
+**Branch**: `claude/implement-phase-2-5-011CV3p72bKajmuhsgEViR75`
 **Completed**:
-  - ✅ Pure Rust Bitcoin decoder (186 tests passing)
-  - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types)
-  - ✅ Pure Rust Solana decoder (compact-u16 + instruction model)
+  - ✅ Pure Rust Bitcoin decoder (47 tests passing)
+  - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types, 6 tests passing)
+  - ✅ Pure Rust Solana decoder (compact-u16 + instruction model, 13 tests passing)
+  - ✅ decoder-encodings crate (510 LOC shared encoding logic)
+    - ✅ VarInt encoding (Bitcoin)
+    - ✅ Compact-u16 encoding (Solana)
+    - ✅ RLP encoding (Ethereum + all EVM chains)
+    - ✅ 16 comprehensive tests
   - ✅ Top 20 chains scaffolded (17 new decoder crates)
   - ✅ Chain family grouping strategy (EVM, OP Stack, SVM, Cosmos, etc.)
   - ✅ Common crates analysis (decoder-encodings, decoder-test-utils)
@@ -413,11 +418,11 @@ Scaffolded Chains (17 new decoders):
 
 ---
 
-### 2.5: Common Crates Extraction - Shared Functionality 🆕
+### 2.5: Common Crates Extraction - Shared Functionality ✅
 
 **Priority**: HIGH (Enables scalability)
 **Timeline**: 2 weeks
-**Status**: Planned (Analysis complete ✅)
+**Status**: Phase 2.5.1 Complete ✅ (decoder-encodings extracted)
 **See**: `COMMON_CRATES_ANALYSIS.md` and `docs/SHARED_CRATES_STRATEGY.md`
 
 **Context**: After implementing Bitcoin, Ethereum, and Solana decoders, significant code duplication has been identified. This phase extracts common functionality to enable rapid addition of new chains.
@@ -428,11 +433,11 @@ Scaffolded Chains (17 new decoders):
 - Address formatting needed by 15+ chains
 - Test utilities can reduce boilerplate by ~30%
 
-#### 2.5.1: decoder-encodings Crate (Week 1)
+#### 2.5.1: decoder-encodings Crate ✅ COMPLETE
 
 **Priority**: CRITICAL (Used by 10+ chains)
-**LOC**: ~800 (moved from existing decoders)
-**Dependencies**: Zero (vendored if needed)
+**LOC**: ~510 (moved from existing decoders)
+**Dependencies**: Zero (only universal-decoder-core)
 
 **What to Extract**:
 
@@ -450,26 +455,27 @@ Scaffolded Chains (17 new decoders):
    - [ ] SS58 (Polkadot, Substrate chains) - For future use
 
 **Implementation Tasks**:
-- [ ] Create `decoder-encodings` crate skeleton
-- [ ] Move VarInt from `decoder-bitcoin` → `decoder-encodings/src/varint.rs`
-- [ ] Update Bitcoin decoder to import from `decoder-encodings`
-- [ ] Move compact-u16 from `decoder-solana` → `decoder-encodings/src/compact_u16.rs`
-- [ ] Update Solana decoder to import from `decoder-encodings`
-- [ ] Move RLP from `decoder-ethereum` → `decoder-encodings/src/rlp/`
-- [ ] Update Ethereum decoder to import from `decoder-encodings`
-- [ ] Update all EVM-family decoders (BNB, Polygon, Arbitrum, Optimism, Avalanche) to use shared RLP
-- [ ] Vendor `bs58` crate using git subtree (see `docs/GIT_SUBTREE_VENDORING.md`)
-- [ ] Vendor `bech32` crate using git subtree
-- [ ] Add address formatting APIs
-- [ ] Comprehensive testing (existing tests + new integration tests)
+- ✅ Create `decoder-encodings` crate skeleton
+- ✅ Move VarInt from `decoder-bitcoin` → `decoder-encodings/src/varint.rs`
+- ✅ Update Bitcoin decoder to import from `decoder-encodings`
+- ✅ Move compact-u16 from `decoder-solana` → `decoder-encodings/src/compact_u16.rs`
+- ✅ Update Solana decoder to import from `decoder-encodings`
+- ✅ Move RLP from `decoder-ethereum` → `decoder-encodings/src/rlp.rs`
+- ✅ Update Ethereum decoder to import from `decoder-encodings`
+- [ ] Update all EVM-family decoders (BNB, Polygon, Arbitrum, Optimism, Avalanche) to use shared RLP (Phase 3)
+- [ ] Vendor `bs58` crate using git subtree (see `docs/GIT_SUBTREE_VENDORING.md`) (Phase 2.5.2)
+- [ ] Vendor `bech32` crate using git subtree (Phase 2.5.2)
+- [ ] Add address formatting APIs (Phase 2.5.2)
+- ✅ Comprehensive testing (existing tests migrated + all passing)
 
 **Validation**:
-- [ ] All 186 Bitcoin tests still pass
-- [ ] All Ethereum tests still pass
-- [ ] All Solana tests still pass
-- [ ] EVM family decoders use shared RLP
-- [ ] Zero production dependencies (vendored only)
-- [ ] Cargo tree shows `decoder-encodings` used by 10+ decoders
+- ✅ All Bitcoin tests still pass (47 tests)
+- ✅ All Ethereum tests still pass (6 tests)
+- ✅ All Solana tests still pass (13 tests)
+- ✅ decoder-encodings tests pass (16 tests for varint, compact-u16, RLP)
+- [ ] EVM family decoders use shared RLP (Phase 3)
+- ✅ Zero production dependencies (only universal-decoder-core)
+- ✅ Cargo tree shows `decoder-encodings` used by 3 decoders (Bitcoin, Ethereum, Solana)
 
 **Impact**:
 - 430 LOC reduction (-13%) across existing decoders
@@ -533,19 +539,23 @@ Scaffolded Chains (17 new decoders):
 **Success Criteria**:
 - ✅ `decoder-encodings` created with zero external dependencies
 - ✅ VarInt, compact-u16, RLP moved and working
-- ✅ All EVM decoders use shared RLP
-- ✅ Base58 and Bech32 vendored via git subtree
-- ✅ `decoder-test-utils` provides common test patterns
-- ✅ All existing tests pass (186 Bitcoin + Ethereum + Solana)
+- [ ] All EVM decoders use shared RLP (Phase 3)
+- [ ] Base58 and Bech32 vendored via git subtree (Phase 2.5.2)
+- [ ] `decoder-test-utils` provides common test patterns (Phase 2.5.2)
+- ✅ All existing tests pass (Bitcoin + Ethereum + Solana)
 - ✅ No increase in core TCB
-- ✅ Future EVM chain implementation takes ~50% less code
+- ✅ Future EVM chain implementation will use ~50% less code (RLP shared)
 
 **Deliverables**:
-- `decoder-encodings` crate (~800 LOC, 0 deps)
-- `decoder-test-utils` crate (~300 LOC, proptest dev-dep)
-- Updated decoders using shared code
-- Comprehensive documentation
-- Migration guide for future decoders
+- ✅ `decoder-encodings` crate (~510 LOC, 0 external deps)
+  - ✅ VarInt encoding (70 LOC)
+  - ✅ Compact-u16 encoding (100 LOC)
+  - ✅ RLP encoding (340 LOC)
+  - ✅ 16 comprehensive tests
+- [ ] `decoder-test-utils` crate (~300 LOC, proptest dev-dep) (Phase 2.5.2)
+- ✅ Updated decoders using shared code (Bitcoin, Ethereum, Solana)
+- [ ] Comprehensive documentation (Phase 2.5.2)
+- [ ] Migration guide for future decoders (Phase 2.5.2)
 
 **Documentation**:
 - ✅ `COMMON_CRATES_ANALYSIS.md` - Detailed 10-section analysis

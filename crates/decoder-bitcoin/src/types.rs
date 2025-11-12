@@ -1,7 +1,7 @@
 //! Bitcoin-specific transaction types
 
 use crate::parsing::{TxInput, TxOutput, Witness};
-use crate::varint::encode_varint;
+use decoder_encodings::varint::encode_varint;
 use crate::BitcoinChain;
 use universal_decoder_core::prelude::*;
 

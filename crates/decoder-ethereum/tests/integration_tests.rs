@@ -293,7 +293,7 @@ mod alloy_validation {
     #[test]
     fn test_validate_rlp_parsing() {
         // Test various RLP encodings that both parsers should agree on
-        use decoder_ethereum::rlp::RlpItem;
+        use decoder_encodings::rlp::RlpItem;
 
         // Test simple string
         let data = hex!("83646f67"); // "dog"
