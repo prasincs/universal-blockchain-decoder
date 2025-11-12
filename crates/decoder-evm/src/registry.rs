@@ -273,4 +273,55 @@ mod tests {
             assert!(ids[i] > ids[i - 1], "Chain IDs should be sorted");
         }
     }
+
+    // ========================================
+    // Borsh Binary Validation Tests
+    // ========================================
+
+    #[test]
+    fn test_borsh_chain_count() {
+        // Verify we have the expected number of chains (2397 as of generation)
+        let registry = ChainRegistry::new();
+        let count = registry.count();
+
+        assert_eq!(
+            count, 2397,
+            "Expected exactly 2397 chains from Borsh binary, got {}. \
+             If this fails, regenerate the binary with: cargo run -p chain-registry-generator",
+            count
+        );
+    }
+
+    #[test]
+    fn test_borsh_spot_check_major_chains() {
+        // Spot check a few major chains to verify data integrity
+        let registry = ChainRegistry::new();
+
+        // Ethereum Mainnet
+        let eth = registry.get_chain(1).expect("Ethereum not found");
+        assert_eq!(eth.chain_id, 1);
+        assert_eq!(eth.short_name, "eth");
+        assert!(!eth.is_testnet);
+        assert!(!eth.has_custom_tx_types);
+
+        // BNB Chain
+        let bnb = registry.get_chain(56).expect("BNB Chain not found");
+        assert_eq!(bnb.chain_id, 56);
+        assert_eq!(bnb.short_name, "bnb");
+
+        // Polygon
+        let polygon = registry.get_chain(137).expect("Polygon not found");
+        assert_eq!(polygon.chain_id, 137);
+        assert_eq!(polygon.short_name, "pol");
+
+        // Optimism (has custom tx types)
+        let optimism = registry.get_chain(10).expect("Optimism not found");
+        assert_eq!(optimism.chain_id, 10);
+        assert!(optimism.has_custom_tx_types, "Optimism should have custom tx types");
+
+        // Arbitrum (has custom tx types)
+        let arbitrum = registry.get_chain(42161).expect("Arbitrum not found");
+        assert_eq!(arbitrum.chain_id, 42161);
+        assert!(arbitrum.has_custom_tx_types, "Arbitrum should have custom tx types");
+    }
 }
