@@ -194,8 +194,8 @@ mod tests {
         let mainnets = registry.mainnet_chains();
         let testnets = registry.testnet_chains();
 
-        assert!(mainnets.len() > 0);
-        assert!(testnets.len() > 0);
+        assert!(!mainnets.is_empty());
+        assert!(!testnets.is_empty());
         assert_eq!(mainnets.len() + testnets.len(), registry.count());
 
         // Check that all mainnets are not testnets
@@ -233,7 +233,7 @@ mod tests {
         let registry = ChainRegistry::new();
 
         let eth_results = registry.search("ethereum");
-        assert!(eth_results.len() > 0);
+        assert!(!eth_results.is_empty());
         assert!(eth_results.iter().any(|c| c.chain_id == 1));
 
         let polygon_results = registry.search("polygon");

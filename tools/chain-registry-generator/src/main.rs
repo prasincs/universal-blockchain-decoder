@@ -131,7 +131,7 @@ fn main() -> Result<()> {
     // Get or detect upstream commit
     let commit = args
         .commit
-        .or_else(|| detect_upstream_commit())
+        .or_else(detect_upstream_commit)
         .unwrap_or_else(|| "unknown".to_string());
 
     // Write metadata

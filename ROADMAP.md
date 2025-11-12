@@ -1,9 +1,9 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 2.5.1 Complete ✅ - decoder-encodings Extracted)
+## Current Status: v0.1.0-alpha (Phase 1.5.1 Complete ✅ - Chain Registries Vendored)
 
-**Latest**: decoder-encodings crate successfully extracted and integrated
-**Branch**: `claude/implement-phase-2-5-011CV3p72bKajmuhsgEViR75`
+**Latest**: Chain registries vendored via git subtree (cosmos + superchain)
+**Branch**: `claude/review-roadmap-next-task-011CV3siyh3rLRUTTL97jV8d`
 **Completed**:
   - ✅ Pure Rust Bitcoin decoder (47 tests passing)
   - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types, 6 tests passing)
@@ -50,12 +50,12 @@
 4. **Zero-cost abstractions**: Static dispatch
 5. **Formally verifiable**: Verus-ready
 
-## Phase 1.5: Testing & Dependency Infrastructure ✅ COMPLETE
+## Phase 1.5: Testing & Dependency Infrastructure ⚠️ PARTIALLY COMPLETE
 
 **Target**: v0.1.0-alpha+testing
 **Timeline**: 2 weeks
 **Focus**: Establish comprehensive testing strategy and minimal TCB
-**Status**: Complete - decoder-primitives crate extracted, dependencies minimized
+**Status**: Phase 1.5.1 complete, Phase 1.5.1b (Borsh transformation) is next priority
 **See**: `docs/ARCHITECTURE_REFACTORING.md` for extraction rationale
 
 ### 1.5.1: Dependency Minimization + Airgapped Operation (Week 1)
@@ -81,19 +81,24 @@
     - Added decode_to_slice functionality
     - 5 performance validation tests
     - All 186 tests passing
-- [ ] **Vendor chain registries using git subtree** (~4 hours)
-  - [ ] EVM chains: ethereum-lists/chains → `decoder-evm/vendored/chainlist`
-  - [ ] Cosmos chains: cosmos/chain-registry → `decoder-cosmos-sdk/vendored/chain-registry`
-  - [ ] OP Stack: ethereum-optimism/superchain-registry → `decoder-op-stack/vendored/superchain-registry`
-  - [ ] Document vendoring process in `docs/GIT_SUBTREE_VENDORING.md`
-  - [ ] Create build.rs scripts to embed chain data at compile time
+- ✅ **Vendor chain registries using git subtree** (commit 66915f965)
+  - ✅ EVM chains: ethereum-lists/chains → Already complete (551KB Borsh)
+  - ✅ Cosmos chains: cosmos/chain-registry → `decoder-cosmos/vendored/chain-registry` (7.4MB, 406 chains)
+  - ✅ OP Stack: ethereum-optimism/superchain-registry → `decoder-optimism/vendored/superchain-registry` (7.1MB, 35+ chains)
+  - ✅ Document vendoring in VENDORED.md for each registry
+  - ⚠️ **Next Priority**: Borsh transformation (14.5MB → <2MB target)
+    - [ ] Create unified `registry-generator` tool with subcommands
+    - [ ] Transform cosmos: 7.4MB JSON → ~1MB Borsh
+    - [ ] Transform superchain: 7.1MB JSON → ~200KB Borsh
+    - [ ] Remove raw JSON files after transformation
 - ✅ **Move `serde_json` to dev-dependencies** (display/test only)
   - ✅ Audited: No public JSON APIs in core
   - ✅ JSON only used for debugging/tests/examples
   - ✅ All production code uses Borsh for canonical serialization
-- [ ] Benchmark `smallvec` vs `Vec`
-  - [ ] Create criterion benchmarks
-  - [ ] Decide: keep, remove, or vendor based on <10% threshold
+- ✅ **Benchmark `smallvec` vs `Vec`** (Already complete)
+  - ✅ Comprehensive benchmarks in `crates/universal-decoder-core/benches/vec_vs_smallvec.rs`
+  - ✅ Decision: **KEEP** smallvec for 15-20% allocation speedup and 26% faster iteration
+  - ✅ See `crates/universal-decoder-core/SMALLVEC_DECISION.md` for detailed analysis
 - ✅ **Move blockchain libs to dev-dependencies**
   - ✅ `bitcoin` → dev-dependencies (test validation only)
   - ✅ `alloy` → dev-dependencies (test validation only)
@@ -124,6 +129,59 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 - ✅ docs/VENDORING_GUIDE.md
 - ✅ docs/GIT_SUBTREE_VENDORING.md
 - ✅ docs/USING_VENDORED_DEPS.md
+- ✅ docs/BORSH_TRANSFORMATION_PLAN.md
+
+### 1.5.1b: Borsh Transformation (Registry Size Optimization) ⭐ NEXT
+
+**Priority**: HIGH (Size optimization for git repository)
+**Timeline**: ~6 hours focused work
+**Status**: Planned (implementation guide complete)
+
+**Goal**: Transform vendored JSON registries to compact Borsh binary format
+- **Current**: 14.5MB raw JSON (cosmos 7.4MB + superchain 7.1MB)
+- **Target**: 1.3MB Borsh binaries (cosmos ~1MB + superchain ~200KB)
+- **Reduction**: 91% size reduction (13.2MB saved)
+
+**Implementation Steps**:
+
+1. **Refactor registry-generator tool** (~2h)
+   - Add subcommand structure (evm | cosmos | superchain)
+   - Reuse existing EVM tool patterns
+   - See: `docs/BORSH_TRANSFORMATION_PLAN.md` for details
+
+2. **Cosmos registry transformation** (~2h)
+   - Create `CosmosChainInfo` Borsh types
+   - Parse 406 chain.json files from vendored/chain-registry/
+   - Generate `data/cosmos-chains.borsh` (~1MB)
+   - Remove JSON files, keep LICENSE + VENDORED.md
+
+3. **Superchain registry transformation** (~1h)
+   - Create `SuperchainInfo` Borsh types
+   - Parse chainList.json (35+ OP Stack chains)
+   - Generate `data/op-chains.borsh` (~200KB)
+   - Remove JSON files, keep LICENSE + VENDORED.md
+
+4. **Integration & testing** (~1h)
+   - Update decoder-cosmos to load Borsh at compile-time
+   - Update decoder-optimism to load Borsh at compile-time
+   - Verify all tests pass
+   - Measure size reduction
+
+**Deliverables**:
+- [ ] Unified `registry-generator` tool with subcommands
+- [ ] `crates/decoder-cosmos/data/cosmos-chains.borsh` (~1MB)
+- [ ] `crates/decoder-optimism/data/op-chains.borsh` (~200KB)
+- [ ] Vendored directories cleaned up (14.5MB → ~100KB docs only)
+- [ ] All decoder tests passing
+- [ ] Total repo size reduced by ~13MB
+
+**Benefits**:
+- ✅ Faster git clone/pull operations
+- ✅ Consistent format across all registries (EVM already uses Borsh)
+- ✅ Faster decoder load time (Borsh vs JSON parsing)
+- ✅ Compile-time embedding (zero runtime I/O)
+
+**Reference**: See `docs/BORSH_TRANSFORMATION_PLAN.md` for detailed 8-phase implementation guide
 
 ### 1.5.2: Testing Infrastructure (Week 2)
 
@@ -181,15 +239,20 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 
 ### Success Criteria
 
+**Phase 1.5.1 (Dependency Minimization + Airgapped Operation)**:
 - ✅ ≤ 5 production dependencies in core
 - ✅ hex vendored via git subtree (verifiable)
 - ✅ Blockchain libs in dev-dependencies only
-- ✅ Unit test coverage: 100% core, 90% decoders
-- ✅ 50+ property tests
-- ✅ 100+ real transaction fixtures
-- ✅ Fuzzing infrastructure operational
-- ✅ CI/CD pipeline passing
-- ✅ Verus toolchain installed and annotated
+- ✅ Chain registries vendored via git subtree (cosmos + superchain)
+- ⚠️ Borsh transformation pending (14.5MB → <2MB target)
+
+**Phase 1.5.2 (Testing Infrastructure)** - Not Started:
+- [ ] Unit test coverage: 100% core, 90% decoders
+- [ ] 50+ property tests
+- [ ] 100+ real transaction fixtures
+- [ ] Fuzzing infrastructure operational
+- [ ] CI/CD pipeline passing
+- [ ] Verus toolchain installed and annotated
 
 **Reference Documentation**:
 - `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Executive summary
@@ -1033,20 +1096,27 @@ See `CONTRIBUTING.md` for:
 ---
 
 **Last Updated**: 2025-11-12
-**Current Phase**: Phase 2.4 Complete ✅ (Common Crates Analysis)
-**Status**: Shared functionality extraction strategy established
-**Branch**: `claude/incomplete-description-011CV3mXj9gKRHKbricouhm9`
+**Current Phase**: Phase 1.5.1 Complete ✅ (Chain Registries Vendored)
+**Status**: Airgapped operation requirements met, Borsh transformation is next priority
+**Branch**: `claude/review-roadmap-next-task-011CV3siyh3rLRUTTL97jV8d`
 
 **Completed Milestones**:
   - ✅ Phase 2.1: Bitcoin decoder (pure Rust, 186 tests)
   - ✅ Phase 2.2: Ethereum decoder (pure Rust, RLP + EIP-2718)
   - ✅ Phase 2.3: Solana decoder (pure Rust, compact-u16 + instruction model)
   - ✅ Phase 2.4: Top 20 chains scaffolding (17 new decoders, chain family strategy)
-  - ✅ Phase 2.x: Common crates analysis (510 LOC duplication identified, extraction strategy)
+  - ✅ Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils)
+  - ✅ Phase 1.5.1: Chain registry vendoring (cosmos + superchain, 14.5MB)
 
 **Next Milestones**:
-  - **Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils) - 2 weeks** ⭐ NEXT
-  - Phase 1.5.1: Vendor chain registries (ethereum-lists/chains, cosmos/chain-registry, etc.) - 1 week
+  - **Phase 1.5.1b: Borsh Transformation (14.5MB → <2MB) - 1 week** ⭐ IMMEDIATE NEXT PRIORITY
+    - Status: Planned (see `docs/BORSH_TRANSFORMATION_PLAN.md`)
+    - Create unified `registry-generator` tool with subcommands
+    - Transform cosmos chains: 7.4MB JSON → ~1MB Borsh
+    - Transform superchain: 7.1MB JSON → ~200KB Borsh
+    - Remove raw JSON files, keep only Borsh binaries + LICENSE
+    - Expected: 91% size reduction (14.5MB → 1.3MB)
+  - Phase 1.5.2: Testing Infrastructure (unit + property + integration + fuzz + CI/CD) - 2 weeks
   - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
