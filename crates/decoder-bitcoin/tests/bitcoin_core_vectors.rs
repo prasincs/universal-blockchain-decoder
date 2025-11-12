@@ -261,3 +261,67 @@ fn test_specific_segwit_transaction() {
     assert_eq!(decoded.outputs.len(), 1);
     assert!(!decoded.witnesses.is_empty(), "Should have witness data");
 }
+
+#[test]
+fn test_bip341_taproot_transactions() {
+    // Load BIP 341 Taproot test vectors
+    let json_data = include_str!("fixtures/bitcoin-core/bip341_wallet_vectors.json");
+    let tests: Value = serde_json::from_str(json_data).expect("Failed to parse bip341_wallet_vectors.json");
+
+    // Test keyPathSpending transactions (Taproot key path spends)
+    let key_path_spending = tests["keyPathSpending"].as_array().expect("Expected keyPathSpending array");
+
+    let mut passed = 0;
+    let mut failed = 0;
+
+    for (i, test_case) in key_path_spending.iter().enumerate() {
+        let raw_unsigned_tx = test_case["given"]["rawUnsignedTx"]
+            .as_str()
+            .expect("Expected rawUnsignedTx");
+
+        // Decode hex
+        let tx_bytes = match universal_decoder_core::hex::decode(raw_unsigned_tx) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                eprintln!("Taproot test {}: Failed to decode hex: {}", i, e);
+                failed += 1;
+                continue;
+            }
+        };
+
+        // Try to decode with our decoder
+        match BitcoinDecoder::decode(&tx_bytes) {
+            Ok(decoded) => {
+                // Basic validation - should have inputs and outputs
+                assert!(!decoded.inputs.is_empty(), "Taproot tx should have inputs");
+                assert!(!decoded.outputs.is_empty(), "Taproot tx should have outputs");
+
+                // Validate against bitcoin crate
+                match validate_against_bitcoin_crate(&tx_bytes, &decoded) {
+                    Ok(()) => passed += 1,
+                    Err(e) => {
+                        eprintln!("Taproot test {}: Validation mismatch: {}", i, e);
+                        failed += 1;
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Taproot test {}: Decode failed: {:?}", i, e);
+                failed += 1;
+            }
+        }
+    }
+
+    println!("\n=== BIP 341 Taproot Vectors Results ===");
+    println!("Total tests:  {}", key_path_spending.len());
+    println!("Passed:       {} ✓", passed);
+    println!("Failed:       {} ✗", failed);
+
+    if failed > 0 {
+        let pass_rate = (passed as f64 / (passed + failed) as f64) * 100.0;
+        println!("Pass rate:    {:.1}%", pass_rate);
+    }
+
+    // We expect Taproot transactions to decode successfully
+    assert_eq!(failed, 0, "Some Taproot transactions failed to decode");
+}
