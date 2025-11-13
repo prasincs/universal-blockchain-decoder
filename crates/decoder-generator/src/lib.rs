@@ -35,7 +35,6 @@
 //! ```
 
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -87,8 +86,6 @@ pub fn validate_spec(spec_path: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_generate_simple_decoder() {
         // This will test the full generation pipeline

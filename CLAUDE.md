@@ -443,7 +443,7 @@ pub struct TxIR<'a, const V: u8> { /* ... */ }
 | Core LOC | ~2500 | < 3000 | ~2700 | ✅ Good |
 | Core dependencies | 8 | ≤ 5 | 5 (hex vendored) | 🚧 In Progress |
 | Decoder dependencies | Yes (bitcoin, ethers) | 0 (pure Rust) | 0 (dev-deps only) | 📋 Planned |
-| Formal verification | No | Verus annotations | Basic annotations | 📋 Week 2 |
+| Formal verification | Basic annotations | Verus annotations | Basic annotations | ✅ Done |
 | Canonical serialization | Borsh ✅ | Borsh ✅ | Borsh ✅ | ✅ Done |
 | Test coverage | 0% | 100% core, 90% decoders | 50%+ | 🚧 Week 2 |
 | Property tests | 0 | 50+ | 20+ | 📋 Week 2 |
@@ -468,7 +468,7 @@ pub struct TxIR<'a, const V: u8> { /* ... */ }
 - PR #7: Create test fixture repository + integration tests
 - PR #8: Set up CI/CD pipeline (GitHub Actions)
 - PR #9: Add fuzzing infrastructure (cargo-fuzz)
-- PR #10: Install Verus + first annotations
+- ✅ PR #10: Install Verus + first annotations (COMPLETED - PR #36)
 
 **Stacking Strategy**:
 ```bash
@@ -595,6 +595,458 @@ When adding new features or making significant changes:
 2. Update `ROADMAP.md` to mark tasks complete
 3. Add/update code comments for public APIs
 4. Update examples if behavior changes
+
+---
+
+## Claude CLI Tools & Workflows 🤖
+
+**IMPORTANT**: When working with Claude CLI on this project, use these tools efficiently to maximize productivity and maintain code quality.
+
+### Core Tools Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  File Operations    │  Search & Discovery │  Execution      │
+├─────────────────────┼─────────────────────┼─────────────────┤
+│  Read              │  Glob               │  Bash           │
+│  Edit              │  Grep               │  Task (Agents)  │
+│  Write             │  Task (Explore)     │  TodoWrite      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1. Task Tool: Exploring the Codebase 🔍
+
+**When to Use**: Open-ended codebase exploration, understanding architecture, finding patterns
+
+**DON'T** do this:
+```bash
+# ❌ Manually searching for patterns
+grep -r "ChainDecoder" crates/
+find . -name "*decoder*.rs"
+```
+
+**DO** this instead:
+```
+# ✅ Use Task tool with Explore agent
+Task(
+  subagent_type="Explore",
+  prompt="Find all implementations of the ChainDecoder trait across the codebase.
+  Show me where they are defined and what chains they support.",
+  description="Explore ChainDecoder implementations"
+)
+```
+
+**Examples**:
+
+```bash
+# Find all error handling patterns
+Task(Explore): "How is error handling implemented? Find all custom error types
+and show how they're used across decoders."
+
+# Understand testing structure
+Task(Explore): "What is the current testing structure? Find all test files
+and describe the testing patterns used."
+
+# Find security-critical code
+Task(Explore): "Find all uses of 'unsafe' code, crypto operations, and
+serialization logic that are security-critical."
+```
+
+**Thoroughness Levels**:
+- `quick`: Fast scan, top-level overview
+- `medium`: Balanced exploration (recommended)
+- `very thorough`: Deep dive, comprehensive analysis
+
+### 2. TodoWrite Tool: Task Management 📋
+
+**MANDATORY**: Use for all non-trivial tasks (3+ steps)
+
+**When to Use**:
+- Multi-step implementations
+- Complex refactoring
+- Following Phase 1.5 PRs
+- User provides multiple tasks
+
+**Task States**:
+```rust
+pending      // Not started
+in_progress  // Currently working (EXACTLY ONE at a time)
+completed    // Finished successfully
+```
+
+**Example Workflow**:
+
+```rust
+// STEP 1: Create todo list at start
+TodoWrite([
+    { content: "Vendor hex crate using git subtree",
+      activeForm: "Vendoring hex crate",
+      status: "pending" },
+    { content: "Update imports in decoder crates",
+      activeForm: "Updating imports",
+      status: "pending" },
+    { content: "Run validation tests",
+      activeForm: "Running validation tests",
+      status: "pending" },
+    { content: "Commit and push changes",
+      activeForm: "Committing changes",
+      status: "pending" }
+])
+
+// STEP 2: Mark first task in_progress BEFORE starting
+TodoWrite([
+    { content: "Vendor hex crate using git subtree",
+      activeForm: "Vendoring hex crate",
+      status: "in_progress" },  // ← Changed
+    { content: "Update imports in decoder crates",
+      activeForm: "Updating imports",
+      status: "pending" },
+    // ... rest pending
+])
+
+// STEP 3: Complete IMMEDIATELY after finishing
+TodoWrite([
+    { content: "Vendor hex crate using git subtree",
+      activeForm: "Vendoring hex crate",
+      status: "completed" },  // ← Changed
+    { content: "Update imports in decoder crates",
+      activeForm: "Updating imports",
+      status: "in_progress" },  // ← Next task
+    // ... rest
+])
+```
+
+**Rules**:
+- ✅ Create todos for complex tasks (3+ steps)
+- ✅ Update status in real-time
+- ✅ EXACTLY ONE task `in_progress` at a time
+- ✅ Complete tasks IMMEDIATELY (don't batch)
+- ❌ Don't use for trivial single-step tasks
+- ❌ Don't leave tasks as `in_progress` if blocked/failed
+
+### 3. File Operations: Read, Edit, Write 📄
+
+**Read Tool**: View file contents
+
+```rust
+// ✅ GOOD: Read files in parallel when independent
+Read("crates/universal-decoder-core/Cargo.toml")
+Read("crates/decoder-bitcoin/Cargo.toml")
+Read("crates/decoder-ethereum/Cargo.toml")
+// Send all three Read calls in a SINGLE message
+
+// ❌ BAD: Sequential reads when parallel is possible
+Read("file1.rs")  // wait for result
+Read("file2.rs")  // then read this
+Read("file3.rs")  // then read this
+```
+
+**Edit Tool**: Modify existing files
+
+```rust
+// ✅ GOOD: Preserve exact indentation from Read output
+// When you see:
+//   123→    fn example() {
+//   124→        let x = 5;
+//   125→    }
+//
+// The actual file content (after line number prefix) is:
+//     "    fn example() {\n        let x = 5;\n    }"
+//
+// Use EXACTLY that indentation in old_string and new_string
+
+Edit(
+    file_path="src/lib.rs",
+    old_string="    fn example() {\n        let x = 5;\n    }",
+    new_string="    fn example() {\n        let x = 10;\n    }"
+)
+
+// ❌ BAD: Including line numbers or wrong indentation
+Edit(
+    old_string="123→    fn example() {",  // Wrong: includes line prefix
+    ...
+)
+```
+
+**Write Tool**: Create new files (use sparingly!)
+
+```rust
+// ⚠️ PREFER editing existing files over creating new ones
+// Only use Write when:
+// 1. User explicitly requests a new file
+// 2. No existing file fits the purpose
+
+// ❌ BAD: Creating new file when existing one could be edited
+Write("docs/NEW_ARCHITECTURE.md", content)
+
+// ✅ GOOD: Edit existing documentation
+Edit("docs/ARCHITECTURE.md", old, new)
+```
+
+### 4. Search Tools: Grep & Glob 🔎
+
+**Glob**: Find files by pattern
+
+```rust
+// Find all Rust files in decoder crates
+Glob(pattern="crates/decoder-*/src/**/*.rs")
+
+// Find all test files
+Glob(pattern="crates/**/tests/**/*.rs")
+
+// Find all Cargo.toml files
+Glob(pattern="**/Cargo.toml")
+```
+
+**Grep**: Search file contents
+
+```rust
+// ✅ GOOD: Parallel searches for independent patterns
+Grep(pattern="use hex::", output_mode="files_with_matches")
+Grep(pattern="use serde_json::", output_mode="files_with_matches")
+Grep(pattern="ChainDecoder", output_mode="content", -C=3)
+
+// Find all TODO comments
+Grep(pattern="TODO|FIXME", output_mode="content")
+
+// Find unsafe code
+Grep(pattern="unsafe ", output_mode="content", -B=2, -A=5)
+
+// Case-insensitive search
+Grep(pattern="decoder", -i=true, output_mode="files_with_matches")
+```
+
+**Output Modes**:
+- `files_with_matches`: Show only file paths (default, fast)
+- `content`: Show matching lines with context
+- `count`: Show match counts per file
+
+**Context Options** (only with `output_mode="content"`):
+- `-A=N`: Show N lines after match
+- `-B=N`: Show N lines before match
+- `-C=N`: Show N lines before and after match
+- `-n=true`: Show line numbers (default)
+
+### 5. Bash Tool: Running Commands 🔧
+
+**Use For**:
+- Git operations
+- Cargo commands (build, test, clippy, fmt)
+- System operations
+- Docker, npm, etc.
+
+**DON'T Use For**:
+- ❌ File reading (`cat` → use `Read`)
+- ❌ File searching (`find`, `grep` → use `Glob`, `Grep`)
+- ❌ File editing (`sed`, `awk` → use `Edit`)
+- ❌ File writing (`echo >`, `cat <<EOF` → use `Write`)
+- ❌ Communication (`echo "message"` → use text output)
+
+**Parallel vs Sequential**:
+
+```bash
+# ✅ GOOD: Independent commands in parallel (single message, multiple Bash calls)
+Bash("git status")
+Bash("git diff")
+Bash("cargo tree -p universal-decoder-core")
+
+# ✅ GOOD: Dependent commands sequentially (single Bash call with &&)
+Bash("cargo fmt --all && cargo clippy --all --all-targets -- -D warnings && cargo test --all")
+
+# ❌ BAD: Sequential commands that could be parallel
+Bash("git status")  // wait
+Bash("git diff")    // then this
+```
+
+**Common Patterns**:
+
+```bash
+# Pre-commit checks (sequential, must pass)
+Bash("cargo fmt --all && cargo clippy --all --all-targets --all-features -- -D warnings")
+
+# Parallel status checks
+Bash("git status")
+Bash("cargo tree -p universal-decoder-core -e normal --depth 1")
+Bash("cargo --version")
+
+# File path quoting (CRITICAL for paths with spaces)
+Bash('cd "/path/with spaces" && ls')  # ✅ Correct
+Bash('cd /path/with spaces && ls')    # ❌ Will fail
+```
+
+### 6. Parallel Tool Execution ⚡
+
+**Rule**: When tool calls are independent, make them in parallel (single message)
+
+**Example: Starting Phase 1.5 PR #1**
+
+```rust
+// ✅ OPTIMAL: All independent operations in ONE message
+Read("crates/universal-decoder-core/Cargo.toml")
+Read("crates/decoder-bitcoin/Cargo.toml")
+Read("crates/decoder-ethereum/Cargo.toml")
+Bash("git status")
+Bash("git log --oneline -5")
+Grep(pattern="use hex::", output_mode="files_with_matches")
+
+// ❌ SLOW: Sequential when parallel is possible
+// Message 1: Read("Cargo.toml")
+// Wait for result...
+// Message 2: Bash("git status")
+// Wait for result...
+// Message 3: Grep(...)
+```
+
+**When to Use Sequential**:
+```rust
+// ✅ Correct: Second command depends on first
+Bash("mkdir -p new_dir && cp file.txt new_dir/")
+
+// ✅ Correct: Need to see results before next action
+Read("config.toml")
+// [analyze results, decide what to do next]
+Edit("config.toml", old, new)
+```
+
+### 7. Project-Specific Workflows 🔄
+
+#### Workflow: Pre-Commit Checks
+
+```bash
+# ALWAYS run before git commit (in ONE sequential Bash call)
+Bash("cargo fmt --all && cargo clippy --all --all-targets --all-features -- -D warnings")
+
+# If warnings found, fix them and repeat
+# Optional but recommended:
+Bash("cargo test --all")
+```
+
+#### Workflow: Dependency Analysis
+
+```bash
+# Parallel: Check current state
+Bash("cargo tree -p universal-decoder-core -e normal --depth 1")
+Bash("cargo tree -p decoder-bitcoin -e normal --depth 1")
+Read("crates/universal-decoder-core/Cargo.toml")
+Grep(pattern='hex = ', path="crates", output_mode="content")
+```
+
+#### Workflow: Vendoring a Dependency (e.g., hex)
+
+```rust
+// STEP 1: Create todo list
+TodoWrite([...])
+
+// STEP 2: Add git subtree (sequential, must succeed)
+Bash("git subtree add --prefix crates/universal-decoder-core/src/vendored/hex https://github.com/KokaKiwi/rust-hex.git v0.4.3 --squash")
+
+// STEP 3: Update todos
+TodoWrite([...mark first completed, next in_progress...])
+
+// STEP 4: Parallel file operations
+Write("crates/universal-decoder-core/src/vendored/mod.rs", content)
+Read("crates/universal-decoder-core/src/lib.rs")
+Read("crates/universal-decoder-core/Cargo.toml")
+
+// STEP 5: Edit files based on reads
+Edit(...)
+Edit(...)
+
+// STEP 6: Validate
+Bash("cargo test --all")
+Bash("cargo tree -p universal-decoder-core -e normal")
+```
+
+#### Workflow: Exploring Codebase for Architecture Understanding
+
+```rust
+// Use Task tool with Explore agent
+Task(
+    subagent_type="Explore",
+    prompt="I need to understand the trait-based architecture. Find:
+    1. All trait definitions in universal-decoder-core
+    2. All implementations of these traits in decoder crates
+    3. Examples of how decoders use these traits
+    Provide a summary of the architecture pattern.",
+    description="Explore trait architecture",
+    model="haiku"  // Optional: use faster model for quick exploration
+)
+```
+
+### 8. Common Mistakes to Avoid ❌
+
+```rust
+// ❌ Using Bash for file reading
+Bash("cat src/lib.rs")
+// ✅ Use Read instead
+Read("src/lib.rs")
+
+// ❌ Using Bash for searching
+Bash("grep -r 'pattern' src/")
+// ✅ Use Grep instead
+Grep(pattern="pattern", path="src", output_mode="content")
+
+// ❌ Using echo for communication
+Bash("echo 'Starting to vendor hex crate...'")
+// ✅ Just output text directly
+"I'm going to vendor the hex crate now..."
+
+// ❌ Sequential reads when parallel is better
+Read("file1.rs")  // Message 1
+// [wait]
+Read("file2.rs")  // Message 2
+// ✅ Parallel reads in one message
+Read("file1.rs")
+Read("file2.rs")
+
+// ❌ Not using TodoWrite for complex tasks
+[Starts multi-step task without todo list]
+// ✅ Create todo list first
+TodoWrite([...all steps...])
+
+// ❌ Forgetting pre-commit checks
+Edit(...)
+Bash("git commit -m 'message'")
+// ✅ Always fmt + clippy first
+Edit(...)
+Bash("cargo fmt --all && cargo clippy --all --all-targets --all-features -- -D warnings")
+Bash("git add . && git commit -m 'message'")
+```
+
+### 9. Performance Tips ⚡
+
+1. **Batch Independent Operations**: Send multiple independent tool calls in one message
+2. **Use Explore Agent**: For open-ended searches, don't grep/glob manually
+3. **Use Haiku Model**: For quick tasks, specify `model="haiku"` in Task tool
+4. **Glob Before Grep**: Find files first with Glob, then Grep specific files
+5. **Limit Output**: Use `head_limit` parameter in Grep for large codebases
+6. **Read Once**: Don't re-read files unnecessarily; store info from first read
+
+### 10. Quick Reference Card 📇
+
+```
+SEARCH & DISCOVERY
+  Glob(pattern="**/*.rs")           → Find files by pattern
+  Grep(pattern="...", output_mode)  → Search file contents
+  Task(Explore, prompt="...")       → Open-ended exploration
+
+FILE OPERATIONS
+  Read("path/to/file")              → View file contents
+  Edit(file_path, old, new)         → Modify existing file
+  Write(file_path, content)         → Create new file (avoid!)
+
+EXECUTION
+  Bash("command")                   → Run shell commands
+  TodoWrite([...])                  → Track multi-step tasks
+  Task(subagent_type, prompt)       → Launch specialized agents
+
+REMEMBER
+  ✅ Parallel: Independent operations in ONE message
+  ✅ Sequential: Dependent operations with && or separate messages
+  ✅ TodoWrite: All complex tasks (3+ steps)
+  ✅ Pre-commit: cargo fmt + clippy before every commit
+  ✅ Explore Agent: Open-ended codebase questions
+```
 
 ---
 
@@ -900,6 +1352,36 @@ All contributions must adhere to these design criteria:
 
 ---
 
+## Changelog
+
+### 2025-11-13 - v0.1.2
+- **Updated**: Rebased onto main with Verus formal verification infrastructure
+  - Integrated Verus tooling (PR #36)
+  - Updated status table: Formal verification marked as ✅ Done
+  - Marked PR #10 (Install Verus) as completed
+  - Privacy.rs now uses proper Verus annotations (commented for normal builds)
+
+### 2025-11-13 - v0.1.1
+- **Added**: Comprehensive "Claude CLI Tools & Workflows" section
+  - Task tool usage for codebase exploration
+  - TodoWrite tool for task management
+  - File operations (Read, Edit, Write) best practices
+  - Search tools (Grep, Glob) patterns
+  - Bash tool guidelines
+  - Parallel vs sequential execution strategies
+  - Project-specific workflows
+  - Common mistakes to avoid
+  - Performance tips
+  - Quick reference card
+
+### 2025-11-13 - v0.1.0
+- Initial CLAUDE.md with core design philosophy
+- Design criteria (1-10)
+- Phase 1.5 implementation plan
+- Git workflow and quality checks
+
+---
+
 **Last Updated**: 2025-11-13
-**Version**: 0.1.0
+**Version**: 0.1.2
 **Status**: Living Document
