@@ -39,7 +39,7 @@ proptest! {
 
     /// Property: Empty input always fails
     #[test]
-    fn empty_input_always_fails(prefix in any::<Vec<u8>>()) {
+    fn empty_input_always_fails(_prefix in any::<Vec<u8>>()) {
         // Even with a prefix, empty core data should fail
         let result = CosmosDecoder::validate_format(&[]);
         prop_assert!(result.is_err());
@@ -168,6 +168,7 @@ proptest! {
                     payer: String::new(),
                     granter: String::new(),
                 }),
+                #[allow(deprecated)]
                 tip: None,
             }),
             signatures: vec![],
@@ -215,6 +216,7 @@ proptest! {
                     payer: String::new(),
                     granter: String::new(),
                 }),
+                #[allow(deprecated)]
                 tip: None,
             }),
             signatures,
@@ -235,5 +237,5 @@ proptest! {
 #[test]
 fn test_proptest_setup() {
     // Ensure proptest is properly configured
-    assert!(true);
+    // This test exists to verify proptest compilation
 }

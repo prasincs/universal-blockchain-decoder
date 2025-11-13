@@ -3,7 +3,6 @@
 //! This module defines the Protobuf message structures for Cosmos SDK transactions.
 //! These match the official Cosmos SDK protobuf definitions.
 
-use prost::Message;
 use prost_types::Any;
 use serde::{Deserialize, Serialize};
 use std::fmt;
