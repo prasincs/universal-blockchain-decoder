@@ -24,3 +24,5 @@ Cargo.lock
 *~
 *.bak
 /.cache/
+/tools/verus/
+/tools/verus-bin/

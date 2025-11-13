@@ -1,108 +1,138 @@
-# Verus Formal Verification Setup Guide
+# Verus Formal Verification Setup
 
-This guide explains how to set up Verus for formal verification of the Universal Blockchain Decoder core library.
+This document explains how to install and use Verus for formal verification of the Universal Blockchain Decoder core library.
 
 ## What is Verus?
 
-[Verus](https://github.com/verus-lang/verus) is a tool for verifying the correctness of Rust code. It allows us to:
-- Prove mathematical properties of our code
-- Guarantee panic-freedom
-- Verify overflow safety
-- Prove determinism and injectivity
+[Verus](https://github.com/verus-lang/verus) is a tool for verifying the correctness of Rust code. It allows you to write specifications (contracts) that describe what your code should do, and then mathematically proves that your code meets those specifications.
+
+## Why Verus for This Project?
+
+The Universal Blockchain Decoder core library has strict correctness requirements:
+
+1. **Deterministic Serialization**: Same data must always produce same bytes
+2. **Panic-Freedom**: Core functions must never panic on valid inputs
+3. **Injectivity**: Different transactions must have different canonical representations
+4. **Resource Bounds**: Memory usage must be bounded and predictable
+
+Verus helps us prove these properties mathematically, giving users confidence in the library's correctness.
 
 ## Installation
 
-### Prerequisites
+### Quick Install (Recommended)
 
-- Rust toolchain (stable or nightly)
-- Z3 SMT solver (Verus uses this for automated theorem proving)
-
-### Step 1: Clone Verus
+Use our automated installation script:
 
 ```bash
-cd ~/tools  # or wherever you keep development tools
+chmod +x scripts/install-verus.sh
+./scripts/install-verus.sh
+```
+
+This will:
+- Detect your platform (Linux, macOS, Windows)
+- Download the latest Verus release
+- Extract it to `tools/verus-bin/`
+- Make it executable
+- Test the installation
+
+### Manual Installation
+
+1. **Download the latest release:**
+
+   Visit [Verus Releases](https://github.com/verus-lang/verus/releases/latest) and download the appropriate file for your platform:
+
+   - Linux x86_64: `verus-X.X.X-x86-linux.zip`
+   - macOS ARM64: `verus-X.X.X-arm64-macos.zip`
+   - macOS x86_64: `verus-X.X.X-x86-macos.zip`
+   - Windows: `verus-X.X.X-x86-win.zip`
+
+2. **Extract the archive:**
+
+   ```bash
+   unzip verus-*.zip
+   cd verus-*
+   ```
+
+3. **macOS only: Remove quarantine:**
+
+   ```bash
+   xattr -d com.apple.quarantine verus
+   find . -type f -exec xattr -d com.apple.quarantine {} \;
+   ```
+
+4. **Add to PATH (optional):**
+
+   ```bash
+   export PATH="/path/to/verus:$PATH"
+   ```
+
+### Building from Source (Advanced)
+
+If you need the latest features or want to contribute to Verus:
+
+```bash
 git clone https://github.com/verus-lang/verus.git
-cd verus
+cd verus/source
+source ../tools/activate  # or activate.fish for fish shell
+vargo build --release
 ```
 
-### Step 2: Install Z3
+See [Verus BUILD.md](https://github.com/verus-lang/verus/blob/main/BUILD.md) for detailed build instructions.
 
-#### Option A: Use Verus's helper script
-```bash
-./tools/get-z3.sh
-source tools/activate  # Adds Z3 to PATH
-```
-
-#### Option B: Install via package manager
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install z3
-```
-
-**macOS:**
-```bash
-brew install z3
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S z3
-```
-
-### Step 3: Build Verus
+### Verify Installation
 
 ```bash
-cargo build --release
+./tools/verus-bin/verus --version || echo "Installed successfully"
 ```
 
-### Step 4: Add to PATH
+## Usage
+
+### Verify a Single File
 
 ```bash
-export PATH="$HOME/tools/verus/target/release:$PATH"
-export VERUS_Z3_PATH="$(which z3)"
+# Using the wrapper script (recommended)
+./scripts/verus.sh crates/universal-decoder-core/src/canonical.rs --crate-type=lib
+
+# Or directly
+tools/verus-bin/verus crates/universal-decoder-core/src/canonical.rs --crate-type=lib
 ```
 
-Add these lines to your `~/.bashrc` or `~/.zshrc` to make them permanent.
-
-### Step 5: Verify Installation
+### Verify the Entire Core Library
 
 ```bash
-verus --version
+# Verify all files with Verus annotations
+find crates/universal-decoder-core/src -name "*.rs" -type f | while read -r file; do
+    echo "Verifying $file"
+    ./scripts/verus.sh "$file" --crate-type=lib
+done
 ```
 
-Should output something like:
-```
-verus 0.x.x
-```
+### Common Verus Flags
 
-## Using Verus with Universal Blockchain Decoder
+- `--crate-type=lib`: Verify as a library (required for non-main files)
+- `--compile`: Compile the code after verification
+- `--verbose`: Show detailed verification information
+- `--rlimit <n>`: Set resource limit for the SMT solver (default: 10)
+- `--time`: Show timing information
 
-### Running Verification
+### Example: Verify and Compile
 
-Verify a specific file:
 ```bash
-verus crates/universal-decoder-core/src/ir.rs
+./scripts/verus.sh examples/verified_hash.rs --compile
+./verified_hash  # Run the compiled binary
 ```
 
-Verify all annotated files:
-```bash
-./scripts/verify_all.sh
-```
+## CI Integration
 
-### CI Integration
+Our GitHub Actions workflow automatically runs Verus verification on every push and pull request.
 
-Verus runs in GitHub Actions (nightly workflow):
-```yaml
-- name: Install Verus
-  run: |
-    git clone https://github.com/verus-lang/verus.git
-    cd verus && ./tools/get-z3.sh && source tools/activate
-    cargo build --release
+See [`.github/workflows/verus-verification.yml`](../.github/workflows/verus-verification.yml) for the complete workflow.
 
-- name: Run Verus
-  run: verus crates/universal-decoder-core/src/ir.rs
-```
+The CI workflow:
+1. Caches Verus installation for faster builds
+2. Installs Verus using our automated script
+3. Runs verification on core modules
+4. Reports verification results
 
 ## Verification Strategy
 
@@ -298,41 +328,76 @@ If verification fails, try:
 - Verify incrementally (one module at a time)
 - Cache verification results in CI
 
-## Resources
+## Common Issues
 
-- [Verus Documentation](https://verus-lang.github.io/verus/)
-- [Verus Tutorial](https://verus-lang.github.io/verus/guide/)
-- [Verus GitHub](https://github.com/verus-lang/verus)
-- [Z3 SMT Solver](https://github.com/Z3Prover/z3)
-- [Formal Verification Strategy](./FORMAL_VERIFICATION.md)
+### Issue: "Verus binary not found"
+
+**Solution**: Run the installation script first:
+```bash
+./scripts/install-verus.sh
+```
+
+### Issue: "Verification failed" / "SMT solver timeout"
+
+**Solution**: Increase the resource limit:
+```bash
+./scripts/verus.sh file.rs --rlimit 20
+```
+
+### Issue: macOS "cannot be opened because the developer cannot be verified"
+
+**Solution**: Remove quarantine:
+```bash
+xattr -d com.apple.quarantine tools/verus-bin/verus
+```
+
+### Issue: "error: toolchain '1.82.0' is not installed"
+
+**Solution**: Verus requires a specific Rust toolchain. Install it:
+```bash
+rustup toolchain install 1.82.0
+```
+
+## Learning Resources
+
+1. **Official Verus Guide**: https://verus-lang.github.io/verus/guide/
+2. **Verus Tutorial**: https://verus-lang.github.io/verus/guide/getting_started.html
+3. **Verus Examples**: https://github.com/verus-lang/verus/tree/main/examples
+4. **Verus Playground**: https://play.verus-lang.org/ (try Verus in your browser!)
+5. **Project Verification Docs**: [FORMAL_VERIFICATION.md](./FORMAL_VERIFICATION.md)
 
 ## Current Verification Status
 
+As of 2025-11-13:
+
 | Module | Status | Properties Verified |
 |--------|--------|---------------------|
+| `canonical.rs` | ⚙️ In Progress | Determinism annotations added |
 | `ir.rs` | ⚙️ In Progress | Basic type safety |
-| `canonical.rs` | 📋 Planned | Determinism |
 | `traits.rs` | 📋 Planned | Trait properties |
-| `error.rs` | ✅ Complete | Error handling |
+| `error.rs` | 📋 Planned | Error handling |
 
-See `FORMAL_VERIFICATION.md` for the complete roadmap.
+See [ROADMAP.md](../ROADMAP.md) and [FORMAL_VERIFICATION.md](./FORMAL_VERIFICATION.md) for the complete verification roadmap.
 
-## Getting Help
+## Contributing
 
-- **Verus Discord**: [Join here](https://discord.gg/verus)
-- **GitHub Issues**: Report bugs or ask questions
-- **Verus Documentation**: Comprehensive guides and examples
+When adding new code to the core library:
 
-## Next Steps
+1. Add Verus specifications for critical properties
+2. Run verification locally: `./scripts/verus.sh <file>`
+3. Ensure CI verification passes
+4. Document any unverified assumptions in comments
 
-1. Install Verus following this guide
-2. Review example annotations in `src/ir.rs`
-3. Read `FORMAL_VERIFICATION.md` for the verification strategy
-4. Start with simple properties (reflexivity, determinism)
-5. Gradually add more complex proofs
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for general contribution guidelines.
+
+## Support
+
+- **Verus Issues**: https://github.com/verus-lang/verus/issues
+- **Project Issues**: https://github.com/prasincs/universal-blockchain-decoder/issues
+- **Verus Zulip Chat**: https://verus-lang.zulipchat.com/
 
 ---
 
-**Last Updated**: 2025-01-11
-**Verus Version**: 0.x.x (check for latest)
-**Status**: Phase 1.5 PR #10 - Initial setup complete
+**Last Updated**: 2025-11-13
+**Verus Version**: 0.2025.11.07
+**Status**: Phase 1.5 - Verus installation and CI integration complete
