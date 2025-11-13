@@ -11,7 +11,10 @@ description = "Arbitrum transaction decoder for universal-decoder"
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 decoder-ethereum = { path = "../decoder-ethereum" }
+decoder-encodings = { path = "../decoder-encodings" }
+borsh = { workspace = true }
 serde = { workspace = true }
+sha3 = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
