@@ -74,7 +74,7 @@ This directory contains a vendored copy of the `hex` crate v0.4.3.
 **Original Source**: https://github.com/KokaKiwi/rust-hex
 **Original Crate**: https://crates.io/crates/hex
 **License**: MIT OR Apache-2.0
-**Vendored Date**: 2025-01-XX
+**Vendored Date**: 2025-11-13
 **Reason**: Reduce dependency count while maintaining functionality
 
 ## Changes from Original
@@ -279,7 +279,7 @@ Document in `SECURITY.md`:
 
 | Dependency | Version | Audit Date | Next Audit | Notes |
 |------------|---------|------------|------------|-------|
-| hex | 0.4.3 | 2025-01-XX | 2026-01-XX | Vendored from rust-hex |
+| hex | 0.4.3 | 2025-11-13 | 2026-11-13 | Vendored from rust-hex |
 
 ### Hex crate audit checklist
 

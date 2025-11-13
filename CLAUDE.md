@@ -6,7 +6,7 @@
 
 **Documentation Map**:
 - 📋 `ROADMAP.md` - Project phases and timeline
-- 📊 `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Testing strategy overview
+- 📊 `docs/TESTING_AND_DEPENDENCIES_SUMMARY.md` - Testing strategy overview
 - 📦 `docs/GIT_SUBTREE_VENDORING.md` - Verifiable dependency vendoring
 - 🧪 `docs/TESTING_STRATEGY.md` - 5-level testing pyramid
 - 🔧 `docs/DECODER_DEPENDENCY_STRATEGY.md` - Pure Rust decoder pattern
@@ -900,6 +900,6 @@ All contributions must adhere to these design criteria:
 
 ---
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2025-11-13
 **Version**: 0.1.0
 **Status**: Living Document

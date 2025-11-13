@@ -19,10 +19,10 @@
   - ✅ Airgapped operation requirement documented
   - ✅ Chain registry vendoring strategy via git subtree
 **See**:
-  - `COMMON_CRATES_ANALYSIS.md` - Comprehensive shared functionality analysis
+  - `docs/COMMON_CRATES_ANALYSIS.md` - Comprehensive shared functionality analysis
   - `docs/SHARED_CRATES_STRATEGY.md` - Quick reference for code reuse
-  - `CHAIN_FAMILIES_GROUPING.md` - Ecosystem-wide decoder strategy
-  - `NEXT_STEPS_CHAINLIST_INTEGRATION.md` - EVM decoder implementation plan
+  - `docs/CHAIN_FAMILIES_GROUPING.md` - Ecosystem-wide decoder strategy
+  - `docs/NEXT_STEPS_CHAINLIST_INTEGRATION.md` - EVM decoder implementation plan
   - `CLAUDE.md` - Updated with airgapped operation requirements
   - `docs/VERUS_VERIFICATION_COVERAGE.md` - **NEW**: Comprehensive Verus guide & coverage tracking
   - `docs/VERIFICATION_TARGETS.md` - **NEW**: 15 formal verification targets documented
@@ -273,7 +273,7 @@ sha3 = "0.10"      # Essential - Ethereum hashing
 - 🚧 Verus toolchain annotated (VT-1 complete, installation pending)
 
 **Reference Documentation**:
-- `TESTING_AND_DEPENDENCIES_SUMMARY.md` - Executive summary
+- `docs/TESTING_AND_DEPENDENCIES_SUMMARY.md` - Executive summary
 - `docs/TESTING_STRATEGY.md` - Complete testing approach
 - `docs/GIT_SUBTREE_VENDORING.md` - Verifiable vendoring
 
@@ -489,18 +489,18 @@ Scaffolded Chains (17 new decoders):
   - ✅ Aptos - BCS + Move VM
 
 **Chain Family Grouping Strategy Established**:
-- ✅ Document created: `CHAIN_FAMILIES_GROUPING.md`
+- ✅ Document created: `docs/CHAIN_FAMILIES_GROUPING.md`
 - ✅ Strategy: Group chains by technology (EVM, OP Stack, SVM, Cosmos, Move, etc.)
 - ✅ Workspace reduction: 620+ individual chains → 18 family decoders (97% reduction!)
 - ✅ Benefits: Scalability, maintainability, consistent API
 
 **Implementation Plan Created**:
-- ✅ Document: `TOP_20_CHAINS_IMPLEMENTATION_PLAN.md`
+- ✅ Document: `docs/TOP_20_CHAINS_IMPLEMENTATION_PLAN.md`
 - ✅ Detailed specs for each of 17 chains
 - ✅ Complexity estimates and dependency strategies
 
 **Chainlist Integration Plan**:
-- ✅ Document: `NEXT_STEPS_CHAINLIST_INTEGRATION.md`
+- ✅ Document: `docs/NEXT_STEPS_CHAINLIST_INTEGRATION.md`
 - ✅ Generic EVM decoder supporting 500+ chains
 - ✅ Vendored chain registry strategy (airgapped operation)
 - ✅ Special case handling (Optimism deposits, Arbitrum retryables, zkSync, etc.)
@@ -521,7 +521,7 @@ Scaffolded Chains (17 new decoders):
 **Priority**: HIGH (Enables scalability)
 **Timeline**: 2 weeks
 **Status**: Phase 2.5.1 Complete ✅ (decoder-encodings extracted)
-**See**: `COMMON_CRATES_ANALYSIS.md` and `docs/SHARED_CRATES_STRATEGY.md`
+**See**: `docs/COMMON_CRATES_ANALYSIS.md` and `docs/SHARED_CRATES_STRATEGY.md`
 
 **Context**: After implementing Bitcoin, Ethereum, and Solana decoders, significant code duplication has been identified. This phase extracts common functionality to enable rapid addition of new chains.
 
@@ -670,7 +670,7 @@ Scaffolded Chains (17 new decoders):
 - [ ] Migration guide for future decoders (Phase 2.5.2)
 
 **Documentation**:
-- ✅ `COMMON_CRATES_ANALYSIS.md` - Detailed 10-section analysis
+- ✅ `docs/COMMON_CRATES_ANALYSIS.md` - Detailed 10-section analysis
 - ✅ `docs/SHARED_CRATES_STRATEGY.md` - Quick reference guide
 - [ ] `docs/DECODER_ENCODINGS_API.md` - API documentation
 - [ ] `docs/TEST_UTILS_GUIDE.md` - Testing utilities guide
@@ -868,8 +868,8 @@ Tasks:
 
 **Prerequisites**:
 - ✅ Phase 2 complete (Bitcoin, Ethereum, Solana decoders)
-- ✅ Chain family grouping strategy (CHAIN_FAMILIES_GROUPING.md)
-- ✅ Common crates analysis (COMMON_CRATES_ANALYSIS.md)
+- ✅ Chain family grouping strategy (docs/CHAIN_FAMILIES_GROUPING.md)
+- ✅ Common crates analysis (docs/COMMON_CRATES_ANALYSIS.md)
 - [ ] Phase 2.5: decoder-encodings extracted (provides shared RLP for EVM chains)
 - [ ] Phase 3.0: Privacy-aware TxIR extensions (for Phase 3.8 privacy chains)
 - [ ] Chain registries vendored via git subtree (Phase 1.5.1)
@@ -878,7 +878,7 @@ Tasks:
 
 **Priority**: CRITICAL (500+ EVM chains)
 **Decoder**: `decoder-evm`
-**See**: `NEXT_STEPS_CHAINLIST_INTEGRATION.md`
+**See**: `docs/NEXT_STEPS_CHAINLIST_INTEGRATION.md`
 
 **Chains Supported**: 500+ EVM-compatible chains (Ethereum, BNB, Polygon, Avalanche, etc.)
 
