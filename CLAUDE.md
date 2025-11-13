@@ -443,7 +443,7 @@ pub struct TxIR<'a, const V: u8> { /* ... */ }
 | Core LOC | ~2500 | < 3000 | ~2700 | ✅ Good |
 | Core dependencies | 8 | ≤ 5 | 5 (hex vendored) | 🚧 In Progress |
 | Decoder dependencies | Yes (bitcoin, ethers) | 0 (pure Rust) | 0 (dev-deps only) | 📋 Planned |
-| Formal verification | No | Verus annotations | Basic annotations | 📋 Week 2 |
+| Formal verification | Basic annotations | Verus annotations | Basic annotations | ✅ Done |
 | Canonical serialization | Borsh ✅ | Borsh ✅ | Borsh ✅ | ✅ Done |
 | Test coverage | 0% | 100% core, 90% decoders | 50%+ | 🚧 Week 2 |
 | Property tests | 0 | 50+ | 20+ | 📋 Week 2 |
@@ -468,7 +468,7 @@ pub struct TxIR<'a, const V: u8> { /* ... */ }
 - PR #7: Create test fixture repository + integration tests
 - PR #8: Set up CI/CD pipeline (GitHub Actions)
 - PR #9: Add fuzzing infrastructure (cargo-fuzz)
-- PR #10: Install Verus + first annotations
+- ✅ PR #10: Install Verus + first annotations (COMPLETED - PR #36)
 
 **Stacking Strategy**:
 ```bash
@@ -1354,6 +1354,13 @@ All contributions must adhere to these design criteria:
 
 ## Changelog
 
+### 2025-11-13 - v0.1.2
+- **Updated**: Rebased onto main with Verus formal verification infrastructure
+  - Integrated Verus tooling (PR #36)
+  - Updated status table: Formal verification marked as ✅ Done
+  - Marked PR #10 (Install Verus) as completed
+  - Privacy.rs now uses proper Verus annotations (commented for normal builds)
+
 ### 2025-11-13 - v0.1.1
 - **Added**: Comprehensive "Claude CLI Tools & Workflows" section
   - Task tool usage for codebase exploration
@@ -1376,5 +1383,5 @@ All contributions must adhere to these design criteria:
 ---
 
 **Last Updated**: 2025-11-13
-**Version**: 0.1.1
+**Version**: 0.1.2
 **Status**: Living Document
