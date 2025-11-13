@@ -1,0 +1,156 @@
+name: Auto-Update Documentation (Smart Triggers)
+
+on:
+  # Only run when significant code changes occur
+  push:
+    branches:
+      - main
+    paths:
+      - 'crates/**/src/**/*.rs'
+      - 'crates/**/Cargo.toml'
+      - 'tools/**/src/**/*.rs'
+      - 'Cargo.toml'
+      - 'ROADMAP.md'
+      - 'CLAUDE.md'
+
+  # Weekly instead of nightly (Sundays at 2 AM)
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday
+
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update all docs (ignore change detection)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-if-needed:
+    name: Check if Update Needed
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      changes_count: ${{ steps.check.outputs.changes_count }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100  # Last 100 commits
+
+      - name: Check for significant changes
+        id: check
+        run: |
+          # Force run if manual dispatch with force flag
+          if [ "${{ github.event.inputs.force_update }}" = "true" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "changes_count=forced" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Count significant changes in last 7 days
+          CHANGES=$(git log --since="7 days ago" --oneline --name-only \
+            -- 'crates/**/src/*.rs' 'crates/**/Cargo.toml' 'tools/**/*.rs' \
+            | grep -E '\.rs$|Cargo\.toml$' | wc -l)
+
+          echo "changes_count=$CHANGES" >> $GITHUB_OUTPUT
+
+          # Only run if more than 10 significant changes
+          if [ "$CHANGES" -gt 10 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Found $CHANGES changes - will update docs"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Only $CHANGES changes - skipping doc update"
+          fi
+
+  update-docs:
+    name: Update Documentation
+    needs: check-if-needed
+    if: needs.check-if-needed.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build auto-update-docs tool
+        run: cargo build --release -p auto-update-docs
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch for updates
+        id: create-branch
+        run: |
+          BRANCH_NAME="auto-update-docs/$(date +%Y%m%d-%H%M%S)"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Run documentation update
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cargo run --release -p auto-update-docs -- \
+            --api-key "$ANTHROPIC_API_KEY" \
+            --verbose
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git add docs/ *.md
+          git commit -m "docs: Auto-update documentation (smart trigger - ${{ needs.check-if-needed.outputs.changes_count }} changes)"
+          git push -u origin ${{ steps.create-branch.outputs.branch_name }}
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.create-branch.outputs.branch_name }}
+          title: "docs: Smart auto-update (${{ needs.check-if-needed.outputs.changes_count }} changes)"
+          body: |
+            ## Smart Documentation Update
+
+            Triggered by: **${{ github.event_name }}**
+            Changes detected: **${{ needs.check-if-needed.outputs.changes_count }}**
+
+            This update was triggered because significant code changes were detected.
+
+            🤖 Generated by auto-update-docs (smart mode)
+          labels: |
+            documentation
+            auto-generated

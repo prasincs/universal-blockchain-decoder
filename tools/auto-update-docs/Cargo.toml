@@ -1,0 +1,49 @@
+[package]
+name = "auto-update-docs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Universal Blockchain Decoder Team"]
+description = "AI-powered documentation and architecture diagram auto-updater"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "auto-update-docs"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP Client
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# File system & path operations
+walkdir = "2.5"
+ignore = "0.4"
+
+# Git operations
+git2 = "0.18"
+
+# Time/Date
+chrono = "0.4"
+
+# Regex
+regex = "1.10"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Markdown parsing and generation
+pulldown-cmark = "0.11"
+
+# TOML parsing
+toml = "0.8"

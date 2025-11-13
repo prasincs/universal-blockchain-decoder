@@ -35,6 +35,7 @@ members = [
     # Tools
     "tools/registry-generator",
     "tools/ai-refactor-suggest",
+    "tools/auto-update-docs",
 ]
 resolver = "2"
 
