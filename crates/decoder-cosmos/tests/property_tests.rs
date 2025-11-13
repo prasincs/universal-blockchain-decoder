@@ -236,6 +236,11 @@ proptest! {
 
 #[test]
 fn test_proptest_setup() {
-    // Ensure proptest is properly configured
-    // This test just verifies that the test infrastructure compiles
+    // Ensure proptest is properly configured by running a trivial property test
+    use proptest::prelude::*;
+
+    proptest!(|(x in 0..100u32)| {
+        // Verify basic proptest functionality: generated values are in range
+        prop_assert!(x < 100);
+    });
 }
