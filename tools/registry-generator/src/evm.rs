@@ -104,21 +104,20 @@ pub fn generate_evm_registry(
     // Write metadata
     println!();
     println!("📄 Writing metadata...");
-    utils::write_metadata(
-        &metadata,
-        "ethereum-lists/chains",
-        "https://github.com/ethereum-lists/chains",
-        chains.len(),
-        serialized.len(),
-        &commit,
-        "crates/decoder-evm/data/chains.borsh",
-        &[
+    let metadata_info = utils::MetadataInfo {
+        source_name: "ethereum-lists/chains",
+        source_repo: "https://github.com/ethereum-lists/chains",
+        chain_count: chains.len(),
+        byte_size: serialized.len(),
+        commit: &commit,
+        verify_commands: vec![
             format!("Clone upstream: git clone https://github.com/ethereum-lists/chains.git /tmp/chains"),
             format!("Checkout: cd /tmp/chains && git checkout {}", commit),
             "Regenerate: cargo run -p registry-generator -- evm".to_string(),
             "Compare: diff crates/decoder-evm/data/chains.borsh (should be identical)".to_string(),
         ],
-    )?;
+    };
+    utils::write_metadata(&metadata, &metadata_info)?;
     println!("   ✓ Wrote {}", metadata.display());
 
     // Summary

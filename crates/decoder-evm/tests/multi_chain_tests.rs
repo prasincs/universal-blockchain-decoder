@@ -54,8 +54,6 @@ fn test_evm_decoder_creation() {
 /// Test that decoder handles invalid input gracefully
 #[test]
 fn test_decoder_handles_garbage() {
-    use decoder_test_utils::assertions::assert_decode_never_panics;
-
     let decoder = EvmDecoder::new();
 
     let test_cases = vec![
