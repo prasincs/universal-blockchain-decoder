@@ -59,6 +59,7 @@ pub mod hooks;
 pub mod ir;
 pub mod privacy;
 pub mod traits;
+pub mod verification;
 
 // Vendored dependencies (git subtree)
 mod vendored;

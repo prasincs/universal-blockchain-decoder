@@ -62,10 +62,12 @@
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "formal-verification")]
-use builtin::*;
-#[cfg(feature = "formal-verification")]
-use builtin_macros::*;
+// Verus builtin modules - only available when actually verifying with Verus
+// Commented out because they're not available during normal builds
+// #[cfg(all(verus, feature = "formal-verification"))]
+// use builtin::*;
+// #[cfg(all(verus, feature = "formal-verification"))]
+// use builtin_macros::*;
 
 /// Privacy metadata for transactions with privacy features
 ///
@@ -109,17 +111,18 @@ impl PrivacyMetadata {
     /// - VT-30.1: If observability is FullyObservable, features should be empty (convention)
     /// - VT-30.2: Clone operation never panics
     /// - VT-30.3: Equality is reflexive, symmetric, and transitive
-    #[cfg_attr(
-        feature = "formal-verification",
-        verifier::spec(|features: Vec<PrivacyFeature>, observability: ObservabilityLevel, viewing_key: Option<ViewingKey>| -> PrivacyMetadata
-            ensures(|result: PrivacyMetadata| {
-                // VT-30.1: Features preserved
-                result.features == features &&
-                result.observability == observability &&
-                result.viewing_key == viewing_key
-            })
-        )
-    )]
+    ///
+    /// Note: Verus specifications are documented but not yet active
+    // #[cfg_attr(
+    //     all(verus, feature = "formal-verification"),
+    //     verifier::spec(|features: Vec<PrivacyFeature>, observability: ObservabilityLevel, viewing_key: Option<ViewingKey>| -> PrivacyMetadata
+    //         ensures(|result: PrivacyMetadata| {
+    //             result.features == features &&
+    //             result.observability == observability &&
+    //             result.viewing_key == viewing_key
+    //         })
+    //     )
+    // )]
     pub fn new(
         features: Vec<PrivacyFeature>,
         observability: ObservabilityLevel,
@@ -138,14 +141,16 @@ impl PrivacyMetadata {
     ///
     /// - Never panics
     /// - Returns true iff features vector is non-empty
-    #[cfg_attr(
-        feature = "formal-verification",
-        verifier::spec(|self: &PrivacyMetadata| -> bool
-            ensures(|result: bool| {
-                result == !self.features.is_empty()
-            })
-        )
-    )]
+    ///
+    /// Note: Verus specifications are documented but not yet active
+    // #[cfg_attr(
+    //     all(verus, feature = "formal-verification"),
+    //     verifier::spec(|self: &PrivacyMetadata| -> bool
+    //         ensures(|result: bool| {
+    //             result == !self.features.is_empty()
+    //         })
+    //     )
+    // )]
     pub fn has_privacy_features(&self) -> bool {
         !self.features.is_empty()
     }
@@ -156,14 +161,16 @@ impl PrivacyMetadata {
     ///
     /// - Never panics
     /// - Returns true iff observability is FullyObservable
-    #[cfg_attr(
-        feature = "formal-verification",
-        verifier::spec(|self: &PrivacyMetadata| -> bool
-            ensures(|result: bool| {
-                result == matches!(self.observability, ObservabilityLevel::FullyObservable)
-            })
-        )
-    )]
+    ///
+    /// Note: Verus specifications are documented but not yet active
+    // #[cfg_attr(
+    //     all(verus, feature = "formal-verification"),
+    //     verifier::spec(|self: &PrivacyMetadata| -> bool
+    //         ensures(|result: bool| {
+    //             result == matches!(self.observability, ObservabilityLevel::FullyObservable)
+    //         })
+    //     )
+    // )]
     pub fn is_fully_observable(&self) -> bool {
         matches!(self.observability, ObservabilityLevel::FullyObservable)
     }
@@ -174,14 +181,16 @@ impl PrivacyMetadata {
     ///
     /// - Never panics
     /// - Returns true iff observability is FullyPrivate
-    #[cfg_attr(
-        feature = "formal-verification",
-        verifier::spec(|self: &PrivacyMetadata| -> bool
-            ensures(|result: bool| {
-                result == matches!(self.observability, ObservabilityLevel::FullyPrivate)
-            })
-        )
-    )]
+    ///
+    /// Note: Verus specifications are documented but not yet active
+    // #[cfg_attr(
+    //     all(verus, feature = "formal-verification"),
+    //     verifier::spec(|self: &PrivacyMetadata| -> bool
+    //         ensures(|result: bool| {
+    //             result == matches!(self.observability, ObservabilityLevel::FullyPrivate)
+    //         })
+    //     )
+    // )]
     pub fn is_fully_private(&self) -> bool {
         matches!(self.observability, ObservabilityLevel::FullyPrivate)
     }
