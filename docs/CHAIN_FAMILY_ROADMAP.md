@@ -163,12 +163,15 @@ This document provides a comprehensive implementation roadmap for all blockchain
 | Component | Status | LOC | Tests | Notes |
 |-----------|--------|-----|-------|-------|
 | RLP Decoder | ✅ Complete | 340 | 16 | Shared in decoder-encodings |
-| Legacy Tx | ✅ Complete | 120 | 4 | Pre-EIP-1559 |
-| EIP-2930 | ✅ Complete | 80 | 2 | Access lists |
-| EIP-1559 | ✅ Complete | 100 | 3 | Base + priority fee |
+| Legacy Tx | ✅ Complete | 120 | 12 | Pre-EIP-1559, comprehensive tests |
+| EIP-2930 | ✅ Complete | 80 | 8 | Access lists, property tests |
+| EIP-1559 | ✅ Complete | 100 | 10 | Base + priority fee, gas validation |
 | EIP-4844 | 📋 Planned | 0 | 0 | Blob transactions |
-| Chain Registry | ✅ Complete | 429 | 3 | 500+ chains embedded |
-| Signature Recovery | 🚧 Partial | 40 | 0 | Needs testing |
+| Chain Registry | ✅ Complete | 429 | 6 | 500+ chains embedded, Borsh optimized |
+| Signature Recovery | ✅ Complete | 40 | 15 | v/r/s validation, property tests |
+| Property Tests | ✅ Complete | 350 | 25 | Decoder safety, RLP, hashing |
+| Fuzz Targets | ✅ Complete | 120 | 4 | Full decoder pipeline |
+| Integration Tests | ✅ Complete | 200 | 30 | Real mainnet transactions |
 
 ### Blockchain Coverage
 
@@ -188,26 +191,30 @@ This document provides a comprehensive implementation roadmap for all blockchain
 | **Evmos** | 9001 | ✅ Complete | 90% | Cosmos+EVM | Medium |
 | **+488 more** | Various | ✅ Complete | 90% | Generic EVM | Low |
 
-### Completeness: 95% ✅
+### Completeness: 98% ✅
 
 **Delivered**:
 - ✅ Generic EVM decoder supporting 500+ chains
 - ✅ Vendored chain registry (ethereum-lists/chains)
 - ✅ Borsh-optimized chain data (551KB, embedded at compile-time)
 - ✅ RLP parser (shared in decoder-encodings)
-- ✅ All EIP-2718 transaction types
+- ✅ All EIP-2718 transaction types (Legacy, EIP-2930, EIP-1559)
 - ✅ Chain ID validation
 - ✅ Airgapped operation (no runtime network calls)
+- ✅ Signature recovery with v/r/s validation
+- ✅ Comprehensive property-based tests (25 tests)
+- ✅ Fuzz testing infrastructure (4 targets)
+- ✅ Integration tests with real mainnet transactions (30 fixtures)
+- ✅ Gas/fee calculation with overflow protection
 
-**Remaining Work** (5%):
+**Remaining Work** (2%):
 - [ ] EIP-4844 blob transactions (Cancun upgrade)
-- [ ] Signature recovery testing
-- [ ] Advanced validation (gas limits, nonce)
+- [ ] Advanced EIP support (EIP-7702, EIP-3074)
 
 **Next Steps**:
-1. Add EIP-4844 support (Week 3)
-2. Complete signature recovery tests (Week 3)
-3. Performance optimization (Week 4)
+1. Add EIP-4844 support (Week 4-5)
+2. Monitor upcoming EIPs for compatibility
+3. Continue performance optimization
 
 ---
 
@@ -1144,7 +1151,7 @@ Privacy-focused blockchains use advanced cryptographic techniques to hide transa
 - **Duration**: Months 1-2
 - **Status**: ✅ Complete
 - **Families**: Bitcoin Core, EVM Standard, SVM, Move (Aptos), Move (Sui)
-- **Progress**: 6/18 families (33%)
+- **Progress**: 6/19 families (32%)
 
 ### Phase 2: Layer 2 Ecosystem (Weeks 1-6)
 - **Duration**: 6 weeks
@@ -1213,16 +1220,29 @@ Privacy-focused blockchains use advanced cryptographic techniques to hide transa
 - NEAR: Action parser (easy - Borsh!)
 - Tron: Protobuf + contracts
 
-### Phase 4: Universal Integration (Week 15)
+### Phase 4: Privacy Chains (Weeks 15-16)
+- **Duration**: 2 weeks
+- **Status**: 🚧 In Progress (Week 15-16)
+- **Family**: Privacy Chains (Monero, Zcash, Aztec, Manta, Aleo)
+- **Progress**: 40% (core types complete)
+
+**Week 15-16**: Privacy Chain Support
+- ✅ Core privacy types (490 LOC, 20 tests)
+- 🚧 Ethereum stealth addresses (EIP-5564)
+- 🚧 Privacy pool detection
+- 📋 Monero decoder (RingCT basics)
+- 📋 Zcash decoder (transparent + Sapling)
+
+### Phase 5: Universal Integration (Week 17)
 - **Duration**: 1 week
 - **Status**: 📋 Planned
 - **Deliverable**: `universal-decoder` crate with unified API
 
-**Week 15**: Universal Decoder
-- Unified API for all 18 families
-- Auto-detection logic
+**Week 17**: Universal Decoder
+- Unified API for all 19 families
+- Auto-detection logic (including privacy chains)
 - Comprehensive integration tests
-- Example: Decode 720+ chains from single API
+- Example: Decode 725+ chains from single API
 
 ---
 
@@ -1232,10 +1252,11 @@ Privacy-focused blockchains use advanced cryptographic techniques to hide transa
 
 | Phase | Families | Chains | Target Date | Status |
 |-------|----------|--------|-------------|--------|
-| Phase 1 | 6/18 (33%) | 512/720+ (71%) | Done | ✅ Complete |
-| Phase 2 | 11/18 (61%) | 560/720+ (78%) | Week 6 | 🚧 In Progress |
-| Phase 3 | 18/18 (100%) | 720+/720+ (100%) | Week 14 | 📋 Planned |
-| Phase 4 | Integration | Universal API | Week 15 | 📋 Planned |
+| Phase 1 | 6/19 (32%) | 512/725+ (71%) | Done | ✅ Complete |
+| Phase 2 | 11/19 (58%) | 560/725+ (77%) | Week 6 | 🚧 In Progress |
+| Phase 3 | 18/19 (95%) | 720/725+ (99%) | Week 14 | 📋 Planned |
+| Phase 4 | 19/19 (100%) | 725/725+ (100%) | Week 16 | 🚧 In Progress |
+| Phase 5 | Integration | Universal API | Week 17 | 📋 Planned |
 
 ### Quality Metrics (Per Family)
 
@@ -1368,19 +1389,21 @@ Privacy-focused blockchains use advanced cryptographic techniques to hide transa
 
 ## Long-Term Vision (v1.0.0)
 
-**Goal**: Universal blockchain decoder supporting 720+ chains across 18 families
+**Goal**: Universal blockchain decoder supporting 725+ chains across 19 families
 
 **Milestones**:
 - ✅ **v0.1.0**: Core architecture + 3 reference implementations (Bitcoin, Ethereum, Solana)
-- 🚧 **v0.2.0**: Chain family support (18 families, 720+ chains) - Week 15
+- 🚧 **v0.1.5**: Privacy-aware TxIR + privacy primitives - Week 16
+- 🚧 **v0.2.0**: Chain family support (19 families, 725+ chains) - Week 17
 - 📋 **v0.3.0**: Formal verification (Verus) - Month 6
 - 📋 **v0.4.0**: Security audit + production hardening - Month 7
 - 📋 **v1.0.0**: Ecosystem adoption + community-driven - Month 8
 
 **Success Criteria for v1.0.0**:
-- 18/18 families implemented (100%)
-- 720+ chains supported
+- 19/19 families implemented (100%)
+- 725+ chains supported (including privacy chains)
 - >80% test coverage across all families
+- Privacy chain support (Monero, Zcash, Aztec, Manta, Aleo)
 - Zero critical security vulnerabilities
 - Used in production by 5+ projects
 - 1000+ GitHub stars
@@ -1417,6 +1440,19 @@ Privacy-focused blockchains use advanced cryptographic techniques to hide transa
 | Algorand | 0 | 0 | 1 | 1 |
 | NEAR | 0 | 0 | 1 | 1 |
 | Tron | 0 | 0 | 1 | 1 |
-| **Total** | **508** | **7** | **205** | **720+** |
+| Privacy Chains | 0 | 2 | 3 | 5 |
+| **Total** | **508** | **9** | **208** | **725+** |
 
-**Progress**: 70% chains covered by implemented families (508/720+)
+**Progress**: 70% chains covered by implemented families (508/725+)
+
+### Privacy Chains Breakdown
+
+| Chain | Status | Progress | Privacy Model | Priority |
+|-------|--------|----------|---------------|----------|
+| Monero | 📋 Planned | 0% | FullyPrivate | High |
+| Zcash | 📋 Planned | 0% | Optional (z2z private) | High |
+| Aztec | 📋 Planned | 0% | Programmable | Medium |
+| Manta Pacific | 📋 Planned | 0% | Optional DeFi privacy | Medium |
+| Aleo | 📋 Planned | 0% | FullyPrivate | Low |
+
+**Note**: Privacy chains have core infrastructure complete (privacy.rs module, 490 LOC, 40% overall progress)
