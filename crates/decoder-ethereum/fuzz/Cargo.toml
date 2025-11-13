@@ -1,0 +1,43 @@
+[package]
+name = "decoder-ethereum-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+decoder-ethereum = { path = ".." }
+universal-decoder-core = { path = "../../universal-decoder-core" }
+decoder-encodings = { path = "../../decoder-encodings" }
+sha3 = "0.10"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_ethereum_decoder"
+path = "fuzz_targets/fuzz_ethereum_decoder.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_ethereum_rlp"
+path = "fuzz_targets/fuzz_ethereum_rlp.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_ethereum_signature"
+path = "fuzz_targets/fuzz_ethereum_signature.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_ethereum_hash"
+path = "fuzz_targets/fuzz_ethereum_hash.rs"
+test = false
+doc = false

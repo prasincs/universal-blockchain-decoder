@@ -18,3 +18,4 @@ thiserror = { workspace = true }
 [dev-dependencies]
 # Testing utilities
 proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }
