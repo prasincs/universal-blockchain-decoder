@@ -116,8 +116,8 @@ fn test_decode_msg_delegate_transaction() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
     use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
-    use prost::Message;
     use cosmos_sdk_proto::Any;
+    use prost::Message;
 
     // Create MsgDelegate
     let msg_delegate = MsgDelegate {
@@ -207,8 +207,8 @@ fn test_decode_multi_message_transaction() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
     use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
-    use prost::Message;
     use cosmos_sdk_proto::Any;
+    use prost::Message;
 
     // Create MsgSend
     let msg_send = MsgSend {
@@ -292,8 +292,8 @@ fn test_validate_signature_count() {
     use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, SignerInfo, Tx, TxBody};
-    use prost::Message;
     use cosmos_sdk_proto::Any;
+    use prost::Message;
 
     let msg_send = MsgSend {
         from_address: "cosmos1sender".to_string(),
