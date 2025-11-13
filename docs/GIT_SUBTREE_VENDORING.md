@@ -128,7 +128,7 @@ This directory contains hex v0.4.3 vendored via git subtree.
 - **Repository**: https://github.com/KokaKiwi/rust-hex
 - **Commit**: v0.4.3 tag
 - **License**: MIT OR Apache-2.0
-- **Vendored**: 2025-01-XX via git subtree
+- **Vendored**: 2025-11-13 via git subtree
 
 ## Verification
 

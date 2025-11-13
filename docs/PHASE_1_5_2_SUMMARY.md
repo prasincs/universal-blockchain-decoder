@@ -492,7 +492,7 @@ git log --oneline main..HEAD
 # Create PR (example)
 gh pr create \
   --title "Phase 1.5.2: Testing Infrastructure (50+ Property Tests, RLP Security Fix)" \
-  --body "$(cat PHASE_1_5_2_SUMMARY.md)"
+  --body "$(cat docs/PHASE_1_5_2_SUMMARY.md)"
 ```
 
 ---
