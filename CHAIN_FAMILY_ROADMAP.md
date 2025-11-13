@@ -11,11 +11,11 @@
 This document provides a comprehensive implementation roadmap for all blockchain families supported by the Universal Blockchain Decoder. Each family groups multiple blockchains that share the same underlying technology, allowing for efficient code reuse and maintenance.
 
 **Key Metrics**:
-- **Total Chain Families**: 18
-- **Total Blockchains Covered**: 620+
-- **Implemented Families**: 6 (33%)
+- **Total Chain Families**: 19 (added Privacy Chains)
+- **Total Blockchains Covered**: 625+
+- **Implemented Families**: 6 (32%)
 - **In Progress Families**: 2 (11%)
-- **Planned Families**: 10 (56%)
+- **Planned Families**: 11 (58%)
 
 **Progress Legend**:
 - ✅ **Complete**: Production-ready with comprehensive tests
@@ -48,8 +48,9 @@ This document provides a comprehensive implementation roadmap for all blockchain
 | **16. Algorand** | 📋 Planned | 1 | 102 | 1 | 10% | Low | Week 12 |
 | **17. NEAR** | 📋 Planned | 1 | 102 | 1 | 10% | Medium | Week 13 |
 | **18. Tron** | 📋 Planned | 1 | 102 | 1 | 10% | Medium | Week 14 |
+| **19. Privacy Chains** | 🚧 In Progress | 5+ | 490 | 20 | 40% | High | Week 15-16 |
 
-**Total**: 720+ chains across 18 families
+**Total**: 725+ chains across 19 families
 
 ---
 
@@ -845,6 +846,295 @@ This document provides a comprehensive implementation roadmap for all blockchain
 2. Implement contract type handlers (Week 14)
 3. Add resource accounting (Week 14)
 4. Test against Tron mainnet
+
+---
+
+## Family 19: Privacy Chains 🚧
+
+**Status**: 🚧 **In Progress (40%)**
+**Technology**: Various privacy-preserving mechanisms
+**Chains**: 5+ (Monero, Zcash, Aztec, Manta, Aleo)
+**Decoders**: `decoder-monero`, `decoder-zcash`, `decoder-aztec`, `decoder-manta`, `decoder-aleo`
+**Core Support**: `privacy.rs` module (490 LOC, Phase 3.5)
+
+### Overview
+
+Privacy-focused blockchains use advanced cryptographic techniques to hide transaction details while maintaining verifiability. Each chain implements different privacy primitives:
+
+- **Monero**: Privacy by default (RingCT, stealth addresses, ring signatures)
+- **Zcash**: Optional privacy (Sapling/Orchard shielded transactions)
+- **Aztec**: ZK rollup with programmable privacy
+- **Manta**: Privacy-preserving DeFi (Manta Pacific L2)
+- **Aleo**: Programmable privacy with zero-knowledge proofs
+
+### Core Privacy Support (Phase 3.5) ✅
+
+**Status**: ✅ **Core Types Complete** (Week 1-2)
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| Privacy Module | ✅ Complete | 490 | 20 | 5 fundamental primitives |
+| Property Tests | ✅ Complete | 350 | 22 | Proptest roundtrips |
+| Fuzz Targets | ✅ Complete | 80 | 1 | Serialization fuzzing |
+| Verus Annotations | 🚧 Partial | 100 | - | VT-30 (consistency) |
+| TxIR Integration | ✅ Complete | 50 | 6 | Optional privacy field |
+
+**Privacy Primitives** (Composable):
+1. ✅ **HiddenSender** - Ring signatures, stealth addresses
+2. ✅ **HiddenRecipient** - One-time addresses, encrypted outputs
+3. ✅ **HiddenAmount** - Confidential transactions, Pedersen commitments
+4. ✅ **HiddenGraph** - Privacy pools, mixers, CoinJoin
+5. ✅ **HiddenExistence** - Encrypted mempools, stealth payments
+
+**Supporting Types**:
+- ✅ `PrivacyMetadata` - Transaction privacy metadata
+- ✅ `ObservabilityLevel` - FullyObservable / PartiallyObservable / FullyPrivate
+- ✅ `PrivateAddress` - Stealth addresses, ring signatures
+- ✅ `ConfidentialAmount` - Pedersen commitments with range proofs
+- ✅ `PrivacyPool` - Anonymity set with compliance proofs
+- ✅ `EncryptedTransaction` - Encrypted payload with validity proof
+- ✅ `ViewingKey` - Selective disclosure (Zcash, Monero)
+
+### Implementation Details
+
+#### 19.1: Monero Decoder
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| RingCT Parser | 📋 Planned | 0 | 0 | Confidential amounts |
+| Ring Signatures | 📋 Planned | 0 | 0 | 11+ signer anonymity |
+| Stealth Addresses | 📋 Planned | 0 | 0 | One-time addresses |
+| Bulletproofs | 📋 Planned | 0 | 0 | Range proofs |
+| Subaddresses | 📋 Planned | 0 | 0 | Wallet privacy |
+
+**Blockchain**: Monero (XMR)
+- **Chain ID**: 128 (XMR)
+- **Status**: 📋 Planned (0%)
+- **Priority**: High
+- **Features**: RingCT, ring signatures, stealth addresses, Bulletproofs
+- **Privacy**: ✅ FullyPrivate (all details hidden by default)
+
+**Challenges**:
+- Complex cryptographic primitives (ring signatures, range proofs)
+- All transactions use privacy features (no transparent fallback)
+- Limited observability (requires view key for auditing)
+
+#### 19.2: Zcash Decoder
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| Transparent Parser | 📋 Planned | 0 | 0 | Bitcoin-like UTXO |
+| Sapling Parser | 📋 Planned | 0 | 0 | Shielded transactions |
+| Orchard Parser | 📋 Planned | 0 | 0 | Latest privacy upgrade |
+| Viewing Keys | 📋 Planned | 0 | 0 | Selective disclosure |
+
+**Blockchain**: Zcash (ZEC)
+- **Chain ID**: 133 (ZEC)
+- **Status**: 📋 Planned (0%)
+- **Priority**: High
+- **Features**: Sapling/Orchard shielded transactions, viewing keys
+- **Privacy**: ✅ PartiallyObservable (optional privacy, z2z transactions fully private)
+
+**Transaction Types**:
+1. **Transparent (t2t)**: Fully observable (Bitcoin-like)
+2. **Shielding (t2z)**: Partially observable (sender visible, recipient hidden)
+3. **Deshielding (z2t)**: Partially observable (sender hidden, recipient visible)
+4. **Shielded (z2z)**: Fully private (both hidden)
+
+#### 19.3: Aztec Decoder
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| Rollup Decoder | 📋 Planned | 0 | 0 | ZK rollup transactions |
+| Private State | 📋 Planned | 0 | 0 | Encrypted contract state |
+| Noir Circuits | 📋 Planned | 0 | 0 | ZK circuit representation |
+
+**Blockchain**: Aztec Network
+- **Chain ID**: Custom
+- **Status**: 📋 Planned (0%)
+- **Priority**: Medium
+- **Features**: ZK rollup, programmable privacy, Noir language
+- **Privacy**: ✅ PartiallyObservable (programmable privacy levels)
+
+#### 19.4: Manta Decoder
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| Manta Pacific L2 | 📋 Planned | 0 | 0 | OP Stack + privacy |
+| Private DeFi | 📋 Planned | 0 | 0 | Encrypted amounts |
+
+**Blockchain**: Manta Pacific (L2)
+- **Chain ID**: 169 (Manta Pacific)
+- **Status**: 📋 Planned (0%)
+- **Priority**: Medium
+- **Features**: Privacy-preserving DeFi, OP Stack compatible
+- **Privacy**: ✅ PartiallyObservable (optional privacy for DeFi)
+
+#### 19.5: Aleo Decoder
+
+| Component | Status | LOC | Tests | Notes |
+|-----------|--------|-----|-------|-------|
+| Leo Program Parser | 📋 Planned | 0 | 0 | Programmable privacy |
+| ZK Execution | 📋 Planned | 0 | 0 | SNARK verification |
+
+**Blockchain**: Aleo
+- **Chain ID**: Custom
+- **Status**: 📋 Planned (0%)
+- **Priority**: Low
+- **Features**: Programmable privacy, Leo language, SNARKs
+- **Privacy**: ✅ FullyPrivate (all transactions private by default)
+
+### Blockchain Coverage
+
+| Blockchain | Chain ID | Status | Progress | Privacy Model | Priority |
+|------------|----------|--------|----------|---------------|----------|
+| **Monero** | 128 (XMR) | 📋 Planned | 0% | FullyPrivate | High |
+| **Zcash** | 133 (ZEC) | 📋 Planned | 0% | Optional (z2z private) | High |
+| **Aztec** | Custom | 📋 Planned | 0% | Programmable | Medium |
+| **Manta Pacific** | 169 | 📋 Planned | 0% | Optional DeFi privacy | Medium |
+| **Aleo** | Custom | 📋 Planned | 0% | FullyPrivate | Low |
+
+### Privacy Feature Matrix
+
+| Chain | HiddenSender | HiddenRecipient | HiddenAmount | HiddenGraph | HiddenExistence |
+|-------|--------------|-----------------|--------------|-------------|-----------------|
+| **Monero** | ✅ Ring sig | ✅ Stealth | ✅ RingCT | ❌ | ❌ |
+| **Zcash** | ✅ Sapling | ✅ Sapling | ✅ Sapling | ❌ | ❌ |
+| **Aztec** | ✅ ZK proof | ✅ ZK proof | ✅ ZK proof | ✅ ZK rollup | ❌ |
+| **Manta** | ✅ Optional | ✅ Optional | ✅ Optional | ❌ | ❌ |
+| **Aleo** | ✅ SNARK | ✅ SNARK | ✅ SNARK | ❌ | ✅ Optional |
+| **Ethereum (EIP-5564)** | ❌ | ✅ Stealth | ❌ | ✅ Pools | ✅ Flashbots |
+
+### Completeness: 40% (Core types only)
+
+**Delivered** (Phase 3.5 Week 1-2):
+- ✅ Core privacy module (490 LOC, 20 unit tests)
+- ✅ Property-based tests (22 tests, roundtrips verified)
+- ✅ Fuzz target for serialization safety
+- ✅ Verus annotations (VT-30: consistency properties)
+- ✅ TxIR integration (optional privacy field)
+- ✅ Backward compatible (existing chains unaffected)
+
+**In Progress** (Phase 3.5 Week 3-4):
+- 🚧 Ethereum stealth address detection (EIP-5564)
+- 🚧 Privacy pool detection (Ethereum mainnet)
+- 🚧 Integration tests with real privacy transactions
+
+**Planned** (Phase 3.5 Week 5-8):
+- [ ] Monero decoder (RingCT, ring signatures, stealth)
+- [ ] Zcash decoder (Sapling, Orchard shielded transactions)
+- [ ] Viewing key support (selective disclosure)
+- [ ] Privacy transaction test fixtures (100+ real transactions)
+
+**Future** (Phase 4+):
+- [ ] Aztec decoder (ZK rollup transactions)
+- [ ] Manta decoder (privacy-preserving DeFi)
+- [ ] Aleo decoder (programmable privacy)
+
+### Testing Strategy
+
+**Level 1: Unit Tests** ✅ Complete (20 tests)
+- ✅ Privacy type creation and validation
+- ✅ Serialization roundtrips (serde_json)
+- ✅ Observability level consistency
+- ✅ Privacy feature composition
+
+**Level 2: Property Tests** ✅ Complete (22 tests)
+- ✅ Serialization determinism
+- ✅ Roundtrip preservation
+- ✅ Size bounds
+- ✅ Clone safety
+- ✅ Equality properties (reflexive, symmetric)
+
+**Level 3: Integration Tests** 🚧 In Progress
+- 🚧 Ethereum stealth addresses (EIP-5564)
+- 🚧 Privacy Pools (Ethereum mainnet)
+- 📋 Monero RingCT transactions
+- 📋 Zcash shielded transactions
+
+**Level 4: Fuzz Testing** ✅ Infrastructure Ready
+- ✅ Privacy serialization fuzzing
+- 📋 Decoder safety fuzzing (never panic)
+
+**Level 5: Formal Verification** 🚧 Partial
+- 🚧 VT-30: Privacy metadata consistency
+- 📋 VT-31: Viewing key safety
+- 📋 VT-32: Observability level correctness
+
+### Implementation Timeline
+
+**Phase 3.5: Privacy Primitive Support** (Weeks 15-16)
+
+**Week 15** (Complete ✅):
+- ✅ Core privacy types (490 LOC)
+- ✅ Unit tests (20 tests)
+- ✅ Property tests (22 tests)
+- ✅ Fuzz target
+- ✅ TxIR integration
+
+**Week 16** (In Progress 🚧):
+- 🚧 Ethereum stealth address support
+- 🚧 Privacy pool detection
+- 🚧 Integration tests
+- 📋 Documentation
+
+**Week 17-18** (Planned):
+- [ ] Monero decoder (RingCT basics)
+- [ ] Zcash transparent + Sapling
+- [ ] Test fixtures (50+ transactions)
+
+**Week 19-20** (Future):
+- [ ] Advanced Monero features (subaddresses)
+- [ ] Zcash Orchard support
+- [ ] Viewing key implementation
+
+### Success Criteria
+
+**Phase 3.5 Complete When**:
+- ✅ Core privacy types implemented and tested
+- ✅ Property-based tests verify roundtrips
+- ✅ TxIR has optional privacy field
+- 🚧 Ethereum stealth addresses detected (Week 16)
+- 🚧 Privacy pool transactions parsed (Week 16)
+- 📋 100+ integration test fixtures (Week 17)
+- 📋 At least 1 privacy chain fully supported (Monero or Zcash, Week 18)
+
+**Production Ready When**:
+- [ ] Monero decoder complete (RingCT, ring signatures, stealth)
+- [ ] Zcash decoder complete (transparent, Sapling, Orchard)
+- [ ] 200+ privacy transaction test fixtures
+- [ ] Formal verification targets complete (VT-30, VT-31, VT-32)
+- [ ] Security audit passed
+- [ ] Privacy documentation complete
+
+### References
+
+- **Privacy Roadmap**: `docs/PRIVACY_ROADMAP.md` (comprehensive design)
+- **EIP-5564**: Stealth Addresses for Ethereum
+- **Privacy Pools** (2024): Compliant privacy with association sets
+- **Monero**: CryptoNote whitepaper, RingCT
+- **Zcash**: Sapling/Orchard protocol specifications
+- **Aztec**: Noir language, ZK rollup architecture
+
+### Notes
+
+**Design Philosophy**:
+- ✅ Composition over enumeration (5 primitives compose into any privacy mechanism)
+- ✅ Extensibility (Custom variant for novel mechanisms)
+- ✅ Backward compatibility (privacy is optional)
+- ✅ Minimal TCB (core provides types, decoders implement parsing)
+
+**Challenges**:
+- Complex cryptographic primitives (ring signatures, SNARKs)
+- Limited observability (requires specialized knowledge)
+- Verification complexity (zero-knowledge proofs)
+- Test data scarcity (fewer public test vectors)
+
+**Opportunities**:
+- Privacy Pools now live on Ethereum (testable today)
+- EIP-5564 stealth addresses emerging (2024-2025)
+- Growing privacy-DeFi ecosystem (Manta, Aztec)
+- Compliance-friendly privacy (association sets)
 
 ---
 

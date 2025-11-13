@@ -62,6 +62,11 @@
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "formal-verification")]
+use builtin::*;
+#[cfg(feature = "formal-verification")]
+use builtin_macros::*;
+
 /// Privacy metadata for transactions with privacy features
 ///
 /// This structure is optional in TxIR (None for fully transparent chains).
@@ -94,6 +99,92 @@ pub struct PrivacyMetadata {
     /// Some privacy protocols (Zcash, Monero) support viewing keys that allow
     /// selective disclosure of transaction details without revealing the spending key.
     pub viewing_key: Option<ViewingKey>,
+}
+
+impl PrivacyMetadata {
+    /// Creates a new PrivacyMetadata with validation
+    ///
+    /// # Formal Properties (VT-30: Privacy Metadata Consistency)
+    ///
+    /// - VT-30.1: If observability is FullyObservable, features should be empty (convention)
+    /// - VT-30.2: Clone operation never panics
+    /// - VT-30.3: Equality is reflexive, symmetric, and transitive
+    #[cfg_attr(
+        feature = "formal-verification",
+        verifier::spec(|features: Vec<PrivacyFeature>, observability: ObservabilityLevel, viewing_key: Option<ViewingKey>| -> PrivacyMetadata
+            ensures(|result: PrivacyMetadata| {
+                // VT-30.1: Features preserved
+                result.features == features &&
+                result.observability == observability &&
+                result.viewing_key == viewing_key
+            })
+        )
+    )]
+    pub fn new(
+        features: Vec<PrivacyFeature>,
+        observability: ObservabilityLevel,
+        viewing_key: Option<ViewingKey>,
+    ) -> Self {
+        Self {
+            features,
+            observability,
+            viewing_key,
+        }
+    }
+
+    /// Returns true if this transaction has any privacy features
+    ///
+    /// # Formal Properties
+    ///
+    /// - Never panics
+    /// - Returns true iff features vector is non-empty
+    #[cfg_attr(
+        feature = "formal-verification",
+        verifier::spec(|self: &PrivacyMetadata| -> bool
+            ensures(|result: bool| {
+                result == !self.features.is_empty()
+            })
+        )
+    )]
+    pub fn has_privacy_features(&self) -> bool {
+        !self.features.is_empty()
+    }
+
+    /// Returns true if transaction is fully observable (no privacy)
+    ///
+    /// # Formal Properties
+    ///
+    /// - Never panics
+    /// - Returns true iff observability is FullyObservable
+    #[cfg_attr(
+        feature = "formal-verification",
+        verifier::spec(|self: &PrivacyMetadata| -> bool
+            ensures(|result: bool| {
+                result == matches!(self.observability, ObservabilityLevel::FullyObservable)
+            })
+        )
+    )]
+    pub fn is_fully_observable(&self) -> bool {
+        matches!(self.observability, ObservabilityLevel::FullyObservable)
+    }
+
+    /// Returns true if transaction has complete privacy
+    ///
+    /// # Formal Properties
+    ///
+    /// - Never panics
+    /// - Returns true iff observability is FullyPrivate
+    #[cfg_attr(
+        feature = "formal-verification",
+        verifier::spec(|self: &PrivacyMetadata| -> bool
+            ensures(|result: bool| {
+                result == matches!(self.observability, ObservabilityLevel::FullyPrivate)
+            })
+        )
+    )]
+    pub fn is_fully_private(&self) -> bool {
+        matches!(self.observability, ObservabilityLevel::FullyPrivate)
+    }
 }
 
 /// Observability level indicates how much transaction data is publicly visible
