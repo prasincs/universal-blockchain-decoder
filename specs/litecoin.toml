@@ -1,0 +1,29 @@
+# Litecoin Decoder Specification
+#
+# Litecoin is Bitcoin-like with SegWit support.
+# To generate: cargo run -p decoder-generator -- generate specs/litecoin.toml
+
+[chain]
+name = "Litecoin"
+chain_id = 2
+family = "utxo"
+description = "Litecoin - Bitcoin fork with faster blocks and SegWit"
+
+[encoding]
+endianness = "little"
+hash = "double-sha256"
+var_encoding = "varint"
+
+# Transaction format (simplified - full implementation TBD)
+[[transaction.fields]]
+type = "primitive"
+name = "version"
+prim_type = "u32"
+
+[[transaction.fields]]
+type = "primitive"
+name = "locktime"
+prim_type = "u32"
+
+[transaction.txid]
+exclude_fields = ["witnesses"]  # Exclude witness data for SegWit TXID
