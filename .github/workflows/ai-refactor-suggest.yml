@@ -1,0 +1,155 @@
+name: AI Refactoring Suggestions
+
+# Run weekly on Monday at 9:00 AM UTC
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      decoder:
+        description: 'Specific decoder to analyze (optional)'
+        required: false
+        type: string
+      family:
+        description: 'Chain family to analyze (optional)'
+        required: false
+        type: choice
+        options:
+          - all
+          - utxo
+          - account
+          - instruction
+          - other
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  analyze:
+    name: Analyze Decoders with Claude
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Build AI refactor tool
+        run: cargo build --release -p ai-refactor-suggest
+
+      - name: Run AI refactoring analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.decoder }}" ]; then
+            ARGS="$ARGS --decoder ${{ github.event.inputs.decoder }}"
+          fi
+          if [ -n "${{ github.event.inputs.family }}" ] && [ "${{ github.event.inputs.family }}" != "all" ]; then
+            ARGS="$ARGS --family ${{ github.event.inputs.family }}"
+          fi
+
+          cargo run --release -p ai-refactor-suggest -- \
+            --output refactor-suggestions.md \
+            --issues-dir github-issues \
+            --config scripts/refactor-config.json \
+            --repo-root . \
+            $ARGS
+
+      - name: Upload refactoring report
+        uses: actions/upload-artifact@v4
+        with:
+          name: refactor-suggestions
+          path: |
+            refactor-suggestions.md
+            github-issues/
+          retention-days: 90
+
+      - name: Check for high-priority suggestions
+        id: check-priority
+        run: |
+          if [ -d "github-issues" ] && [ "$(ls -A github-issues)" ]; then
+            echo "has_high_priority=true" >> $GITHUB_OUTPUT
+            echo "issue_count=$(ls -1 github-issues/*.md 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "has_high_priority=false" >> $GITHUB_OUTPUT
+            echo "issue_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create summary comment
+        if: steps.check-priority.outputs.has_high_priority == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issueCount = ${{ steps.check-priority.outputs.issue_count }};
+
+            // Read the report
+            const report = fs.readFileSync('refactor-suggestions.md', 'utf8');
+
+            // Extract summary section (first 1000 chars)
+            const summary = report.substring(0, 1000);
+
+            const body = `## 🤖 AI Refactoring Suggestions - Weekly Report
+
+            The AI refactoring analysis has identified **${issueCount} high-priority suggestions**.
+
+            ${summary}
+
+            [Full report available in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            **Next Steps:**
+            1. Review the full report artifact
+            2. Evaluate high-priority suggestions
+            3. Create issues for valid suggestions
+            4. Plan implementation in upcoming sprints
+            `;
+
+            // Create an issue to track the suggestions
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `AI Refactoring Suggestions - Week of ${new Date().toISOString().split('T')[0]}`,
+              body: body,
+              labels: ['ai-generated', 'refactoring', 'review-needed']
+            });
+
+      - name: Create pull request with report (optional)
+        if: steps.check-priority.outputs.has_high_priority == 'true' && github.event_name == 'schedule'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "docs: Add AI refactoring suggestions report"
+          title: "AI Refactoring Suggestions - Week of ${{ github.event.repository.updated_at }}"
+          body: |
+            ## 🤖 Automated AI Refactoring Analysis
+
+            This PR contains the weekly AI refactoring suggestions report.
+
+            **Summary:**
+            - Total high-priority suggestions: ${{ steps.check-priority.outputs.issue_count }}
+            - Generated: ${{ github.event.repository.updated_at }}
+
+            **Review Process:**
+            1. Review `refactor-suggestions.md` for full analysis
+            2. Evaluate suggestions in `github-issues/` directory
+            3. Create tracking issues for valid suggestions
+            4. Close this PR after review
+
+            This is an automated analysis - human review required before implementation.
+          branch: ai-refactor-suggestions-${{ github.run_number }}
+          delete-branch: true
+          labels: |
+            ai-generated
+            documentation
+            review-needed
