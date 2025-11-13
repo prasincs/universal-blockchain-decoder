@@ -4,7 +4,6 @@
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Complete decoder specification
 #[derive(Debug, Clone, Serialize, Deserialize)]

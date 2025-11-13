@@ -10,7 +10,7 @@
 use anyhow::{Context, Result};
 use decoder_generator::{generate_decoder, validate_spec};
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -120,7 +120,7 @@ RECOMMENDED WORKFLOW:
     );
 }
 
-fn print_warning_already_exists(path: &PathBuf) {
+fn print_warning_already_exists(path: &Path) {
     eprintln!("\n⚠️  WARNING: {} already exists", path.display());
     eprintln!("    Regenerating will OVERWRITE your changes!");
     eprintln!("    This tool is for ONE-TIME generation only.\n");
@@ -136,7 +136,7 @@ fn confirm_overwrite() -> Result<bool> {
     Ok(input.trim().eq_ignore_ascii_case("y"))
 }
 
-fn print_post_generation_instructions(output_dir: &PathBuf) {
+fn print_post_generation_instructions(output_dir: &Path) {
     println!("\n✅ Generated decoder at {}", output_dir.display());
     println!("\n📋 NEXT STEPS:");
     println!("   1. cd {}", output_dir.display());
@@ -184,9 +184,7 @@ fn interactive_mode() -> Result<()> {
 
 fn quick_generate_from_args(args: &[String]) -> Result<()> {
     if args.is_empty() {
-        eprintln!(
-            "Usage: decoder-gen new <name> --chain-id <id> --family <family> --hash <hash>"
-        );
+        eprintln!("Usage: decoder-gen new <name> --chain-id <id> --family <family> --hash <hash>");
         std::process::exit(1);
     }
 

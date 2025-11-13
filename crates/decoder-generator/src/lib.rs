@@ -35,7 +35,6 @@
 //! ```
 
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -87,6 +86,7 @@ pub fn validate_spec(spec_path: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
