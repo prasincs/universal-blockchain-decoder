@@ -4,11 +4,13 @@
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
 use crate::EthereumChain;
+use borsh::{BorshDeserialize, BorshSerialize};
 use decoder_encodings::rlp::RlpItem;
+use serde::{Deserialize, Serialize};
 use universal_decoder_core::prelude::*;
 
 /// Ethereum transaction type indicator (EIP-2718)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TxType {
     /// Legacy transaction (pre-EIP-2718)
     Legacy = 0,
@@ -18,6 +20,34 @@ pub enum TxType {
     Eip1559 = 2,
     /// EIP-4844: Blob transactions (Proto-Danksharding)
     Eip4844 = 3,
+}
+
+impl BorshSerialize for TxType {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        let value: u8 = match self {
+            TxType::Legacy => 0,
+            TxType::Eip2930 => 1,
+            TxType::Eip1559 => 2,
+            TxType::Eip4844 => 3,
+        };
+        BorshSerialize::serialize(&value, writer)
+    }
+}
+
+impl BorshDeserialize for TxType {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let value = u8::deserialize_reader(reader)?;
+        match value {
+            0 => Ok(TxType::Legacy),
+            1 => Ok(TxType::Eip2930),
+            2 => Ok(TxType::Eip1559),
+            3 => Ok(TxType::Eip4844),
+            _ => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Unknown transaction type: {}", value),
+            )),
+        }
+    }
 }
 
 impl TxType {
@@ -38,7 +68,7 @@ impl TxType {
 /// Ethereum-specific transaction representation
 ///
 /// Pure Rust implementation supporting all transaction types.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct EthereumTransaction {
     /// Transaction type
     pub tx_type: TxType,
@@ -80,7 +110,7 @@ pub struct EthereumTransaction {
 }
 
 /// Access list item (EIP-2930)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct AccessListItem {
     /// Address
     pub address: [u8; 20],
@@ -308,6 +338,27 @@ impl EthereumTransaction {
     /// Get effective gas price
     pub fn effective_gas_price(&self) -> u128 {
         self.gas_price.or(self.max_fee_per_gas).unwrap_or_default()
+    }
+
+    /// Get the sender address
+    ///
+    /// Note: This currently returns a placeholder address.
+    /// Full implementation would recover the sender from the signature (ECDSA recovery).
+    /// TODO: Implement proper ECDSA public key recovery (requires secp256k1 crate)
+    pub fn get_from(&self) -> [u8; 20] {
+        // TODO: Implement ECDSA recovery from (v, r, s) signature
+        // For now, return zero address as placeholder
+        [0u8; 20]
+    }
+
+    /// Get transaction type as u8
+    pub fn tx_type_u8(&self) -> u8 {
+        match self.tx_type {
+            TxType::Legacy => 0,
+            TxType::Eip2930 => 1,
+            TxType::Eip1559 => 2,
+            TxType::Eip4844 => 3,
+        }
     }
 }
 
