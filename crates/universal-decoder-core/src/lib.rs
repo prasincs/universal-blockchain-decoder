@@ -57,6 +57,7 @@ pub mod chain;
 pub mod error;
 pub mod hooks;
 pub mod ir;
+pub mod privacy;
 pub mod traits;
 
 // Vendored dependencies (git subtree)
@@ -78,6 +79,11 @@ pub mod prelude {
         ContractDeploy, GenericOperation, InputReference, KeyType, Operation, OutputValue,
         PublicKey, ResourceLimits, ResourceType, Signature, SignatureScheme, Stake,
         StakeOperationType, StateDeltas, StorageChange, Transfer, TxIR, TxMetadata,
+    };
+    pub use crate::privacy::{
+        AddressPrivacyType, ComplianceProof, ConfidentialAmount, DecryptionPolicy,
+        EncryptedTransaction, ObservabilityLevel, PrivacyFeature, PrivacyMetadata, PrivacyPool,
+        PrivateAddress, RangeProofSystem, ViewingKey, ViewingKeyType,
     };
     pub use crate::traits::{
         BatchDecoder, Canonicalizer, ChainDecoder, DecoderPlugin, DoubleSha256, FormallyVerifiable,
