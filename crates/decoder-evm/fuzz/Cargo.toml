@@ -1,0 +1,36 @@
+[package]
+name = "decoder-evm-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+decoder-evm = { path = ".." }
+decoder-ethereum = { path = "../../decoder-ethereum" }
+universal-decoder-core = { path = "../../universal-decoder-core" }
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_evm_decoder"
+path = "fuzz_targets/fuzz_evm_decoder.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_evm_multi_chain"
+path = "fuzz_targets/fuzz_evm_multi_chain.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_evm_registry"
+path = "fuzz_targets/fuzz_evm_registry.rs"
+test = false
+doc = false
