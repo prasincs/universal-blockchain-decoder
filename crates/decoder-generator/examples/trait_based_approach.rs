@@ -19,9 +19,7 @@ pub trait UtxoChainConfig: Send + Sync + 'static {
     type HashAlgorithm: HashAlgorithm;
 
     /// Override parsing if needed (default works for most chains)
-    fn parse_custom_input<R: std::io::Read>(
-        _reader: &mut R,
-    ) -> Option<CustomInput> {
+    fn parse_custom_input<R: std::io::Read>(_reader: &mut R) -> Option<CustomInput> {
         None // Most chains use default
     }
 }
@@ -78,9 +76,9 @@ pub struct Litecoin;
 impl UtxoChainConfig for Litecoin {
     const CHAIN_ID: u64 = 2;
     const CHAIN_NAME: &'static str = "Litecoin";
-    const HAS_SEGWIT: bool = true;  // Same as Bitcoin
+    const HAS_SEGWIT: bool = true; // Same as Bitcoin
 
-    type HashAlgorithm = DoubleSha256;  // Same as Bitcoin
+    type HashAlgorithm = DoubleSha256; // Same as Bitcoin
 }
 
 pub type LitecoinDecoder = UtxoDecoder<Litecoin>;
@@ -96,7 +94,7 @@ pub struct Dogecoin;
 impl UtxoChainConfig for Dogecoin {
     const CHAIN_ID: u64 = 3;
     const CHAIN_NAME: &'static str = "Dogecoin";
-    const HAS_SEGWIT: bool = false;  // Only difference!
+    const HAS_SEGWIT: bool = false; // Only difference!
 
     type HashAlgorithm = DoubleSha256;
 }
@@ -114,7 +112,7 @@ impl UtxoChainConfig for Zcash {
     const CHAIN_NAME: &'static str = "Zcash";
     const HAS_SEGWIT: bool = false;
 
-    type HashAlgorithm = Blake2b;  // Different hash!
+    type HashAlgorithm = Blake2b; // Different hash!
 
     // Could also override parse_custom_input for shielded transactions
 }

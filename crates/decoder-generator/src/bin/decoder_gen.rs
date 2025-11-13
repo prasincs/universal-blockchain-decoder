@@ -184,9 +184,7 @@ fn interactive_mode() -> Result<()> {
 
 fn quick_generate_from_args(args: &[String]) -> Result<()> {
     if args.is_empty() {
-        eprintln!(
-            "Usage: decoder-gen new <name> --chain-id <id> --family <family> --hash <hash>"
-        );
+        eprintln!("Usage: decoder-gen new <name> --chain-id <id> --family <family> --hash <hash>");
         std::process::exit(1);
     }
 
