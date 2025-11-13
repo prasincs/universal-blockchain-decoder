@@ -1200,6 +1200,237 @@ let tx = decoder.decode(&tx_bytes, Some(ChainId::Numeric(56)))?; // BNB Chain
 
 **Why Important**: User-facing unified interface
 
+---
+
+## Phase 3.10: WASM Demo & Interactive Playground (Week 12-13)
+
+**Target**: v0.2.1-wasm-demo
+**Timeline**: 1-2 weeks
+**Focus**: Browser-based transaction decoder with CodeMirror for blog posts, papers, and demos
+**Priority**: HIGH (Paper/blog demo, conference presentations)
+
+**Motivation**: Create a compelling, interactive demonstration of the universal decoder that:
+- Runs entirely in the browser (zero-trust, no server-side processing)
+- Works offline (reinforces airgapped narrative)
+- Can be embedded in blog posts and documentation
+- Provides visual comparison of different blockchain models
+- Highlights privacy features across chains
+- Serves as educational tool and conference demo
+
+**See**: `docs/WASM_DEMO.md` for comprehensive implementation guide
+
+### 3.10.1: WASM Core Infrastructure (Week 12)
+
+**Tasks**:
+- [ ] Create `crates/universal-decoder-wasm` crate
+  - wasm-bindgen for JS interop
+  - serde-wasm-bindgen for data serialization
+  - console_error_panic_hook for better debugging
+- [ ] Implement WASM API
+  ```rust
+  #[wasm_bindgen]
+  pub struct DecodeResult {
+      canonical_hex: String,
+      canonical_hash: String,
+      json: JsValue,
+      privacy_features: Vec<String>,
+  }
+
+  #[wasm_bindgen]
+  pub fn decode_transaction(chain: &str, hex: &str) -> Result<JsValue, JsValue>
+  ```
+- [ ] Set up build infrastructure
+  - wasm-pack for building
+  - Build script for optimization (opt-level = "z", LTO)
+  - Size benchmarking (target: < 500KB for core + 3 decoders)
+- [ ] Create minimal web UI skeleton
+  - HTML structure with CodeMirror integration
+  - Basic CSS styling
+  - JavaScript module loader
+- [ ] Test WASM build and bundle size
+  - Minimal build: Bitcoin + Ethereum (~300KB gzipped target)
+  - Full build: All decoders (~2MB gzipped target)
+- [ ] Write integration tests for WASM API
+
+**Validation**:
+- [ ] WASM module loads successfully in browser
+- [ ] Can decode Bitcoin transaction in browser
+- [ ] Can decode Ethereum transaction in browser
+- [ ] Error messages are clear and helpful
+- [ ] Bundle size is acceptable (< 500KB for minimal)
+
+### 3.10.2: Interactive UI & Visual Features (Week 13)
+
+**Priority**: MEDIUM (Polish for demos)
+
+**Tasks**:
+- [ ] Implement CodeMirror editor integration
+  - Hex input editor with syntax highlighting
+  - JSON output editor with formatting
+  - Line numbers and error highlighting
+- [ ] Create chain selector dropdown
+  - Bitcoin, Ethereum, Solana, OP Stack, etc.
+  - Auto-detection option (from transaction format)
+- [ ] Add example transaction loader
+  - Pre-loaded examples for each chain:
+    - Bitcoin: SegWit transaction
+    - Ethereum: EIP-1559 transaction
+    - Ethereum: Tornado Cash deposit (privacy features!)
+    - OP Stack: L1→L2 deposit (0x7E)
+    - Solana: Token transfer
+  - Load on click, decode automatically
+- [ ] Implement output tabs
+  - Tab 1: JSON (human-readable display)
+  - Tab 2: Canonical Borsh (hex representation)
+  - Tab 3: Privacy Analysis (if applicable)
+- [ ] Add metadata display
+  - Canonical hash
+  - Canonical size (bytes)
+  - Privacy score (🟢 Private / 🟡 Partial / 🔴 Transparent)
+  - Privacy features detected (ring signatures, stealth addresses, etc.)
+- [ ] Implement privacy highlighting
+  - Color-code privacy features in JSON
+  - Badge for privacy level
+  - Explanation tooltips
+- [ ] Create comparison mode (optional, stretch goal)
+  - Split-screen: 3 chains side-by-side
+  - Same semantic operation (Transfer) across chains
+  - Highlight differences (UTXO vs Account vs Instruction)
+  - "All normalize to same TxIR" visualization
+
+**Advanced Features** (optional):
+- [ ] Visual transaction flow diagram
+- [ ] Export options (download .borsh, .json, copy hash)
+- [ ] Shareable URL (transaction hex in URL fragment)
+- [ ] Dark/light mode toggle
+- [ ] Mobile-responsive layout
+
+**Validation**:
+- [ ] User can paste any transaction hex and decode it
+- [ ] Privacy features are highlighted correctly
+- [ ] Examples work for all supported chains
+- [ ] UI is intuitive and responsive
+- [ ] Works on mobile devices
+
+### 3.10.3: Deployment & Integration (Week 13)
+
+**Tasks**:
+- [ ] Deploy to GitHub Pages
+  - Set up GitHub Actions for automatic deployment
+  - Custom domain (optional): decoder.universalblockchain.dev
+- [ ] Create embeddable iframe version
+  - Minimal UI for embedding in blog posts
+  - URL parameters for chain selection and pre-filled transactions
+  - Example: `<iframe src="https://decoder.../embed?chain=bitcoin&tx=...">`
+- [ ] Write documentation
+  - User guide: How to use the demo
+  - Developer guide: How to embed in websites
+  - API documentation for WASM module
+- [ ] Create demo video/GIF
+  - Screen recording showing decoding across chains
+  - Privacy feature detection demonstration
+  - For use in README, blog posts, presentations
+- [ ] Update README.md with demo link
+  - Prominent "Try it live!" button
+  - Screenshot of the demo
+  - Link to WASM_DEMO.md for technical details
+
+**Deliverables**:
+- [ ] Live demo deployed and accessible
+- [ ] Embeddable version for blog posts
+- [ ] Documentation for users and developers
+- [ ] Demo video/GIF for promotion
+- [ ] GitHub Pages site with custom domain (optional)
+
+### 3.10.4: Use Cases & Applications
+
+**Blog Post Integration**:
+- Embed interactive examples directly in blog posts
+- Readers can experiment with real transactions
+- Visual comparison of blockchain models
+
+**Conference Presentations**:
+- Works offline (no WiFi needed after initial load)
+- Live demonstration with audience transactions
+- Privacy feature detection in real-time
+
+**Educational Tool**:
+- Students learn transaction formats hands-on
+- Visualize UTXO vs Account models
+- Understand canonical encoding
+
+**Privacy Research**:
+- Analyze Tornado Cash transactions
+- Compare privacy primitives across chains
+- Quantify privacy scores
+
+**Paper Demonstrations**:
+- Interactive figures in HTML versions of papers
+- Reproducible examples
+- Visual proof of concept
+
+### 3.10.5: Success Criteria
+
+**Technical**:
+- ✅ WASM module builds successfully
+- ✅ Bundle size < 500KB (minimal) or < 2MB (full)
+- ✅ Decodes Bitcoin, Ethereum, Solana successfully
+- ✅ Works offline after initial load
+- ✅ No network calls during operation (airgapped demo)
+- ✅ Error handling is robust and user-friendly
+
+**User Experience**:
+- ✅ Interface is intuitive (no instructions needed)
+- ✅ Examples load instantly
+- ✅ Privacy features are visually obvious
+- ✅ Works on desktop and mobile
+- ✅ Embeddable in blog posts
+
+**Documentation**:
+- ✅ User guide complete
+- ✅ Developer guide for embedding
+- ✅ API documentation for WASM module
+- ✅ Demo video/GIF created
+
+**Adoption**:
+- ✅ Deployed to GitHub Pages
+- ✅ Linked from main README
+- ✅ Used in at least one blog post or paper
+- ✅ Positive feedback from early users
+
+### Benefits
+
+**Maximum Impact**:
+- **Zero-trust demonstration**: Nothing leaves the browser
+- **Offline capability**: Reinforces airgapped architecture
+- **Embeddable**: Can be used in papers, blogs, documentation
+- **Visual**: Privacy features and blockchain models clearly shown
+- **Educational**: Interactive learning tool
+- **Marketing**: Compelling demo for GitHub, conferences, papers
+
+**Low Maintenance**:
+- Auto-updates with core library changes
+- Hosted on GitHub Pages (free)
+- No server infrastructure needed
+- Small bundle size (fast to load)
+
+**High ROI**:
+- Development time: 1-2 weeks
+- Impact: Massive (demos, papers, education, adoption)
+- Cost: $0 hosting (GitHub Pages)
+- Maintenance: Minimal (auto-deploys with CI)
+
+**Why This Matters**:
+- **Papers**: Interactive demonstrations are more compelling than static figures
+- **Conferences**: Live demos without WiFi dependency
+- **Blog Posts**: Readers can experiment immediately
+- **Education**: Visual, hands-on learning beats documentation
+- **Adoption**: Seeing is believing - instant proof of concept
+- **Privacy**: Demonstrates privacy-aware architecture visually
+- **Marketing**: Shareable, impressive demo for social media
+
+---
+
 ## Phase 4: Formal Verification (Months 3-4)
 
 **Target**: v0.3.0

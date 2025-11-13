@@ -10,12 +10,13 @@
 - 📦 `docs/GIT_SUBTREE_VENDORING.md` - Verifiable dependency vendoring
 - 🧪 `docs/TESTING_STRATEGY.md` - 5-level testing pyramid
 - 🔧 `docs/DECODER_DEPENDENCY_STRATEGY.md` - Pure Rust decoder pattern
+- 🌐 `docs/WASM_DEMO.md` - Interactive browser-based demo (Phase 3.10)
 
-**Next Actions** (Week 1):
-1. Vendor `hex` using git subtree (see below)
-2. Move `serde_json` to dev-dependencies
-3. Benchmark `smallvec` vs `Vec`
-4. Move blockchain libs to dev-dependencies
+**Next Actions**:
+1. Complete OP Stack implementation (Phase 3.2) - 90% done, ~4 hours
+2. Implement Cosmos SDK decoder (Phase 3.5) - Registry vendored, high ROI
+3. Build WASM demo (Phase 3.10) - 1-2 weeks, perfect for papers/blogs/conferences
+4. Add more property tests (Phase 1.5.2) - Need 34 more (currently 16/50)
 
 ---
 
