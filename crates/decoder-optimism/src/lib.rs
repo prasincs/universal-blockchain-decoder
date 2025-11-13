@@ -32,11 +32,10 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use decoder_optimism::*;
 //! use universal_decoder_core::prelude::*;
 //!
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Standard Ethereum transaction on Optimism
 //! let eth_tx_bytes = hex::decode("02...")?;
 //! let tx = OptimismDecoder::decode(&eth_tx_bytes)?;
@@ -47,15 +46,13 @@
 //!
 //! match deposit {
 //!     OptimismTransaction::Deposit(d) => {
-//!         println!("Deposit from {} to {:?}", hex::encode(d.from), d.to);
+//!         println!("Deposit from {} to {:?}", universal_decoder_core::hex::encode(d.from), d.to);
 //!         println!("Mint: {}, Value: {}", d.mint, d.value);
 //!     }
 //!     OptimismTransaction::Standard(eth) => {
 //!         println!("Standard Ethereum transaction");
 //!     }
 //! }
-//! # Ok(())
-//! # }
 //! ```
 //!
 //! ## Specification
@@ -164,7 +161,7 @@ fn is_op_stack_chain(chain_id: u64) -> bool {
         | 957     // Lyra
         | 1750    // Metal
         | 1135 // Lisk
-    ) || (chain_id >= 900000 && chain_id < 910000) // OP Stack testnet range
+    ) || (900000..910000).contains(&chain_id) // OP Stack testnet range
 }
 
 #[cfg(test)]

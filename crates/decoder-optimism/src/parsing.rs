@@ -3,7 +3,7 @@
 //! Parses Optimism-specific transaction types, including deposit transactions (0x7E).
 
 use crate::types::{DepositTransaction, OptimismTransaction};
-use decoder_encodings::rlp::{RlpDecoder, RlpItem};
+use decoder_encodings::rlp::RlpItem;
 use decoder_ethereum::EthereumDecoder;
 use decoder_primitives::prelude::*;
 
@@ -72,10 +72,9 @@ pub fn parse_optimism_transaction(bytes: &[u8]) -> Result<OptimismTransaction> {
 /// - is_creation: bool (0x00 or 0x01)
 /// - data: bytes
 fn parse_deposit_transaction(rlp_bytes: &[u8]) -> Result<OptimismTransaction> {
-    let mut decoder = RlpDecoder::new(rlp_bytes);
-
     // Deposit transaction must be an RLP list
-    let items = match decoder.decode()? {
+    let rlp = RlpItem::decode(rlp_bytes)?;
+    let items = match rlp {
         RlpItem::List(items) => items,
         RlpItem::Data(_) => {
             return Err(DecoderError::invalid_structure(
@@ -128,9 +127,7 @@ fn parse_deposit_transaction(rlp_bytes: &[u8]) -> Result<OptimismTransaction> {
     );
 
     // Validate invariants
-    deposit
-        .validate()
-        .map_err(|e| DecoderError::invalid_structure(e))?;
+    deposit.validate()?;
 
     Ok(OptimismTransaction::Deposit(deposit))
 }
