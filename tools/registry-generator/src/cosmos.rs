@@ -108,21 +108,20 @@ pub fn generate_cosmos_registry(
     // Write metadata
     println!();
     println!("📄 Writing metadata...");
-    utils::write_metadata(
-        &metadata,
-        "cosmos/chain-registry",
-        "https://github.com/cosmos/chain-registry",
-        chains.len(),
-        serialized.len(),
-        &commit,
-        "crates/decoder-cosmos/data/cosmos-chains.borsh",
-        &[
+    let metadata_info = utils::MetadataInfo {
+        source_name: "cosmos/chain-registry",
+        source_repo: "https://github.com/cosmos/chain-registry",
+        chain_count: chains.len(),
+        byte_size: serialized.len(),
+        commit: &commit,
+        verify_commands: vec![
             "Clone upstream: git clone https://github.com/cosmos/chain-registry.git /tmp/chain-registry".to_string(),
             format!("Checkout: cd /tmp/chain-registry && git checkout {}", commit),
             "Regenerate: cargo run -p registry-generator -- cosmos".to_string(),
             "Compare: diff crates/decoder-cosmos/data/cosmos-chains.borsh (should be identical)".to_string(),
         ],
-    )?;
+    };
+    utils::write_metadata(&metadata, &metadata_info)?;
     println!("   ✓ Wrote {}", metadata.display());
 
     // Summary

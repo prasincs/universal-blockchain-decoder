@@ -3,7 +3,6 @@
 //! This module contains tests using actual Ethereum mainnet transactions
 //! to validate that our decoder correctly handles real-world data.
 
-
 // ========================================================================
 // LEGACY TRANSACTIONS (EIP-155)
 // ========================================================================

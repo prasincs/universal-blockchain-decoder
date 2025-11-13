@@ -106,21 +106,20 @@ pub fn generate_superchain_registry(
     // Write metadata
     println!();
     println!("📄 Writing metadata...");
-    utils::write_metadata(
-        &metadata,
-        "ethereum-optimism/superchain-registry",
-        "https://github.com/ethereum-optimism/superchain-registry",
-        chains.len(),
-        serialized.len(),
-        &commit,
-        "crates/decoder-optimism/data/op-chains.borsh",
-        &[
+    let metadata_info = utils::MetadataInfo {
+        source_name: "ethereum-optimism/superchain-registry",
+        source_repo: "https://github.com/ethereum-optimism/superchain-registry",
+        chain_count: chains.len(),
+        byte_size: serialized.len(),
+        commit: &commit,
+        verify_commands: vec![
             "Clone upstream: git clone https://github.com/ethereum-optimism/superchain-registry.git /tmp/superchain-registry".to_string(),
             format!("Checkout: cd /tmp/superchain-registry && git checkout {}", commit),
             "Regenerate: cargo run -p registry-generator -- superchain".to_string(),
             "Compare: diff crates/decoder-optimism/data/op-chains.borsh (should be identical)".to_string(),
         ],
-    )?;
+    };
+    utils::write_metadata(&metadata, &metadata_info)?;
     println!("   ✓ Wrote {}", metadata.display());
 
     // Summary
