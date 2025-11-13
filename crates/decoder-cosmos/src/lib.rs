@@ -194,8 +194,20 @@ fn build_operations(messages: &[CosmosMessage]) -> Result<Vec<Operation>> {
                     }));
                 }
             }
+            CosmosMessage::IbcTransfer(ibc) => {
+                // IBC transfer: cross-chain token transfer
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(ibc.sender.clone()),
+                    to: create_address(format!("{}@{}", ibc.receiver, ibc.source_channel)),
+                    amount: parse_amount(&ibc.token.amount, &ibc.token.denom)?,
+                    asset: AssetId::Custom(format!(
+                        "ibc/{}/{}",
+                        ibc.source_channel, ibc.token.denom
+                    )),
+                }));
+            }
             _ => {
-                // Other message types marked as unknown for now
+                // Other message types marked as placeholder
                 operations.push(Operation::Transfer(Transfer {
                     from: create_address("cosmos".to_string()),
                     to: create_address("cosmos".to_string()),
@@ -239,28 +251,50 @@ fn build_authorization(tx: &Tx) -> Result<AuthorizationPackage> {
 
 fn build_state_deltas(messages: &[CosmosMessage]) -> Result<StateDeltas> {
     let mut account_changes = Vec::new();
+    let inputs = Vec::new();
+    let mut outputs = Vec::new();
 
     for msg in messages {
-        if let CosmosMessage::Send(send) = msg {
-            account_changes.push(AccountChange {
-                address: create_address(send.from_address.clone()),
-                nonce: None,
-                balance_change: -1,
-                storage_changes: vec![],
-            });
+        match msg {
+            CosmosMessage::Send(send) => {
+                account_changes.push(AccountChange {
+                    address: create_address(send.from_address.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
 
-            account_changes.push(AccountChange {
-                address: create_address(send.to_address.clone()),
-                nonce: None,
-                balance_change: 1,
-                storage_changes: vec![],
-            });
+                account_changes.push(AccountChange {
+                    address: create_address(send.to_address.clone()),
+                    nonce: None,
+                    balance_change: 1,
+                    storage_changes: vec![],
+                });
+            }
+            CosmosMessage::IbcTransfer(ibc) => {
+                // IBC transfer: tokens leave this chain
+                account_changes.push(AccountChange {
+                    address: create_address(ibc.sender.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
+
+                // Track IBC packet as output (cross-chain state change)
+                outputs.push(OutputValue {
+                    index: outputs.len() as u32,
+                    address: create_address(format!("ibc:{}:{}", ibc.source_channel, ibc.receiver)),
+                    value: parse_amount(&ibc.token.amount, &ibc.token.denom)?,
+                    script: vec![],
+                });
+            }
+            _ => {}
         }
     }
 
     Ok(StateDeltas {
-        inputs: vec![],
-        outputs: vec![],
+        inputs,
+        outputs,
         account_changes,
     })
 }

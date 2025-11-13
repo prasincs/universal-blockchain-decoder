@@ -162,16 +162,19 @@ proptest! {
                 extension_options: vec![],
                 non_critical_extension_options: vec![],
             }),
-            auth_info: Some(AuthInfo {
-                signer_infos: vec![],
-                fee: Some(Fee {
-                    amount: vec![],
-                    gas_limit,
-                    payer: String::new(),
-                    granter: String::new(),
-                }),
-                tip: None,
-            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
             signatures: vec![],
         };
 
@@ -209,16 +212,19 @@ proptest! {
                 extension_options: vec![],
                 non_critical_extension_options: vec![],
             }),
-            auth_info: Some(AuthInfo {
-                signer_infos,
-                fee: Some(Fee {
-                    amount: vec![],
-                    gas_limit: 200000,
-                    payer: String::new(),
-                    granter: String::new(),
-                }),
-                tip: None,
-            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos,
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
             signatures,
         };
 
@@ -236,6 +242,11 @@ proptest! {
 
 #[test]
 fn test_proptest_setup() {
-    // Ensure proptest is properly configured
-    // This test just verifies that the test infrastructure compiles
+    // Ensure proptest is properly configured by running a trivial property test
+    use proptest::prelude::*;
+
+    proptest!(|(x in 0..100u32)| {
+        // Verify basic proptest functionality: generated values are in range
+        prop_assert!(x < 100);
+    });
 }

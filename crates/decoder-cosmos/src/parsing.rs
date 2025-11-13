@@ -178,8 +178,7 @@ pub fn parse_message(msg: &Any) -> Result<CosmosMessage> {
         type_urls::MSG_DELEGATE => parse_msg_delegate(&msg.value),
         type_urls::MSG_UNDELEGATE => parse_msg_undelegate(&msg.value),
         type_urls::MSG_BEGIN_REDELEGATE => parse_msg_begin_redelegate(&msg.value),
-        // TODO: Requires ibc feature flags
-        // type_urls::MSG_IBC_TRANSFER => parse_msg_ibc_transfer(&msg.value),
+        type_urls::MSG_IBC_TRANSFER => parse_msg_ibc_transfer(&msg.value),
         type_urls::MSG_VOTE => parse_msg_vote(&msg.value),
         // TODO: Requires cosmwasm feature flags
         // type_urls::MSG_EXECUTE_CONTRACT => parse_msg_execute_contract(&msg.value),
@@ -284,13 +283,35 @@ fn parse_msg_begin_redelegate(data: &[u8]) -> Result<CosmosMessage> {
     }))
 }
 
-/// Parse IBC transfer message
-/// TODO: Requires IBC feature flags in cosmos-sdk-proto
-#[allow(dead_code)]
-fn parse_msg_ibc_transfer(_data: &[u8]) -> Result<CosmosMessage> {
-    Err(DecoderError::invalid_structure(
-        "IBC transfer parsing requires additional dependencies",
-    ))
+/// Parse IBC transfer message using ibc-proto
+fn parse_msg_ibc_transfer(data: &[u8]) -> Result<CosmosMessage> {
+    let msg =
+        ibc_proto::ibc::applications::transfer::v1::MsgTransfer::decode(data).map_err(|e| {
+            DecoderError::invalid_structure(format!("Failed to parse MsgTransfer: {}", e))
+        })?;
+
+    let token = msg
+        .token
+        .ok_or_else(|| DecoderError::invalid_structure("Missing token in IBC transfer"))?;
+
+    let timeout_height = msg.timeout_height.map(|h| IbcHeight {
+        revision_number: h.revision_number,
+        revision_height: h.revision_height,
+    });
+
+    Ok(CosmosMessage::IbcTransfer(MsgIbcTransfer {
+        source_port: msg.source_port,
+        source_channel: msg.source_channel,
+        token: Coin {
+            denom: token.denom,
+            amount: token.amount,
+        },
+        sender: msg.sender,
+        receiver: msg.receiver,
+        timeout_height,
+        timeout_timestamp: msg.timeout_timestamp,
+        memo: msg.memo,
+    }))
 }
 
 /// Parse MsgVote
