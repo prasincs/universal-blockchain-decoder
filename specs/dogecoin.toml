@@ -1,0 +1,48 @@
+# Dogecoin Decoder Specification
+#
+# This spec generates a complete decoder crate for Dogecoin.
+# To generate: cargo run -p decoder-generator -- generate specs/dogecoin.toml
+
+[chain]
+name = "Dogecoin"
+chain_id = 3
+family = "utxo"
+description = "Dogecoin - Bitcoin-like chain without SegWit"
+
+[encoding]
+endianness = "little"
+hash = "double-sha256"
+var_encoding = "varint"
+
+[[transaction.fields]]
+type = "primitive"
+name = "version"
+prim_type = "u32"
+
+[[transaction.fields]]
+type = "array"
+name = "inputs"
+max_count = 10000
+
+[[transaction.fields.item_type]]
+type = "bytes"
+name = "prev_hash"
+size = 32
+
+[[transaction.fields]]
+type = "array"
+name = "outputs"
+max_count = 10000
+
+[[transaction.fields.item_type]]
+type = "var_bytes"
+name = "script_pubkey"
+max_size = 10000
+
+[[transaction.fields]]
+type = "primitive"
+name = "locktime"
+prim_type = "u32"
+
+[transaction.txid]
+exclude_fields = []  # No witness data to exclude

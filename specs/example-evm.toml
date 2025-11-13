@@ -1,0 +1,34 @@
+# Example EVM Chain Decoder Specification
+#
+# Template for EVM-compatible chains (BSC, Polygon, etc.)
+# To generate: cargo run -p decoder-generator -- generate specs/example-evm.toml
+
+[chain]
+name = "ExampleEVM"
+chain_id = 99999
+family = "account"
+description = "Example EVM-compatible chain using RLP encoding"
+
+[encoding]
+endianness = "big"  # EVM uses big-endian
+hash = "keccak256"  # Ethereum's hash function
+var_encoding = "rlp"  # Recursive Length Prefix
+
+# Transaction format (EIP-2718 envelope)
+[[transaction.fields]]
+type = "primitive"
+name = "tx_type"
+prim_type = "u8"
+
+[[transaction.fields]]
+type = "primitive"
+name = "nonce"
+prim_type = "u64"
+
+[[transaction.fields]]
+type = "primitive"
+name = "gas_limit"
+prim_type = "u64"
+
+[transaction.txid]
+exclude_fields = []  # EVM includes all fields in hash
