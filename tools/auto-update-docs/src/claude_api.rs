@@ -133,7 +133,7 @@ fn call_claude_api(
 }
 
 /// Build prompt for documentation update
-fn build_doc_update_prompt(update: &DocUpdate, analysis: &CodebaseAnalysis) -> String {
+pub fn build_doc_update_prompt(update: &DocUpdate, analysis: &CodebaseAnalysis) -> String {
     format!(
         r#"You are a technical documentation expert helping maintain the Universal Blockchain Decoder project.
 
@@ -197,7 +197,7 @@ Return ONLY the updated documentation content in Markdown format. Do not include
 }
 
 /// Build prompt for architecture diagram generation
-fn build_diagram_prompt(analysis: &CodebaseAnalysis, diagram_type: &str) -> String {
+pub fn build_diagram_prompt(analysis: &CodebaseAnalysis, diagram_type: &str) -> String {
     let diagram_instructions = match diagram_type {
         "overview" => {
             "Create a high-level architecture overview showing:

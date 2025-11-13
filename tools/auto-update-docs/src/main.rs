@@ -4,6 +4,7 @@ use log::{debug, info};
 use std::path::PathBuf;
 
 mod analyzer;
+mod bedrock_api;
 mod claude_api;
 mod diagram_generator;
 mod doc_updater;
@@ -18,8 +19,17 @@ struct Args {
     repo_root: PathBuf,
 
     /// Anthropic API key (or set ANTHROPIC_API_KEY env var)
+    /// Not required if using --use-bedrock
     #[arg(long, env)]
-    api_key: String,
+    api_key: Option<String>,
+
+    /// Use AWS Bedrock instead of direct Anthropic API (often cheaper!)
+    #[arg(long)]
+    use_bedrock: bool,
+
+    /// AWS region for Bedrock (e.g., us-east-1, us-west-2)
+    #[arg(long, default_value = "us-east-1")]
+    aws_region: String,
 
     /// Output directory for updated documentation
     #[arg(long, default_value = "docs")]
@@ -50,8 +60,10 @@ struct Args {
     create_pr: bool,
 
     /// Claude model to use
-    #[arg(long, default_value = "claude-sonnet-4-5-20250929")]
-    model: String,
+    /// For Anthropic API: claude-sonnet-4-5-20250929, claude-opus-4-20250514
+    /// For Bedrock: anthropic.claude-3-5-sonnet-20241022-v2:0
+    #[arg(long)]
+    model: Option<String>,
 
     /// Maximum tokens for Claude response
     #[arg(long, default_value = "8000")]
@@ -87,6 +99,39 @@ fn main() -> Result<()> {
     info!("🚀 Starting documentation auto-update tool");
     info!("Repository: {:?}", args.repo_root);
 
+    // Determine which API to use and validate configuration
+    let (api_mode, model) = if args.use_bedrock {
+        info!("Using AWS Bedrock (region: {})", args.aws_region);
+
+        // Check if Bedrock is available
+        if let Err(e) = bedrock_api::check_bedrock_available() {
+            anyhow::bail!("AWS Bedrock not available: {}", e);
+        }
+
+        let model = args
+            .model
+            .unwrap_or_else(|| "anthropic.claude-3-5-sonnet-20241022-v2:0".to_string());
+
+        info!("Bedrock model: {}", model);
+        ("bedrock", model)
+    } else {
+        info!("Using Anthropic API");
+
+        // Validate API key
+        if args.api_key.is_none() {
+            anyhow::bail!(
+                "ANTHROPIC_API_KEY must be set or --api-key provided when not using Bedrock"
+            );
+        }
+
+        let model = args
+            .model
+            .unwrap_or_else(|| "claude-sonnet-4-5-20250929".to_string());
+
+        info!("Anthropic model: {}", model);
+        ("anthropic", model)
+    };
+
     // Step 1: Analyze the codebase
     info!("📊 Analyzing codebase structure...");
     let analysis = analyzer::analyze_codebase(&args.repo_root, args.since.as_deref())?;
@@ -114,13 +159,23 @@ fn main() -> Result<()> {
     // Step 3: Generate architecture diagrams using Claude
     if args.generate_diagrams {
         info!("🎨 Generating architecture diagrams...");
-        let diagrams = diagram_generator::generate_diagrams(
-            &args.api_key,
-            &args.model,
-            args.max_tokens,
-            args.temperature,
-            &analysis,
-        )?;
+        let diagrams = if api_mode == "bedrock" {
+            diagram_generator::generate_diagrams_bedrock(
+                &args.aws_region,
+                &model,
+                args.max_tokens,
+                args.temperature,
+                &analysis,
+            )?
+        } else {
+            diagram_generator::generate_diagrams_anthropic(
+                args.api_key.as_ref().unwrap(),
+                &model,
+                args.max_tokens,
+                args.temperature,
+                &analysis,
+            )?
+        };
 
         if !args.dry_run {
             for (name, diagram) in diagrams {
@@ -141,14 +196,25 @@ fn main() -> Result<()> {
         for update in &updates_needed {
             info!("  Updating {}...", update.doc_path.display());
 
-            let updated_content = claude_api::generate_doc_update(
-                &args.api_key,
-                &args.model,
-                args.max_tokens,
-                args.temperature,
-                update,
-                &analysis,
-            )?;
+            let updated_content = if api_mode == "bedrock" {
+                bedrock_api::generate_doc_update(
+                    &args.aws_region,
+                    &model,
+                    args.max_tokens,
+                    args.temperature,
+                    update,
+                    &analysis,
+                )?
+            } else {
+                claude_api::generate_doc_update(
+                    args.api_key.as_ref().unwrap(),
+                    &model,
+                    args.max_tokens,
+                    args.temperature,
+                    update,
+                    &analysis,
+                )?
+            };
 
             if !args.dry_run {
                 doc_updater::write_doc(&update.doc_path, &updated_content)?;

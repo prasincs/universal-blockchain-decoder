@@ -51,18 +51,48 @@ cargo build --release -p auto-update-docs
 
 ### Prerequisites
 
+### Option A: Anthropic API (Simple Setup)
+
 Set your Anthropic API key:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+### Option B: AWS Bedrock (Recommended - Lower Cost!)
+
+AWS Bedrock often provides **up to 50% cost savings** with provisioned throughput:
+
+1. Install AWS CLI: https://aws.amazon.com/cli/
+2. Configure credentials: `aws configure`
+3. Enable Claude models in Bedrock console
+4. Use `--use-bedrock` flag (no API key needed)
+
+**Cost Comparison**:
+- Anthropic API: ~$20-25/month (nightly)
+- Bedrock On-Demand: ~$20-25/month (nightly)
+- Bedrock Provisioned: ~$10-12/month (nightly) - **50% savings!**
+- Bedrock + Smart Triggers: ~$2-3/month - **90% savings!**
+
+See [COST_OPTIMIZATION.md](COST_OPTIMIZATION.md) for detailed savings strategies.
+
 ### Basic Usage
 
-Update all documentation:
-
+**Using Anthropic API**:
 ```bash
+export ANTHROPIC_API_KEY=sk-ant-...
 cargo run -p auto-update-docs
+```
+
+**Using AWS Bedrock** (cheaper!):
+```bash
+# AWS credentials from ~/.aws/credentials or environment
+cargo run -p auto-update-docs -- --use-bedrock
+
+# Specify region
+cargo run -p auto-update-docs -- \
+  --use-bedrock \
+  --aws-region us-west-2
 ```
 
 ### Advanced Options
