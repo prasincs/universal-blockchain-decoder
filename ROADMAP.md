@@ -701,6 +701,165 @@ Tasks:
 - Performance baseline established
 - User documentation complete
 
+## Phase 3.0: Privacy-Aware TxIR Extensions (Week 1-2)
+
+**Target**: v0.1.5-privacy
+**Timeline**: 2 weeks
+**Focus**: Extend TxIR to support privacy-preserving transactions with optional viewing keys
+**Priority**: CRITICAL (Prerequisite for Phase 3.8 Privacy Chains)
+
+**Motivation**: Current TxIR assumes all transaction data is publicly visible (amounts, addresses, etc.). Privacy chains like Zcash, Aleo, and Monero encrypt this data using zero-knowledge proofs. We need to extend TxIR to handle:
+- Encrypted/shielded components (amounts, addresses)
+- Zero-knowledge proofs (zk-SNARKs, Bulletproofs)
+- Optional viewing key decryption
+- Privacy metadata without breaking existing decoders
+
+### 3.0.1: Core TxIR Privacy Extensions (Week 1)
+
+**Tasks**:
+- [ ] Add `PrivacyComponents` struct to TxIR
+  ```rust
+  pub struct TxIR<'a, const V: u8> {
+      // ... existing fields ...
+      pub privacy: Option<PrivacyComponents>,
+  }
+
+  pub struct PrivacyComponents {
+      pub encrypted_data: Vec<EncryptedComponent>,
+      pub proofs: Vec<ZkProof>,
+      pub viewing_key_type: Option<ViewingKeyType>,
+  }
+  ```
+- [ ] Define `EncryptedComponent` (amounts, addresses, memos)
+- [ ] Define `ZkProof` (proof type, bytes, verification metadata)
+- [ ] Define `ViewingKeyType` enum (Zcash IVK, Aleo VK, Monero ViewKey)
+- [ ] Extend `Transfer` to support optional encrypted fields
+  ```rust
+  pub struct Transfer {
+      pub from: Address,              // Public or placeholder
+      pub to: Address,                // Public or placeholder
+      pub amount: Amount,              // Public or placeholder
+      pub encrypted_from: Option<EncryptedComponent>,
+      pub encrypted_to: Option<EncryptedComponent>,
+      pub encrypted_amount: Option<EncryptedComponent>,
+      pub asset: AssetId,
+  }
+  ```
+- [ ] Update Borsh serialization to include privacy components
+- [ ] Comprehensive unit tests (30+ tests)
+
+**Validation**:
+- [ ] Existing decoders (Bitcoin, Ethereum, Solana) unaffected
+- [ ] TxIR with privacy components serializes deterministically
+- [ ] Privacy fields are truly optional (backward compatible)
+
+### 3.0.2: Viewing Key Decoder Trait (Week 2)
+
+**Tasks**:
+- [ ] Create `PrivacyAwareDecoder` trait
+  ```rust
+  pub trait PrivacyAwareDecoder: ChainDecoder {
+      type ViewingKey;
+
+      fn decode_with_viewing_key(
+          &self,
+          data: &[u8],
+          viewing_key: Option<&Self::ViewingKey>
+      ) -> Result<TxIR>;
+
+      fn supports_viewing_keys(&self) -> bool { false }
+  }
+  ```
+- [ ] Implement default `PrivacyAwareDecoder` for existing decoders
+  - Bitcoin: No viewing keys, `supports_viewing_keys() = false`
+  - Ethereum: No viewing keys, `supports_viewing_keys() = false`
+  - Solana: No viewing keys, `supports_viewing_keys() = false`
+- [ ] Add decryption helper utilities
+  ```rust
+  pub trait ViewingKeyDecryptor {
+      fn decrypt_amount(&self, encrypted: &[u8]) -> Result<Amount>;
+      fn decrypt_address(&self, encrypted: &[u8]) -> Result<Address>;
+      fn decrypt_memo(&self, encrypted: &[u8]) -> Result<Vec<u8>>;
+  }
+  ```
+- [ ] Create privacy-aware examples
+  - Example 1: Parse shielded transaction without viewing key (extract proofs only)
+  - Example 2: Parse shielded transaction with viewing key (decrypt amounts/addresses)
+- [ ] Documentation: `docs/PRIVACY_AWARE_TXIR.md`
+
+**Validation**:
+- [ ] Trait compiles with existing decoders
+- [ ] No breaking changes to existing decoder API
+- [ ] Examples demonstrate both modes (with/without viewing keys)
+
+### 3.0.3: Privacy Component Types (Week 2)
+
+**Tasks**:
+- [ ] Define common privacy primitives
+  ```rust
+  // Nullifiers (Zcash, Monero)
+  pub struct Nullifier {
+      pub bytes: Vec<u8>,
+      pub nullifier_type: NullifierType,
+  }
+
+  // Commitments (Zcash, Monero)
+  pub struct Commitment {
+      pub bytes: Vec<u8>,
+      pub commitment_type: CommitmentType,
+  }
+
+  // Note encryption (Zcash)
+  pub struct EncryptedNote {
+      pub ciphertext: Vec<u8>,
+      pub ephemeral_key: Vec<u8>,
+      pub decrypted_note: Option<Note>,
+  }
+
+  // Ring signatures (Monero)
+  pub struct RingSignature {
+      pub ring_size: usize,
+      pub key_images: Vec<Vec<u8>>,
+      pub ring_members: Vec<Vec<u8>>,
+  }
+  ```
+- [ ] Add privacy-specific operations to `Operation` enum
+  ```rust
+  pub enum Operation {
+      Transfer(Transfer),
+      ContractCall(ContractCall),
+      // ... existing ...
+      ShieldedTransfer(ShieldedTransfer),  // NEW
+      PrivateExecution(PrivateExecution),  // NEW (for Aleo)
+  }
+  ```
+- [ ] Comprehensive tests for all privacy types
+
+**Deliverables**:
+- [ ] Extended TxIR with optional privacy components
+- [ ] `PrivacyAwareDecoder` trait with viewing key support
+- [ ] Privacy primitive types (nullifiers, commitments, encrypted notes, ring signatures)
+- [ ] Backward compatible with all existing decoders
+- [ ] Documentation: `docs/PRIVACY_AWARE_TXIR.md`
+- [ ] Examples demonstrating privacy features
+- [ ] All tests passing (existing + new privacy tests)
+
+**Success Criteria**:
+- ✅ TxIR can represent both transparent and shielded transactions
+- ✅ Viewing keys are optional (privacy by default, transparency with keys)
+- ✅ Zero impact on existing non-privacy decoders
+- ✅ Borsh serialization includes privacy components
+- ✅ Documentation explains privacy semantics clearly
+- ✅ Ready for Phase 3.8 privacy chain implementations
+
+**Why This Matters**:
+- **Architectural Soundness**: TxIR must handle privacy-preserving transactions
+- **Security**: Viewing keys are opt-in (privacy by default)
+- **Extensibility**: Supports multiple privacy schemes (zk-SNARKs, ring sigs, etc.)
+- **Backward Compatibility**: No breaking changes to existing decoders
+
+---
+
 ## Phase 3: Chain Family Decoders (Months 3-4)
 
 **Target**: v0.2.0
@@ -712,6 +871,7 @@ Tasks:
 - ✅ Chain family grouping strategy (CHAIN_FAMILIES_GROUPING.md)
 - ✅ Common crates analysis (COMMON_CRATES_ANALYSIS.md)
 - [ ] Phase 2.5: decoder-encodings extracted (provides shared RLP for EVM chains)
+- [ ] Phase 3.0: Privacy-aware TxIR extensions (for Phase 3.8 privacy chains)
 - [ ] Chain registries vendored via git subtree (Phase 1.5.1)
 
 ### 3.1: EVM Family Decoder (Week 1-2)
@@ -903,7 +1063,83 @@ Tasks:
 
 ---
 
-### 3.8: Universal Decoder Integration (Week 10)
+### 3.8: Privacy Chains Family Decoder (Week 9-10)
+
+**Priority**: MEDIUM (Privacy features require special handling)
+**Decoder**: `decoder-privacy-chains`
+**Prerequisites**: Phase 3.0 (Privacy-Aware TxIR Extensions) must be complete
+
+**Chains Supported**: Zcash, Aleo, Monero (limited)
+
+Tasks:
+- [ ] Create `decoder-privacy-chains` crate
+- [ ] Implement Zcash decoder (transparent + shielded transactions)
+  - [ ] Implement `PrivacyAwareDecoder` trait with Zcash viewing keys
+  - [ ] Transparent transactions (reuse `BitcoinDecoder` base)
+  - [ ] Shielded transactions (zk-SNARK components)
+    - [ ] Sprout (JoinSplit descriptions)
+    - [ ] Sapling (Spend/Output descriptions)
+    - [ ] Orchard (Action descriptions)
+  - [ ] Parse: nullifiers, commitments, encrypted notes, proofs
+  - [ ] Populate `PrivacyComponents` with encrypted data
+  - [ ] Implement viewing key decryption (uses `ViewingKeyDecryptor` from Phase 3.0)
+  - [ ] Without viewing key: Extract proof structure only (privacy preserved)
+  - [ ] With viewing key: Decrypt amounts/addresses, populate `Transfer` operations
+- [ ] Implement Aleo decoder (Leo VM transactions)
+  - [ ] Implement `PrivacyAwareDecoder` trait with Aleo viewing keys
+  - [ ] Program execution records
+  - [ ] State transitions
+  - [ ] Zero-knowledge proofs (snarkVM)
+  - [ ] Public inputs/outputs
+  - [ ] Populate `PrivateExecution` operations (uses Phase 3.0 privacy types)
+  - [ ] Instruction-based model (similar to Solana structure)
+- [ ] Implement Monero decoder (limited, privacy-by-default)
+  - [ ] Implement `PrivacyAwareDecoder` trait with Monero view keys
+  - [ ] Ring signatures (populate `RingSignature` from Phase 3.0)
+  - [ ] Stealth addresses
+  - [ ] Ring CT (Confidential Transactions)
+  - [ ] Can extract: ring size, fees, proof structure
+  - [ ] Cannot fully decrypt: actual sender (by design), limited receiver/amount decryption
+- [ ] Hardcode chain list
+- [ ] Comprehensive testing with mainnet transactions
+
+**Special Features**:
+- **Zcash**:
+  - Dual-mode: transparent (Bitcoin-like) + shielded (zk-SNARK)
+  - Multiple shielded protocols (Sprout, Sapling, Orchard)
+  - Viewing keys for selective disclosure
+  - Proof verification metadata
+- **Aleo**:
+  - Leo programming language VM
+  - Full privacy by default (all computations private)
+  - Zero-knowledge proofs for state transitions
+  - Program execution traces
+- **Monero**:
+  - Ring signatures (transaction mixing)
+  - One-time stealth addresses
+  - Ring CT (hidden amounts)
+  - Subaddresses
+
+**Privacy Limitations** (by design):
+- ✅ Can decode: transaction structure, proof components, public metadata
+- ❌ Cannot decode: private transfer amounts, sender/receiver in shielded transactions
+- ⚠️ Limited information extraction is expected and correct behavior
+
+**Delivered**:
+- Support for 3 major privacy-focused blockchains
+- Transparent/public component extraction
+- Proof structure parsing (without breaking privacy)
+- Documentation on privacy limitations
+
+**Why Important**:
+- Privacy chains are growing in importance
+- Zcash and Aleo use cutting-edge cryptography (zk-SNARKs)
+- Demonstrates TxIR can handle privacy-preserving transactions
+- Validates extensibility for non-standard transaction formats
+
+---
+
+### 3.9: Universal Decoder Integration (Week 11)
 
 **Priority**: HIGH (Unified API)
 **Decoder**: `universal-decoder`
@@ -1271,14 +1507,16 @@ Tasks:
 
 **Priority**: COMMUNITY
 
+**Note**: Privacy chains (Zcash, Aleo, Monero) are addressed in Phase 3.8.
+
 Chains to support (priority order):
-1. [ ] Cosmos (IBC support)
-2. [ ] Avalanche (multi-chain)
+1. [ ] Cosmos (IBC support) - **Note**: Cosmos SDK family decoder planned for Phase 3.5
+2. [ ] Avalanche (multi-chain) - **Note**: C-Chain uses EVM decoder (Phase 3.1), X-Chain and P-Chain need custom decoder
 3. [ ] NEAR Protocol (Borsh-native!)
 4. [ ] Tron
 5. [ ] Stellar
 6. [ ] Algorand
-7. [ ] Monero (privacy-limited)
+7. [ ] Additional privacy chains (Firo, Beam, Grin)
 
 ### 6.2: Tooling & Integration
 
@@ -1399,8 +1637,10 @@ See `CONTRIBUTING.md` for:
     - Remove raw JSON files, keep only Borsh binaries + LICENSE
     - Expected: 91% size reduction (14.5MB → 1.3MB)
   - Phase 1.5.2: Testing Infrastructure (unit + property + integration + fuzz + CI/CD) - 2 weeks
+  - Phase 3.0: Privacy-aware TxIR extensions (viewing keys, encrypted components) - 2 weeks
   - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
-  - Phase 3.8: Universal decoder integration - 1 week
-  - v0.2.0 (Phase 3 complete: 620+ chains supported) - 3-4 months
+  - Phase 3.8: Privacy chains family decoder (Zcash, Aleo, Monero) - 2 weeks
+  - Phase 3.9: Universal decoder integration - 1 week
+  - v0.2.0 (Phase 3 complete: 620+ chains + privacy chains supported) - 3-4 months
