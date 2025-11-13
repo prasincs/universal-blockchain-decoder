@@ -5,6 +5,7 @@
 //! into a unified semantic structure.
 
 use crate::chain::{ChainIdentity, ChainRef};
+use crate::privacy::PrivacyMetadata;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
@@ -28,6 +29,18 @@ pub struct TxIR<'a, const V: u8> {
 
     /// Expected state deltas (inputs consumed / outputs created)
     pub state_deltas: StateDeltas,
+
+    /// Optional privacy metadata (None for fully transparent chains)
+    ///
+    /// When present, describes the privacy mechanisms used in this transaction.
+    /// This field is backward compatible: existing code can ignore it (defaults to None).
+    ///
+    /// # Examples
+    ///
+    /// - Bitcoin/Ethereum legacy: `None` (fully transparent)
+    /// - Ethereum with stealth addresses: `Some(PrivacyMetadata { ... })`
+    /// - Monero: `Some(PrivacyMetadata { observability: FullyPrivate, ... })`
+    pub privacy: Option<PrivacyMetadata>,
 
     /// PhantomData to bind the IR to the source data lifetime
     /// This ensures proper lifetime tracking and influences Send/Sync traits
@@ -71,6 +84,63 @@ impl<'a, const V: u8> TxIR<'a, V> {
             authorization,
             operations,
             state_deltas,
+            privacy: None,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Creates a new TxIR instance with privacy metadata
+    ///
+    /// # Arguments
+    ///
+    /// * `chain` - A type implementing `ChainIdentity` to identify the blockchain
+    /// * `metadata` - Transaction metadata
+    /// * `authorization` - Authorization information (signatures, public keys)
+    /// * `operations` - Operations performed by this transaction
+    /// * `state_deltas` - Expected state changes
+    /// * `privacy` - Optional privacy metadata
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use universal_decoder_core::prelude::*;
+    ///
+    /// let privacy = PrivacyMetadata {
+    ///     features: vec![
+    ///         PrivacyFeature::HiddenRecipient(PrivateAddress {
+    ///             privacy_type: AddressPrivacyType::Stealth { scheme_id: 5564 },
+    ///             public_address: vec![1, 2, 3],
+    ///             viewing_hint: None,
+    ///         }),
+    ///     ],
+    ///     observability: ObservabilityLevel::PartiallyObservable,
+    ///     viewing_key: None,
+    /// };
+    ///
+    /// let tx_ir = TxIR::with_privacy(
+    ///     &EthereumChain,
+    ///     metadata,
+    ///     authorization,
+    ///     operations,
+    ///     state_deltas,
+    ///     Some(privacy),
+    /// );
+    /// ```
+    pub fn with_privacy<C: ChainIdentity>(
+        chain: &C,
+        metadata: TxMetadata,
+        authorization: AuthorizationPackage,
+        operations: Vec<Operation>,
+        state_deltas: StateDeltas,
+        privacy: Option<PrivacyMetadata>,
+    ) -> Self {
+        Self {
+            chain: ChainRef::from(chain),
+            metadata,
+            authorization,
+            operations,
+            state_deltas,
+            privacy,
             _phantom: PhantomData,
         }
     }
