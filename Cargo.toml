@@ -35,11 +35,8 @@ members = [
     # Tools
     "tools/registry-generator",
     "tools/ai-refactor-suggest",
-<<<<<<< HEAD
     "tools/auto-update-docs",
-=======
     "crates/decoder-generator",
->>>>>>> 0bee7b87 (Add decoder-generator: Testable code generation tool (replaces brittle docs))
 ]
 resolver = "2"
 
