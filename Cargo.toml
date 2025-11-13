@@ -33,7 +33,7 @@ members = [
     "examples/simple-decoder",
 
     # Tools
-    "tools/chain-registry-generator",
+    "tools/registry-generator",
 ]
 resolver = "2"
 

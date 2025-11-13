@@ -12,6 +12,7 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 decoder-ethereum = { path = "../decoder-ethereum" }
 serde = { workspace = true }
+borsh = { version = "1.3", default-features = true, features = ["derive", "std"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
