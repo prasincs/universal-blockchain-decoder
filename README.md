@@ -18,6 +18,30 @@ The Universal Blockchain Decoder is a **Pandoc for blockchains** - it provides a
 - **✅ Formally Verifiable**: Designed for integration with tools like Prusti and Verus
 - **🔗 Multi-Chain**: Supports UTXO (Bitcoin), Account (Ethereum), and Instruction-based (Solana) models
 
+### Project Scope
+
+**This project focuses exclusively on transaction decoding and analysis.**
+
+✅ **In Scope:**
+- Decoding blockchain transactions into structured formats
+- Canonical serialization for hashing and analysis
+- Transaction validation and structural verification
+- Signature verification (checking existing signatures)
+
+❌ **Out of Scope:**
+- Transaction encoding/construction
+- Transaction signing
+- Fee estimation
+- UTXO selection or nonce management
+- Transaction broadcasting
+
+For transaction construction and wallet functionality, use chain-specific SDKs:
+- **Bitcoin**: `bitcoin` crate, BDK (Bitcoin Dev Kit)
+- **Ethereum**: `ethers-rs`, `alloy`
+- **Solana**: `solana-sdk`
+
+**See** [CLAUDE.md](CLAUDE.md#project-scope-decoding-only-) for detailed rationale.
+
 ## 🏗️ Architecture
 
 The decoder follows a three-layer pipeline inspired by compiler design and document converters like Pandoc:
