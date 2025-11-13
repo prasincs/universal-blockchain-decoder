@@ -60,6 +60,7 @@ fn test_decode_msg_send_transaction() {
     };
 
     // Create auth info
+    #[allow(deprecated)]
     let auth_info = AuthInfo {
         signer_infos: vec![],
         fee: Some(fee),
@@ -147,19 +148,22 @@ fn test_decode_msg_delegate_transaction() {
             extension_options: vec![],
             non_critical_extension_options: vec![],
         }),
-        auth_info: Some(AuthInfo {
-            signer_infos: vec![],
-            fee: Some(Fee {
-                amount: vec![Coin {
-                    denom: "uatom".to_string(),
-                    amount: "2000".to_string(),
-                }],
-                gas_limit: 150000,
-                payer: String::new(),
-                granter: String::new(),
-            }),
-            tip: None,
-        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "2000".to_string(),
+                    }],
+                    gas_limit: 150000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
         signatures: vec![vec![0u8; 64]],
     };
 
@@ -190,15 +194,100 @@ fn test_decode_msg_delegate_transaction() {
 }
 
 #[test]
-#[ignore = "IBC modules not available in cosmos-sdk-proto 0.25.0"]
 fn test_decode_ibc_transfer_transaction() {
-    // This test is disabled because IBC modules are not available in cosmos-sdk-proto 0.25.0
-    // To enable this test:
-    // 1. Upgrade cosmos-sdk-proto to a version that includes IBC modules (e.g., 0.27.0+)
-    // 2. Uncomment the test implementation below
-    // 3. Enable IBC features in Cargo.toml if needed
-    //
-    // The test would validate IBC transfer message decoding and canonicalization
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as CosmosCoin;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+    use cosmos_sdk_proto::Any;
+    use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
+    use ibc_proto::ibc::applications::transfer::v1::MsgTransfer;
+    use ibc_proto::ibc::core::client::v1::Height;
+    use prost::Message;
+
+    // Create MsgTransfer (IBC)
+    let msg_transfer = MsgTransfer {
+        source_port: "transfer".to_string(),
+        source_channel: "channel-0".to_string(),
+        token: Some(IbcCoin {
+            denom: "uatom".to_string(),
+            amount: "10000000".to_string(),
+        }),
+        sender: "cosmos1sender".to_string(),
+        receiver: "osmo1receiver".to_string(),
+        timeout_height: Some(Height {
+            revision_number: 1,
+            revision_height: 1000000,
+        }),
+        timeout_timestamp: 0,
+        memo: "IBC transfer".to_string(),
+    };
+
+    // Encode as Any
+    let mut msg_bytes = Vec::new();
+    msg_transfer.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
+        value: msg_bytes,
+    };
+
+    // Create transaction
+    let tx = Tx {
+        body: Some(TxBody {
+            messages: vec![any_msg],
+            memo: "IBC test".to_string(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![CosmosCoin {
+                        denom: "uatom".to_string(),
+                        amount: "3000".to_string(),
+                    }],
+                    gas_limit: 250000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    };
+
+    // Encode transaction
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    // Decode
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+
+    // Parse messages
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::IbcTransfer(ibc) => {
+            assert_eq!(ibc.source_port, "transfer");
+            assert_eq!(ibc.source_channel, "channel-0");
+            assert_eq!(ibc.sender, "cosmos1sender");
+            assert_eq!(ibc.receiver, "osmo1receiver");
+            assert_eq!(ibc.token.denom, "uatom");
+            assert_eq!(ibc.token.amount, "10000000");
+        }
+        _ => panic!("Expected MsgIbcTransfer"),
+    }
+
+    // Canonicalize
+    let tx_ir = decoded.canonicalize().unwrap();
+    assert_eq!(tx_ir.operations.len(), 1);
+
+    // Verify IBC transfer creates state delta with outputs (tokens leaving chain)
+    assert!(!tx_ir.state_deltas.outputs.is_empty());
+    assert_eq!(tx_ir.state_deltas.account_changes.len(), 1); // Sender account
 }
 
 #[test]
@@ -255,19 +344,22 @@ fn test_decode_multi_message_transaction() {
             extension_options: vec![],
             non_critical_extension_options: vec![],
         }),
-        auth_info: Some(AuthInfo {
-            signer_infos: vec![],
-            fee: Some(Fee {
-                amount: vec![Coin {
-                    denom: "uatom".to_string(),
-                    amount: "5000".to_string(),
-                }],
-                gas_limit: 300000,
-                payer: String::new(),
-                granter: String::new(),
-            }),
-            tip: None,
-        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "5000".to_string(),
+                    }],
+                    gas_limit: 300000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
         signatures: vec![vec![0u8; 64]],
     };
 
@@ -321,20 +413,23 @@ fn test_validate_signature_count() {
             extension_options: vec![],
             non_critical_extension_options: vec![],
         }),
-        auth_info: Some(AuthInfo {
-            signer_infos: vec![SignerInfo {
-                public_key: None,
-                mode_info: None,
-                sequence: 0,
-            }],
-            fee: Some(Fee {
-                amount: vec![],
-                gas_limit: 200000,
-                payer: String::new(),
-                granter: String::new(),
-            }),
-            tip: None,
-        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![SignerInfo {
+                    public_key: None,
+                    mode_info: None,
+                    sequence: 0,
+                }],
+                fee: Some(Fee {
+                    amount: vec![],
+                    gas_limit: 200000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
         signatures: vec![], // No signatures, but 1 signer!
     };
 

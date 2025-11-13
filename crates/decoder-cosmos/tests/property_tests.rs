@@ -162,16 +162,19 @@ proptest! {
                 extension_options: vec![],
                 non_critical_extension_options: vec![],
             }),
-            auth_info: Some(AuthInfo {
-                signer_infos: vec![],
-                fee: Some(Fee {
-                    amount: vec![],
-                    gas_limit,
-                    payer: String::new(),
-                    granter: String::new(),
-                }),
-                tip: None,
-            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
             signatures: vec![],
         };
 
@@ -209,16 +212,19 @@ proptest! {
                 extension_options: vec![],
                 non_critical_extension_options: vec![],
             }),
-            auth_info: Some(AuthInfo {
-                signer_infos,
-                fee: Some(Fee {
-                    amount: vec![],
-                    gas_limit: 200000,
-                    payer: String::new(),
-                    granter: String::new(),
-                }),
-                tip: None,
-            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos,
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
             signatures,
         };
 
