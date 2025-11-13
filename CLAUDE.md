@@ -31,6 +31,40 @@ This document outlines the **fundamental design criteria** for the Universal Blo
 
 Create a **small, reviewable, formally verifiable core library** that serves as the trusted foundation for all blockchain transaction decoding, while allowing **unlimited extensibility through external implementations**.
 
+---
+
+## Project Scope: Decoding Only 🎯
+
+**IMPORTANT**: This project is **exclusively focused on transaction decoding and analysis**.
+
+**In Scope** ✅:
+- Decoding blockchain transactions (chain-specific bytes → TxIR)
+- Canonical serialization for hashing/analysis (TxIR → Borsh bytes)
+- Transaction validation and structural analysis
+- Signature verification (checking existing signatures)
+- Chain-agnostic intermediate representation (TxIR)
+
+**Out of Scope** ❌:
+- **Transaction encoding** (TxIR → chain-specific bytes)
+- **Transaction construction** (building new transactions)
+- **Transaction signing** (creating signatures)
+- **Fee estimation** (requires chain state, mempool data)
+- **UTXO selection** (wallet functionality)
+- **Nonce management** (account state tracking)
+- **Gas price estimation** (requires market data)
+- **Transaction broadcasting** (network operations)
+
+**Rationale**:
+1. **Different Problem Domains**: Decoding (defensive, untrusted input) vs Encoding (constructive, constraint satisfaction)
+2. **Security Model Mismatch**: Different threat models require different verification strategies
+3. **TCB Preservation**: Encoding would double complexity and violate "minimal TCB < 3000 LOC"
+4. **Dependency Explosion**: Construction requires chain state, fee markets, key management
+5. **Clear Focus**: Serves explorers, indexers, forensics, auditing (not wallets, dApps)
+
+**Future Consideration**: If transaction encoding becomes necessary, it should be a **separate project** (`universal-blockchain-encoder`) that depends on `universal-decoder-core` for TxIR types. This preserves the minimal TCB of the decoder while allowing encoding to have its own security model and dependencies.
+
+**See**: "Decision Log" section below for detailed analysis of encoding scope.
+
 ## Design Criteria
 
 ### 1. Minimal Core ⚡
@@ -1275,6 +1309,56 @@ cargo tree -p universal-decoder-core -e normal --depth 1 | grep -v "^universal" 
 
 ## Decision Log
 
+### Why Decoding Only (No Encoding)?
+
+**Decision**: Project scope limited to transaction decoding; encoding is out of scope
+
+**Date**: 2025-11-13
+
+**Rationale**:
+- **Different Problem Domains**:
+  - Decoding: Defensive programming, handle malicious/malformed input, bounds checking
+  - Encoding: Constructive programming, constraint satisfaction, fee estimation, state management
+  - These require fundamentally different architectural approaches
+
+- **TCB Preservation**:
+  - Current core: ~2700 LOC (within target < 3000 LOC)
+  - Adding encoding: Would add ~2500+ LOC (construction logic, validation, fee handling)
+  - Would violate core principle of minimal, verifiable TCB
+
+- **Dependency Explosion**:
+  - Current: 5 production dependencies (serde, borsh, thiserror, sha2, sha3)
+  - Encoding would need: chain state providers, fee oracles, UTXO selectors, nonce managers
+  - Violates "minimal dependencies" and "airgapped operation" requirements
+
+- **Security Model**:
+  - Decoding: Trust boundary is clear (external bytes → validated TxIR)
+  - Encoding: Trust boundary is complex (user intent → valid transaction with fees, nonces, gas)
+  - Verification strategies differ significantly
+
+- **Primary Use Cases Served**:
+  - ✅ Block explorers (decode historical transactions)
+  - ✅ Forensics and auditing (analyze existing transactions)
+  - ✅ Indexers and analytics (extract structured data)
+  - ✅ Chain monitoring (detect patterns, anomalies)
+  - ❌ Wallets (need encoding + signing + broadcasting)
+  - ❌ dApps (need transaction construction)
+
+**Trade-offs**:
+- **Advantage**: Clear scope, minimal complexity, verifiable core, faster development
+- **Disadvantage**: Users need separate tools for transaction construction
+- **Mitigation**: Document clearly, point to wallet SDKs for construction
+
+**Future Path**: If encoding becomes critical:
+1. Create separate `universal-blockchain-encoder` repository
+2. Depends on `universal-decoder-core` for TxIR types
+3. Different security model, dependencies, and verification strategy
+4. Users can choose: decode-only (lightweight) or full codec (comprehensive)
+
+**Status**: Documented in scope boundaries (see "Project Scope" section above)
+
+---
+
 ### Why Borsh over Protobuf?
 
 **Decision**: Use Borsh for canonical serialization
@@ -1327,8 +1411,11 @@ All contributions must adhere to these design criteria:
 5. ✅ **Zero-cost abstractions** (static dispatch)
 6. ✅ **Comprehensive tests** (unit + property + integration)
 7. ✅ **Security-first** (audit-friendly code)
+8. ✅ **Decoding only** (no transaction encoding, construction, or signing)
 
 **See**: `CONTRIBUTING.md` for detailed guidelines
+
+**Note**: Contributions that add transaction encoding, construction, signing, or broadcasting will be rejected as out of scope. This project focuses exclusively on decoding and analysis.
 
 ## References
 
@@ -1349,6 +1436,38 @@ All contributions must adhere to these design criteria:
 
 > "Simplicity is prerequisite for reliability."
 > — Edsger W. Dijkstra
+
+---
+
+## Frequently Asked Questions
+
+### Q: Why doesn't this project support transaction encoding/construction?
+
+**A**: This project is **intentionally decoding-only** to maintain a minimal, verifiable trusted computing base (TCB). Transaction encoding requires:
+- Chain state access (nonces, balances, UTXO sets)
+- Fee estimation (mempool data, gas markets)
+- Complex validation (sufficient funds, gas limits)
+- Different security model (constructive vs defensive)
+
+Adding encoding would **double the complexity** and violate our core principle of "minimal TCB < 3000 LOC." For transaction construction, use chain-specific wallet SDKs:
+- Bitcoin: `bitcoin` crate, BDK (Bitcoin Dev Kit)
+- Ethereum: `ethers-rs`, `alloy`
+- Solana: `solana-sdk`
+
+### Q: Can I use TxIR to build transactions?
+
+**A**: TxIR is designed as a **read-only intermediate representation** for analysis. While it contains all transaction data, it lacks the construction logic needed to build valid transactions (fee calculation, UTXO selection, nonce management). Use chain-specific wallet libraries for transaction creation.
+
+### Q: Will encoding support be added in the future?
+
+**A**: Not to this project. If transaction encoding becomes necessary, it will be a **separate project** (`universal-blockchain-encoder`) that depends on `universal-decoder-core` for TxIR types. This preserves the decoder's minimal TCB while allowing encoding to have its own dependencies and security model.
+
+### Q: What about roundtrip testing (encode(decode(x)) = x)?
+
+**A**: Roundtrip property testing is valuable, but we test it differently:
+1. **Canonical Serialization**: Test `borsh_encode(borsh_decode(x)) = x` (in scope, for Borsh roundtrips)
+2. **Chain Format**: Test against reference implementations in dev-dependencies (e.g., decode with our parser, compare to `bitcoin` crate's parser)
+3. **No Reverse Encoding**: We don't test `chain_encode(chain_decode(x)) = x` because encoding is out of scope
 
 ---
 
@@ -1380,8 +1499,25 @@ All contributions must adhere to these design criteria:
 - Phase 1.5 implementation plan
 - Git workflow and quality checks
 
+### 2025-11-13 - v0.2.0
+- **Added**: "Project Scope: Decoding Only" section
+  - Explicitly documents that encoding is out of scope
+  - Lists in-scope and out-of-scope functionality
+  - Provides rationale for decode-only architecture
+- **Added**: "Why Decoding Only (No Encoding)?" decision log entry
+  - Detailed analysis of decode vs encode problem domains
+  - TCB impact assessment
+  - Future path for separate encoder project
+- **Added**: FAQ section
+  - Answers common questions about encoding scope
+  - Provides alternatives for transaction construction
+  - Explains roundtrip testing strategy
+- **Updated**: Contributing section
+  - Added criterion #8: "Decoding only"
+  - Clarifies that encoding PRs will be rejected
+
 ---
 
 **Last Updated**: 2025-11-13
-**Version**: 0.1.2
+**Version**: 0.2.0
 **Status**: Living Document
