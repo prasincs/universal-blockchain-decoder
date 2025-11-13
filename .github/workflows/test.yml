@@ -3,8 +3,18 @@ name: Test Suite
 on:
   push:
     branches: [ main, master, 'claude/**' ]
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: [ main, master ]
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/test.yml'
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta]
+        rust: [stable]  # Only stable - beta testing moved to nightly
 
     steps:
       - name: Checkout code
@@ -111,26 +121,9 @@ jobs:
 
       # Note: decoder integration tests will be enabled in Phase 2 after pure Rust implementations
 
-  # Job 4: Code formatting check
-  format-check:
-    name: Format Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-  # Job 5: Clippy lints
-  clippy:
-    name: Clippy Lints
+  # Job 4: Code quality checks (format + clippy combined)
+  quality-checks:
+    name: Format & Clippy
     runs-on: ubuntu-latest
 
     steps:
@@ -142,7 +135,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
+          components: rustfmt, clippy
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -153,13 +146,17 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-  # Job 6: Security audit
+  # Job 5: Security audit (skip on claude/** branches to save minutes)
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
@@ -171,10 +168,11 @@ jobs:
       - name: Run security audit
         run: cargo audit
 
-  # Job 7: Build documentation
+  # Job 6: Build documentation (skip on claude/** branches to save minutes)
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
@@ -199,10 +197,11 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
 
-  # Job 8: Minimal versions check (ensures MSRV compatibility)
+  # Job 7: Minimal versions check (skip on claude/** branches to save minutes)
   minimal-versions:
     name: Minimal Versions
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
