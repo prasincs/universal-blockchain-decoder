@@ -1,0 +1,42 @@
+[package]
+name = "decoder-bitcoin-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.decoder-bitcoin]
+path = ".."
+
+[dependencies.universal-decoder-core]
+path = "../../universal-decoder-core"
+
+[dependencies.decoder-encodings]
+path = "../../decoder-encodings"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_bitcoin_decoder"
+path = "fuzz_targets/fuzz_bitcoin_decoder.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_bitcoin_varint"
+path = "fuzz_targets/fuzz_bitcoin_varint.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_bitcoin_txid"
+path = "fuzz_targets/fuzz_bitcoin_txid.rs"
+test = false
+doc = false
