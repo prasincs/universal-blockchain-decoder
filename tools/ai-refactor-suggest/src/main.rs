@@ -12,6 +12,7 @@
 
 mod analyzer;
 mod decoder_info;
+mod information_fetcher;
 mod prompts;
 mod suggestions;
 

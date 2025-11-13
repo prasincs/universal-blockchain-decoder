@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::decoder_info::DecoderInfo;
+use crate::information_fetcher::InformationFetcher;
 use crate::prompts::{get_latest_updates, PromptManager};
 use crate::suggestions::RefactorSuggestion;
 
@@ -16,6 +17,15 @@ pub struct AnalyzerConfig {
     pub enabled_categories: Vec<String>,
     pub min_priority: String,
     pub excluded_decoders: Vec<String>,
+    /// Enable real-time information fetching from GitHub, crates.io, etc.
+    #[serde(default = "default_true")]
+    pub enable_live_updates: bool,
+    /// GitHub personal access token for higher API rate limits (optional)
+    pub github_token: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for AnalyzerConfig {
@@ -33,6 +43,8 @@ impl Default for AnalyzerConfig {
             ],
             min_priority: "low".to_string(),
             excluded_decoders: Vec::new(),
+            enable_live_updates: true,
+            github_token: None,
         }
     }
 }
@@ -71,6 +83,7 @@ pub struct RefactorAnalyzer {
     client: reqwest::Client,
     config: AnalyzerConfig,
     prompt_manager: PromptManager,
+    information_fetcher: Option<InformationFetcher>,
 }
 
 impl RefactorAnalyzer {
@@ -96,11 +109,32 @@ impl RefactorAnalyzer {
         let prompts_dir = repo_root.join("scripts/refactor-prompts");
         let prompt_manager = PromptManager::load_from_directory(&prompts_dir)?;
 
+        // Initialize information fetcher if enabled
+        let information_fetcher = if config.enable_live_updates {
+            let cache_dir = repo_root.join(".cache");
+            let github_token = config
+                .github_token
+                .clone()
+                .or_else(|| std::env::var("GITHUB_TOKEN").ok());
+
+            match InformationFetcher::new(cache_dir, github_token) {
+                Ok(fetcher) => Some(fetcher),
+                Err(e) => {
+                    eprintln!("Warning: Failed to initialize information fetcher: {}", e);
+                    eprintln!("Falling back to static updates");
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         Ok(Self {
             api_key,
             client,
             config,
             prompt_manager,
+            information_fetcher,
         })
     }
 
@@ -116,8 +150,21 @@ impl RefactorAnalyzer {
             .read_source_files(10)
             .context("Failed to read source files")?;
 
-        // Get latest updates
-        let latest_updates = get_latest_updates(decoder);
+        // Get latest updates (use information fetcher if available)
+        let latest_updates = if let Some(ref fetcher) = self.information_fetcher {
+            match fetcher.fetch_all_updates(decoder).await {
+                Ok(updates) => fetcher.format_updates(&updates),
+                Err(e) => {
+                    eprintln!(
+                        "Warning: Failed to fetch live updates for {}: {}",
+                        decoder.name, e
+                    );
+                    get_latest_updates(decoder)
+                }
+            }
+        } else {
+            get_latest_updates(decoder)
+        };
 
         // Build prompt
         let prompt = self

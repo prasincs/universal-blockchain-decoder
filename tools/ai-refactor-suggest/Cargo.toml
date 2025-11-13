@@ -40,3 +40,12 @@ chrono = "0.4"
 
 # Regex for parsing responses
 regex = "1.10"
+
+# GitHub API integration
+octocrab = "0.39"
+
+# Caching for API responses
+cacache = { version = "13.0", default-features = false, features = ["tokio-runtime"] }
+
+# Semver parsing for version comparison
+semver = "1.0"

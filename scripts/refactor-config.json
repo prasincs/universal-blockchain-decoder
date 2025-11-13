@@ -10,5 +10,7 @@
     "architecture"
   ],
   "min_priority": "low",
-  "excluded_decoders": []
+  "excluded_decoders": [],
+  "enable_live_updates": true,
+  "github_token": null
 }
