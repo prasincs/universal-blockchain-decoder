@@ -1,0 +1,22 @@
+{
+  "description": "EIP-1559 Transaction (Type 2)",
+  "type": 2,
+  "chain_id": 1,
+  "nonce": 0,
+  "max_priority_fee_per_gas": "2000000000",
+  "max_fee_per_gas": "30000000000",
+  "gas_limit": 21000,
+  "to": "0xb853c8a49ab5a451d5fa67ccb507eb940aa12e9b",
+  "value": "100000000000000000",
+  "value_eth": "0.1",
+  "data": "0x",
+  "access_list": [],
+  "v": 0,
+  "r": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "s": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "notes": [
+    "EIP-1559 transaction format",
+    "Uses base fee + priority fee model",
+    "Simple ETH transfer (0.1 ETH)"
+  ]
+}

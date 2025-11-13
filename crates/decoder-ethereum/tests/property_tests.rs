@@ -285,7 +285,7 @@ proptest! {
             }
 
             // If it starts with 0x01-0x03, should be typed transaction
-            if first_byte >= 0x01 && first_byte <= 0x03 {
+            if (0x01..=0x03).contains(&first_byte) {
                 prop_assert!(!actual_is_legacy,
                     "Transaction starting with 0x{:02x} should be typed", first_byte);
             }
@@ -298,7 +298,7 @@ proptest! {
         _seed in any::<u64>()
     ) {
         // Legacy transactions are RLP-encoded lists starting with 0xc0+
-        let legacy_tx = vec![0xf8, 0x6d]; // RLP list prefix
+        let legacy_tx = [0xf8, 0x6d]; // RLP list prefix
 
         // Should be recognized as having RLP structure
         let is_rlp_list = legacy_tx[0] >= 0xc0;
@@ -311,7 +311,7 @@ proptest! {
         _seed in any::<u64>()
     ) {
         // EIP-1559 transactions start with 0x02
-        let eip1559_tx = vec![0x02, 0xf8, 0x6d];
+        let eip1559_tx = [0x02, 0xf8, 0x6d];
 
         prop_assert_eq!(eip1559_tx[0], 0x02, "EIP-1559 should start with 0x02");
     }
@@ -389,7 +389,7 @@ proptest! {
     /// Property: Zero address is valid
     #[test]
     fn prop_zero_address_valid(_unit in 0u8..1) {
-        let zero_addr = vec![0u8; 20];
+        let zero_addr = [0u8; 20];
         prop_assert_eq!(zero_addr.len(), 20, "Zero address should be 20 bytes");
         // Zero address is used for contract creation and burning
     }
@@ -452,8 +452,10 @@ proptest! {
     /// Property: Nonce is always non-negative (u64)
     #[test]
     fn prop_nonce_non_negative(nonce in any::<u64>()) {
-        // Nonce is u64, so always non-negative by type
-        prop_assert!(nonce <= u64::MAX, "Nonce should be valid u64");
+        // Nonce is u64, so always non-negative and valid by type
+        // This test verifies the type constraint holds
+        let _nonce: u64 = nonce; // Type check ensures non-negative
+        prop_assert!(true, "Nonce is valid u64");
     }
 
     /// Property: Nonce = 0 is valid (first transaction)

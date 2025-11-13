@@ -1,0 +1,19 @@
+{
+  "description": "Contract Creation Transaction",
+  "type": 0,
+  "nonce": 0,
+  "gas_price": "20000000000",
+  "gas_limit": 21000,
+  "to": null,
+  "value": "1000000000000000000",
+  "value_eth": "1.0",
+  "data": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212201234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef64736f6c63430008010033",
+  "v": 38,
+  "r": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "s": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "notes": [
+    "Contract creation transaction",
+    "No 'to' address (empty field in RLP)",
+    "Data field contains contract bytecode"
+  ]
+}

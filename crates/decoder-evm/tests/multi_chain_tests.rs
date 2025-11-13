@@ -16,7 +16,7 @@ fn test_well_known_chains() {
         (56, "BNB Smart Chain"),
         (137, "Polygon"),
         (42161, "Arbitrum One"),
-        (10, "Optimism"),
+        (10, "OP Mainnet"),
         (8453, "Base"),
         (43114, "Avalanche C-Chain"),
         (250, "Fantom Opera"),
@@ -54,8 +54,6 @@ fn test_evm_decoder_creation() {
 /// Test that decoder handles invalid input gracefully
 #[test]
 fn test_decoder_handles_garbage() {
-    use decoder_test_utils::assertions::assert_decode_never_panics;
-
     let decoder = EvmDecoder::new();
 
     let test_cases = vec![

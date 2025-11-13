@@ -1,0 +1,21 @@
+{
+  "description": "EIP-2930 Transaction (Type 1)",
+  "type": 1,
+  "chain_id": 1,
+  "nonce": 0,
+  "gas_price": "20000000000",
+  "gas_limit": 21000,
+  "to": "0x0123456789abcdef0123456789abcdef01234567",
+  "value": "1000000000000000000",
+  "value_eth": "1.0",
+  "data": "0x",
+  "access_list": [],
+  "v": 1,
+  "r": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "s": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "notes": [
+    "EIP-2930 transaction format",
+    "Introduced optional access lists",
+    "Simple ETH transfer"
+  ]
+}
