@@ -2,6 +2,8 @@
 //!
 //! These tests verify properties that should hold for all valid inputs.
 
+#![allow(deprecated)]
+
 use decoder_cosmos::{Coin, CosmosDecoder};
 use decoder_primitives::prelude::*;
 use proptest::prelude::*;
@@ -39,7 +41,7 @@ proptest! {
 
     /// Property: Empty input always fails
     #[test]
-    fn empty_input_always_fails(prefix in any::<Vec<u8>>()) {
+    fn empty_input_always_fails(_prefix in any::<Vec<u8>>()) {
         // Even with a prefix, empty core data should fail
         let result = CosmosDecoder::validate_format(&[]);
         prop_assert!(result.is_err());
@@ -235,5 +237,5 @@ proptest! {
 #[test]
 fn test_proptest_setup() {
     // Ensure proptest is properly configured
-    assert!(true);
+    // This test just verifies that the test infrastructure compiles
 }
