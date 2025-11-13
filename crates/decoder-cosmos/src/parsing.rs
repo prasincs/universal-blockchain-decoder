@@ -95,6 +95,7 @@ fn parse_auth_info(auth_info: cosmos_sdk_proto::cosmos::tx::v1beta1::AuthInfo) -
 
     let parsed_fee = parse_fee(fee)?;
 
+    #[allow(deprecated)]
     let tip = auth_info.tip.map(|tip| Tip {
         amount: tip.amount.into_iter().map(parse_coin).collect(),
         tipper: tip.tipper,

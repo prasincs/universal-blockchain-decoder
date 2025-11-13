@@ -11,6 +11,7 @@ description = "Bitcoin transaction decoder for universal-decoder"
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 decoder-encodings = { path = "../decoder-encodings" }
+decoder-chains-common = { path = "../decoder-chains-common" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }

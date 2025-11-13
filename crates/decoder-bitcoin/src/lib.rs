@@ -29,6 +29,7 @@
 //! let tx_ir = decoded.canonicalize()?;
 //! ```
 
+use decoder_chains_common::prelude::*;
 use decoder_primitives::prelude::*;
 use std::io::Cursor;
 
@@ -38,23 +39,8 @@ pub mod types;
 use parsing::*;
 pub use types::BitcoinTransaction;
 
-/// Bitcoin chain identity
-#[derive(Debug, Clone, Copy)]
-pub struct BitcoinChain;
-
-impl ChainIdentity for BitcoinChain {
-    fn chain_id(&self) -> u64 {
-        0 // Bitcoin chain ID
-    }
-
-    fn chain_name(&self) -> &str {
-        "Bitcoin"
-    }
-
-    fn chain_family(&self) -> ChainFamily {
-        ChainFamily::Utxo
-    }
-}
+/// Bitcoin chain identity (re-export from common library)
+pub use decoder_chains_common::chains::BITCOIN as BitcoinChain;
 
 /// Bitcoin decoder implementing the ChainDecoder trait
 ///
@@ -64,10 +50,10 @@ pub struct BitcoinDecoder;
 
 impl ChainDecoder for BitcoinDecoder {
     type TxSpecific = BitcoinTransaction;
-    type Chain = BitcoinChain;
+    type Chain = decoder_chains_common::chains::ChainInfo;
 
     fn chain() -> Self::Chain {
-        BitcoinChain
+        decoder_chains_common::chains::BITCOIN
     }
 
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
@@ -154,28 +140,8 @@ impl ChainDecoder for BitcoinDecoder {
     }
 
     fn validate_format(raw_bytes: &[u8]) -> Result<()> {
-        if raw_bytes.is_empty() {
-            return Err(DecoderError::invalid_structure(
-                "Bitcoin transaction cannot be empty",
-            ));
-        }
-
-        if raw_bytes.len() < 10 {
-            return Err(DecoderError::invalid_structure(format!(
-                "Bitcoin transaction too small: {} bytes (minimum 10 bytes)",
-                raw_bytes.len()
-            )));
-        }
-
-        if raw_bytes.len() > MAX_TRANSACTION_SIZE {
-            return Err(DecoderError::invalid_structure(format!(
-                "Bitcoin transaction too large: {} bytes (maximum {} bytes)",
-                raw_bytes.len(),
-                MAX_TRANSACTION_SIZE
-            )));
-        }
-
-        Ok(())
+        // Use common validation logic
+        validation::validate_format(raw_bytes, 10, MAX_TRANSACTION_SIZE, "Bitcoin")
     }
 }
 

@@ -3,6 +3,8 @@
 //! These tests validate the decoder against real Cosmos SDK transactions
 //! using the official cosmos-sdk-proto library for reference.
 
+#![allow(deprecated)]
+
 use decoder_cosmos::{CosmosDecoder, CosmosMessage};
 use decoder_primitives::prelude::*;
 
