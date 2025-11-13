@@ -237,5 +237,5 @@ proptest! {
 #[test]
 fn test_proptest_setup() {
     // Ensure proptest is properly configured
-    assert!(true);
+    // This test just verifies that the test infrastructure compiles
 }
