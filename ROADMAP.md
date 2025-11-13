@@ -903,7 +903,75 @@ Tasks:
 
 ---
 
-### 3.8: Universal Decoder Integration (Week 10)
+### 3.8: Privacy Chains Family Decoder (Week 9-10)
+
+**Priority**: MEDIUM (Privacy features require special handling)
+**Decoder**: `decoder-privacy-chains`
+
+**Chains Supported**: Zcash, Aleo, Monero (limited)
+
+Tasks:
+- [ ] Create `decoder-privacy-chains` crate
+- [ ] Implement Zcash decoder (transparent + shielded transactions)
+  - [ ] Transparent transactions (reuse `BitcoinDecoder` base)
+  - [ ] Shielded transactions (zk-SNARK components)
+    - [ ] Sprout (JoinSplit descriptions)
+    - [ ] Sapling (Spend/Output descriptions)
+    - [ ] Orchard (Action descriptions)
+  - [ ] Parse: nullifiers, commitments, encrypted notes, proofs
+  - [ ] Cannot decode: private transfer amounts/addresses (by design)
+- [ ] Implement Aleo decoder (Leo VM transactions)
+  - [ ] Program execution records
+  - [ ] State transitions
+  - [ ] Zero-knowledge proofs (snarkVM)
+  - [ ] Public inputs/outputs
+  - [ ] Instruction-based model (similar to Solana structure)
+- [ ] Implement Monero decoder (limited, privacy-by-default)
+  - [ ] Ring signatures
+  - [ ] Stealth addresses
+  - [ ] Ring CT (Confidential Transactions)
+  - [ ] Can extract: ring size, fees, proof structure
+  - [ ] Cannot decode: actual sender, receiver, amounts
+- [ ] Hardcode chain list
+- [ ] Comprehensive testing with mainnet transactions
+
+**Special Features**:
+- **Zcash**:
+  - Dual-mode: transparent (Bitcoin-like) + shielded (zk-SNARK)
+  - Multiple shielded protocols (Sprout, Sapling, Orchard)
+  - Viewing keys for selective disclosure
+  - Proof verification metadata
+- **Aleo**:
+  - Leo programming language VM
+  - Full privacy by default (all computations private)
+  - Zero-knowledge proofs for state transitions
+  - Program execution traces
+- **Monero**:
+  - Ring signatures (transaction mixing)
+  - One-time stealth addresses
+  - Ring CT (hidden amounts)
+  - Subaddresses
+
+**Privacy Limitations** (by design):
+- ✅ Can decode: transaction structure, proof components, public metadata
+- ❌ Cannot decode: private transfer amounts, sender/receiver in shielded transactions
+- ⚠️ Limited information extraction is expected and correct behavior
+
+**Delivered**:
+- Support for 3 major privacy-focused blockchains
+- Transparent/public component extraction
+- Proof structure parsing (without breaking privacy)
+- Documentation on privacy limitations
+
+**Why Important**:
+- Privacy chains are growing in importance
+- Zcash and Aleo use cutting-edge cryptography (zk-SNARKs)
+- Demonstrates TxIR can handle privacy-preserving transactions
+- Validates extensibility for non-standard transaction formats
+
+---
+
+### 3.9: Universal Decoder Integration (Week 11)
 
 **Priority**: HIGH (Unified API)
 **Decoder**: `universal-decoder`
@@ -1271,14 +1339,16 @@ Tasks:
 
 **Priority**: COMMUNITY
 
+**Note**: Privacy chains (Zcash, Aleo, Monero) are addressed in Phase 3.8.
+
 Chains to support (priority order):
-1. [ ] Cosmos (IBC support)
-2. [ ] Avalanche (multi-chain)
+1. [ ] Cosmos (IBC support) - **Note**: Cosmos SDK family decoder planned for Phase 3.5
+2. [ ] Avalanche (multi-chain) - **Note**: C-Chain uses EVM decoder (Phase 3.1), X-Chain and P-Chain need custom decoder
 3. [ ] NEAR Protocol (Borsh-native!)
 4. [ ] Tron
 5. [ ] Stellar
 6. [ ] Algorand
-7. [ ] Monero (privacy-limited)
+7. [ ] Additional privacy chains (Firo, Beam, Grin)
 
 ### 6.2: Tooling & Integration
 
@@ -1402,5 +1472,6 @@ See `CONTRIBUTING.md` for:
   - Phase 3.1: EVM family decoder (500+ chains, uses shared RLP) - 2 weeks
   - Phase 3.2-3.3: OP Stack + Arbitrum Orbit family decoders - 2 weeks
   - Phase 3.4-3.7: SVM, Cosmos, Move, Bitcoin forks family decoders - 4 weeks
-  - Phase 3.8: Universal decoder integration - 1 week
-  - v0.2.0 (Phase 3 complete: 620+ chains supported) - 3-4 months
+  - Phase 3.8: Privacy chains family decoder (Zcash, Aleo, Monero) - 2 weeks
+  - Phase 3.9: Universal decoder integration - 1 week
+  - v0.2.0 (Phase 3 complete: 620+ chains + privacy chains supported) - 3-4 months
