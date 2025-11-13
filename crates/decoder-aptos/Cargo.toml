@@ -10,8 +10,10 @@ description = "Aptos transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+sha3 = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
