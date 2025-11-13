@@ -8,6 +8,7 @@
 //!
 //! ## Modules
 //!
+//! - `bcs`: Binary Canonical Serialization (Move/Aptos/Sui)
 //! - `varint`: Bitcoin-style variable-length integer encoding
 //! - `compact_u16`: Solana-style compact-u16 encoding
 //! - `rlp`: Ethereum's Recursive Length Prefix encoding
@@ -41,11 +42,13 @@
 //! let item = RlpItem::decode(&rlp_data).unwrap();
 //! ```
 
+pub mod bcs;
 pub mod compact_u16;
 pub mod rlp;
 pub mod varint;
 
 // Re-export commonly used types
+pub use bcs::{read_bytes as read_bcs_bytes, read_uleb128};
 pub use compact_u16::read_compact_u16;
 pub use rlp::RlpItem;
 pub use varint::encode_varint;

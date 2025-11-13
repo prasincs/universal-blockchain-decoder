@@ -6,6 +6,7 @@ use decoder_encodings::rlp::RlpItem;
 use proptest::prelude::*;
 
 /// Generate arbitrary RLP data items (non-list)
+#[allow(dead_code)]
 fn arb_rlp_data() -> impl Strategy<Value = Vec<u8>> {
     prop::collection::vec(any::<u8>(), 0..100)
 }
@@ -106,7 +107,7 @@ proptest! {
         };
 
         // Encode as RLP
-        let mut encoded = if bytes.is_empty() {
+        let encoded = if bytes.is_empty() {
             vec![0x80]
         } else if bytes.len() <= 55 {
             let mut e = vec![0x80 + bytes.len() as u8];
@@ -240,9 +241,7 @@ proptest! {
         let mut encoded = vec![prefix];
 
         // Add maximum length bytes (all 0xFF)
-        for _ in 0..length_of_length {
-            encoded.push(0xFF);
-        }
+        encoded.extend(std::iter::repeat_n(0xFF, length_of_length));
 
         // This should either:
         // 1. Return error for length overflow (correct)
