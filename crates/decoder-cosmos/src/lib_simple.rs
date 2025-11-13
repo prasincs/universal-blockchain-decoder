@@ -6,9 +6,9 @@
 use decoder_primitives::prelude::*;
 use sha2::{Digest, Sha256};
 
-pub mod parsing;
 pub mod registry;
 pub mod types;
+pub mod parsing;
 
 pub use registry::{CosmosChainInfo, CosmosRegistry};
 pub use types::*;
@@ -47,9 +47,7 @@ impl CosmosTransaction {
     }
 
     pub fn messages(&self) -> Result<Vec<CosmosMessage>> {
-        self.tx
-            .body
-            .messages
+        self.tx.body.messages
             .iter()
             .map(parsing::parse_message)
             .collect()
@@ -141,11 +139,10 @@ impl<'a> Canonicalizer<'a> for CosmosTransaction {
         }
 
         if self.tx.signatures.len() != self.signer_count() {
-            return Err(DecoderError::invalid_structure(format!(
-                "Signature count ({}) doesn't match signer count ({})",
-                self.tx.signatures.len(),
-                self.signer_count()
-            )));
+            return Err(DecoderError::invalid_structure(
+                format!("Signature count ({}) doesn't match signer count ({})",
+                    self.tx.signatures.len(), self.signer_count())
+            ));
         }
 
         if self.tx.body.messages.is_empty() {
@@ -279,8 +276,8 @@ mod tests {
     #[test]
     fn test_parse_amount() {
         let amount = parse_amount("1000000", "uatom").unwrap();
-        assert_eq!(amount.value, 1000000);
-        assert_eq!(amount.decimals, 6);
+        assert_eq!(amount.value(), 1000000);
+        assert_eq!(amount.decimals(), 6);
     }
 
     #[test]
