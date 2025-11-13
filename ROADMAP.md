@@ -345,7 +345,17 @@ Testing Tasks (186 tests passing):
   - CLI tool with clap (universal-tx-decoder)
   - Comprehensive library documentation (LIBRARY_USAGE.md)
   - SegWit TXID calculation fixed
-- PR #4: Property-based testing with proptest (MEDIUM priority, 6-8h)
+- ✅ PR #4: Property-based testing with proptest (COMPLETE)
+  - 16 comprehensive property tests covering:
+    - Decoder never panics on arbitrary input
+    - VarInt encoding/decoding roundtrips (1000 test cases)
+    - TXID calculation determinism
+    - Fee calculation properties (non-negative, bounded)
+    - Canonical serialization properties
+    - SegWit detection consistency
+    - Input/output count bounds
+    - Amount arithmetic properties
+  - All tests passing with 0 warnings
 - PR #5: Fuzzing infrastructure with cargo-fuzz (MEDIUM priority, 4-6h)
 - PR #6: Performance benchmarking (LOW priority, 4-6h)
 - PR #7: Additional documentation and advanced examples (LOW priority, 2-4h)
