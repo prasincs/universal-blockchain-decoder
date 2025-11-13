@@ -2,8 +2,8 @@
 
 use crate::types::*;
 use decoder_encodings::bcs::{
-    read_bool, read_bytes, read_fixed_bytes, read_option, read_string, read_u16, read_u64,
-    read_u8, read_uleb128,
+    read_bool, read_bytes, read_fixed_bytes, read_option, read_string, read_u16, read_u64, read_u8,
+    read_uleb128,
 };
 use decoder_primitives::prelude::*;
 use std::io::{Cursor, Read};

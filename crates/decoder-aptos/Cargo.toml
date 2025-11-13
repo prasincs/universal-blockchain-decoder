@@ -18,3 +18,7 @@ sha3 = { workspace = true }
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+# Official BCS implementation for validation testing
+bcs = "0.1"
+# TODO: Add aptos-types when implementing full SDK validation
+# aptos-types = "3"

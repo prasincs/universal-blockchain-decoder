@@ -18,3 +18,7 @@ blake2 = "0.10"
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+# Official BCS implementation for validation testing
+bcs = "0.1"
+# TODO: Add sui-types when implementing full SDK validation
+# sui_types = "1.17"
