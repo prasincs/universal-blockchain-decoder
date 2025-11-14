@@ -289,11 +289,12 @@ mod tests {
         let content = "The project has 25 modules and 15 decoders.";
 
         // Create 15 decoder modules to match the content
-        let decoder_modules: Vec<crate::analyzer::ModuleInfo> = (0..15)
+
+        let decoder_modules: Vec<_> = (0..15)
             .map(|i| crate::analyzer::ModuleInfo {
                 name: format!("decoder-{}", i),
                 path: PathBuf::from(format!("crates/decoder-{}", i)),
-                module_type: ModuleType::Decoder,
+                module_type: crate::analyzer::ModuleType::Decoder,
                 loc: 100,
                 dependencies: vec![],
                 description: String::new(),
