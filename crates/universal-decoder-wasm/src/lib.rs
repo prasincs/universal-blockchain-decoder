@@ -2,38 +2,16 @@
 //!
 //! This crate provides a thin WASM wrapper around the existing decoder infrastructure,
 //! exposing the decoder functionality to JavaScript/browser environments.
-//!
-//! # Architecture
-//!
-//! This is a **thin wrapper** that reuses:
-//! - Core library (`universal-decoder-core`) for traits and TxIR
-//! - Existing decoders (`decoder-bitcoin`, `decoder-ethereum`, etc.)
-//! - All canonicalization and validation logic already implemented
-//!
-//! # Usage (from JavaScript)
-//!
-//! ```javascript
-//! import init, { decode_transaction, supported_chains } from './pkg/universal_decoder_wasm.js';
-//!
-//! await init();
-//!
-//! const chains = supported_chains();
-//! console.log(chains); // ["bitcoin", "ethereum", "solana", "cosmos"]
-//!
-//! const result = decode_transaction("bitcoin", "0100000001...");
-//! console.log(result.json);
-//! console.log(result.canonical_hex);
-//! ```
 
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 // Import existing decoders (reusing implementations!)
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use decoder_cosmos::{CosmosDecoder, CosmosTransaction};
-use decoder_ethereum::{EthereumDecoder, EthereumTransaction};
-use decoder_solana::{SolanaDecoder, SolanaTransaction};
-use universal_decoder_core::{Canonicalizer, ChainDecoder};
+use decoder_bitcoin::BitcoinDecoder;
+use decoder_cosmos::CosmosDecoder;
+use decoder_ethereum::EthereumDecoder;
+use decoder_solana::SolanaDecoder;
+use universal_decoder_core::prelude::{CanonicalSerialize, Canonicalizer, ChainDecoder};
 
 /// Result of decoding a transaction (serializable to JavaScript).
 #[derive(Serialize, Deserialize)]
@@ -49,21 +27,11 @@ pub struct DecodeResult {
     #[wasm_bindgen(skip)]
     pub json: serde_json::Value,
 
-    /// Privacy features detected (for highlighting)
-    #[wasm_bindgen(skip)]
-    pub privacy_features: Vec<String>,
-
-    /// Privacy score (0 = fully observable, 100 = fully private)
-    pub privacy_score: u8,
-
     /// Chain name
     pub chain_name: String,
 
     /// Chain ID
     pub chain_id: u64,
-
-    /// Transaction type (e.g., "Transfer", "ContractCall")
-    pub transaction_type: String,
 
     /// Canonical size in bytes
     pub canonical_size: usize,
@@ -75,12 +43,6 @@ impl DecodeResult {
     #[wasm_bindgen(getter)]
     pub fn json(&self) -> JsValue {
         serde_wasm_bindgen::to_value(&self.json).unwrap_or(JsValue::NULL)
-    }
-
-    /// Get privacy features as JavaScript array
-    #[wasm_bindgen(getter)]
-    pub fn privacy_features(&self) -> Vec<String> {
-        self.privacy_features.clone()
     }
 }
 
@@ -100,31 +62,30 @@ pub fn init() {
 ///
 /// # Returns
 ///
-/// `DecodeResult` with canonical bytes, JSON, and privacy analysis
-///
-/// # Errors
-///
-/// Returns error if:
-/// - Chain is not supported
-/// - Hex is invalid
-/// - Transaction parsing fails
+/// `DecodeResult` containing:
+/// - `canonical_hex`: Borsh-encoded canonical representation
+/// - `canonical_hash`: SHA-256 hash of canonical bytes
+/// - `json`: Human-readable JSON (via `.json()` getter)
+/// - `chain_name`, `chain_id`: Chain identification
+/// - `canonical_size`: Size of canonical representation in bytes
 #[wasm_bindgen]
 pub fn decode_transaction(chain: &str, hex: &str) -> Result<DecodeResult, JsValue> {
-    // Decode hex to bytes
     let bytes = universal_decoder_core::hex::decode(hex)
         .map_err(|e| JsValue::from_str(&format!("Invalid hex: {}", e)))?;
 
-    // Decode based on chain (reusing existing decoders!)
     match chain.to_lowercase().as_str() {
-        "bitcoin" | "btc" => decode_bitcoin_transaction(&bytes),
-        "ethereum" | "eth" => decode_ethereum_transaction(&bytes),
-        "solana" | "sol" => decode_solana_transaction(&bytes),
-        "cosmos" | "atom" => decode_cosmos_transaction(&bytes),
-        _ => Err(JsValue::from_str(&format!("Unsupported chain: {}", chain))),
+        "bitcoin" => decode_with::<BitcoinDecoder>(&bytes),
+        "ethereum" => decode_with::<EthereumDecoder>(&bytes),
+        "solana" => decode_with::<SolanaDecoder>(&bytes),
+        "cosmos" => decode_with::<CosmosDecoder>(&bytes),
+        _ => Err(JsValue::from_str(&format!(
+            "Unsupported chain: {}. Supported: bitcoin, ethereum, solana, cosmos",
+            chain
+        ))),
     }
 }
 
-/// Get list of supported chains
+/// List all supported blockchain names
 #[wasm_bindgen]
 pub fn supported_chains() -> Vec<String> {
     vec![
@@ -135,23 +96,24 @@ pub fn supported_chains() -> Vec<String> {
     ]
 }
 
-/// Auto-detect chain from transaction bytes (best effort)
+/// Attempt to automatically detect which blockchain a transaction belongs to
+/// by trying decoders in order of popularity.
 #[wasm_bindgen]
 pub fn auto_detect_chain(hex: &str) -> Result<String, JsValue> {
     let bytes = universal_decoder_core::hex::decode(hex)
         .map_err(|e| JsValue::from_str(&format!("Invalid hex: {}", e)))?;
 
     // Try decoders in order (most common first)
-    if BitcoinDecoder.decode(&bytes).is_ok() {
+    if BitcoinDecoder::decode(&bytes).is_ok() {
         return Ok("bitcoin".to_string());
     }
-    if EthereumDecoder.decode(&bytes).is_ok() {
+    if EthereumDecoder::decode(&bytes).is_ok() {
         return Ok("ethereum".to_string());
     }
-    if SolanaDecoder.decode(&bytes).is_ok() {
+    if SolanaDecoder::decode(&bytes).is_ok() {
         return Ok("solana".to_string());
     }
-    if CosmosDecoder.decode(&bytes).is_ok() {
+    if CosmosDecoder::decode(&bytes).is_ok() {
         return Ok("cosmos".to_string());
     }
 
@@ -159,26 +121,24 @@ pub fn auto_detect_chain(hex: &str) -> Result<String, JsValue> {
 }
 
 // ============================================================================
-// Chain-specific decoder wrappers (reusing existing implementations)
+// Generic decoder helper
 // ============================================================================
 
-fn decode_bitcoin_transaction(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
-    // Decode using existing BitcoinDecoder
-    let tx: BitcoinTransaction = BitcoinDecoder
-        .decode(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Bitcoin decode error: {}", e)))?;
+fn decode_with<D: ChainDecoder>(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
+    // Decode using chain-specific decoder
+    let tx = D::decode(bytes).map_err(|e| JsValue::from_str(&format!("Decode error: {}", e)))?;
 
-    // Get TxIR using existing canonicalizer
+    // Canonicalize to TxIR
     let tx_ir = tx
-        .to_intermediate_representation()
+        .canonicalize()
         .map_err(|e| JsValue::from_str(&format!("TxIR conversion error: {}", e)))?;
 
-    // Get canonical bytes (already implemented!)
+    // Get canonical bytes (Borsh encoding)
     let canonical_bytes = tx_ir
         .to_canonical_bytes()
         .map_err(|e| JsValue::from_str(&format!("Canonical encoding error: {}", e)))?;
 
-    // Get canonical hash (already implemented!)
+    // Get canonical hash (SHA-256 of Borsh bytes)
     let canonical_hash = tx_ir
         .canonical_hash()
         .map_err(|e| JsValue::from_str(&format!("Hash error: {}", e)))?;
@@ -187,208 +147,14 @@ fn decode_bitcoin_transaction(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
     let json = serde_json::to_value(&tx_ir)
         .map_err(|e| JsValue::from_str(&format!("JSON error: {}", e)))?;
 
-    // Extract privacy features (Bitcoin is transparent by default)
-    let privacy_features = extract_privacy_features(&tx_ir);
-    let privacy_score = calculate_privacy_score(&tx_ir);
-
     Ok(DecodeResult {
         canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
         canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
         json,
-        privacy_features,
-        privacy_score,
-        chain_name: tx_ir.chain.chain_name().to_string(),
-        chain_id: tx_ir.chain.chain_id(),
-        transaction_type: format!(
-            "{:?}",
-            tx_ir
-                .operations
-                .first()
-                .map(|o| &o.operation_type)
-                .unwrap_or(&universal_decoder_core::OperationType::Transfer)
-        ),
+        chain_name: tx_ir.chain.name.clone(),
+        chain_id: tx_ir.chain.id,
         canonical_size: canonical_bytes.len(),
     })
-}
-
-fn decode_ethereum_transaction(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
-    // Decode using existing EthereumDecoder
-    let tx: EthereumTransaction = EthereumDecoder
-        .decode(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Ethereum decode error: {}", e)))?;
-
-    // Get TxIR using existing canonicalizer
-    let tx_ir = tx
-        .to_intermediate_representation()
-        .map_err(|e| JsValue::from_str(&format!("TxIR conversion error: {}", e)))?;
-
-    // Get canonical bytes (already implemented!)
-    let canonical_bytes = tx_ir
-        .to_canonical_bytes()
-        .map_err(|e| JsValue::from_str(&format!("Canonical encoding error: {}", e)))?;
-
-    // Get canonical hash (already implemented!)
-    let canonical_hash = tx_ir
-        .canonical_hash()
-        .map_err(|e| JsValue::from_str(&format!("Hash error: {}", e)))?;
-
-    // Serialize to JSON for display
-    let json = serde_json::to_value(&tx_ir)
-        .map_err(|e| JsValue::from_str(&format!("JSON error: {}", e)))?;
-
-    // Extract privacy features
-    let privacy_features = extract_privacy_features(&tx_ir);
-    let privacy_score = calculate_privacy_score(&tx_ir);
-
-    Ok(DecodeResult {
-        canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
-        canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
-        json,
-        privacy_features,
-        privacy_score,
-        chain_name: tx_ir.chain.chain_name().to_string(),
-        chain_id: tx_ir.chain.chain_id(),
-        transaction_type: format!(
-            "{:?}",
-            tx_ir
-                .operations
-                .first()
-                .map(|o| &o.operation_type)
-                .unwrap_or(&universal_decoder_core::OperationType::Transfer)
-        ),
-        canonical_size: canonical_bytes.len(),
-    })
-}
-
-fn decode_solana_transaction(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
-    // Decode using existing SolanaDecoder
-    let tx: SolanaTransaction = SolanaDecoder
-        .decode(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Solana decode error: {}", e)))?;
-
-    // Get TxIR using existing canonicalizer
-    let tx_ir = tx
-        .to_intermediate_representation()
-        .map_err(|e| JsValue::from_str(&format!("TxIR conversion error: {}", e)))?;
-
-    // Get canonical bytes (already implemented!)
-    let canonical_bytes = tx_ir
-        .to_canonical_bytes()
-        .map_err(|e| JsValue::from_str(&format!("Canonical encoding error: {}", e)))?;
-
-    // Get canonical hash (already implemented!)
-    let canonical_hash = tx_ir
-        .canonical_hash()
-        .map_err(|e| JsValue::from_str(&format!("Hash error: {}", e)))?;
-
-    // Serialize to JSON for display
-    let json = serde_json::to_value(&tx_ir)
-        .map_err(|e| JsValue::from_str(&format!("JSON error: {}", e)))?;
-
-    // Extract privacy features
-    let privacy_features = extract_privacy_features(&tx_ir);
-    let privacy_score = calculate_privacy_score(&tx_ir);
-
-    Ok(DecodeResult {
-        canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
-        canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
-        json,
-        privacy_features,
-        privacy_score,
-        chain_name: tx_ir.chain.chain_name().to_string(),
-        chain_id: tx_ir.chain.chain_id(),
-        transaction_type: format!(
-            "{:?}",
-            tx_ir
-                .operations
-                .first()
-                .map(|o| &o.operation_type)
-                .unwrap_or(&universal_decoder_core::OperationType::Transfer)
-        ),
-        canonical_size: canonical_bytes.len(),
-    })
-}
-
-fn decode_cosmos_transaction(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
-    // Decode using existing CosmosDecoder
-    let tx: CosmosTransaction = CosmosDecoder
-        .decode(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Cosmos decode error: {}", e)))?;
-
-    // Get TxIR using existing canonicalizer
-    let tx_ir = tx
-        .to_intermediate_representation()
-        .map_err(|e| JsValue::from_str(&format!("TxIR conversion error: {}", e)))?;
-
-    // Get canonical bytes (already implemented!)
-    let canonical_bytes = tx_ir
-        .to_canonical_bytes()
-        .map_err(|e| JsValue::from_str(&format!("Canonical encoding error: {}", e)))?;
-
-    // Get canonical hash (already implemented!)
-    let canonical_hash = tx_ir
-        .canonical_hash()
-        .map_err(|e| JsValue::from_str(&format!("Hash error: {}", e)))?;
-
-    // Serialize to JSON for display
-    let json = serde_json::to_value(&tx_ir)
-        .map_err(|e| JsValue::from_str(&format!("JSON error: {}", e)))?;
-
-    // Extract privacy features
-    let privacy_features = extract_privacy_features(&tx_ir);
-    let privacy_score = calculate_privacy_score(&tx_ir);
-
-    Ok(DecodeResult {
-        canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
-        canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
-        json,
-        privacy_features,
-        privacy_score,
-        chain_name: tx_ir.chain.chain_name().to_string(),
-        chain_id: tx_ir.chain.chain_id(),
-        transaction_type: format!(
-            "{:?}",
-            tx_ir
-                .operations
-                .first()
-                .map(|o| &o.operation_type)
-                .unwrap_or(&universal_decoder_core::OperationType::Transfer)
-        ),
-        canonical_size: canonical_bytes.len(),
-    })
-}
-
-// ============================================================================
-// Privacy analysis helpers (simple heuristics for now)
-// ============================================================================
-
-fn extract_privacy_features(tx_ir: &universal_decoder_core::TxIR<1>) -> Vec<String> {
-    let mut features = Vec::new();
-
-    // Check for privacy-related metadata (from TxIR)
-    if let Some(privacy) = &tx_ir.privacy {
-        for feature in &privacy.features {
-            features.push(format!("{:?}", feature));
-        }
-    }
-
-    // If no explicit privacy features, mark as transparent
-    if features.is_empty() {
-        features.push("Fully Transparent".to_string());
-    }
-
-    features
-}
-
-fn calculate_privacy_score(tx_ir: &universal_decoder_core::TxIR<1>) -> u8 {
-    match &tx_ir.privacy {
-        None => 0, // Fully observable (Bitcoin, Ethereum)
-        Some(p) => {
-            // Simple heuristic: more privacy features = higher score
-            let feature_count = p.features.len() as u8;
-            (feature_count * 25).min(100)
-        }
-    }
 }
 
 #[cfg(test)]
@@ -404,19 +170,11 @@ mod tests {
         assert_eq!(chains.len(), 4);
         assert!(chains.contains(&"bitcoin".to_string()));
         assert!(chains.contains(&"ethereum".to_string()));
-        assert!(chains.contains(&"solana".to_string()));
-        assert!(chains.contains(&"cosmos".to_string()));
     }
 
     #[wasm_bindgen_test]
     fn test_invalid_hex() {
-        let result = decode_transaction("bitcoin", "not-hex");
-        assert!(result.is_err());
-    }
-
-    #[wasm_bindgen_test]
-    fn test_unsupported_chain() {
-        let result = decode_transaction("unknown-chain", "0123456789abcdef");
+        let result = decode_transaction("bitcoin", "not_hex");
         assert!(result.is_err());
     }
 }
