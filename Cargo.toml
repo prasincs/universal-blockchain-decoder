@@ -8,6 +8,7 @@ members = [
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     "crates/decoder-solana",
+    "crates/decoder-svm",           # SVM family decoder (Solana, Eclipse, Pyth, etc.)
     "crates/decoder-evm",           # Generic EVM decoder for 2000+ chains
     "crates/universal-decoder-cli",
 

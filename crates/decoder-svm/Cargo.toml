@@ -1,0 +1,20 @@
+[package]
+name = "decoder-svm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "SVM (Solana Virtual Machine) family decoder for universal-decoder"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-solana = { path = "../decoder-solana" }
+serde = { workspace = true }
+borsh = { version = "1.3", default-features = true, features = ["derive", "std"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
