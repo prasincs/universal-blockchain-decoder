@@ -288,10 +288,23 @@ mod tests {
     fn test_check_module_counts() {
         let content = "The project has 25 modules and 15 decoders.";
 
+        // Create 15 decoder modules to match the content
+        let decoder_modules: Vec<crate::analyzer::ModuleInfo> = (0..15)
+            .map(|i| crate::analyzer::ModuleInfo {
+                name: format!("decoder-{}", i),
+                path: PathBuf::from(format!("crates/decoder-{}", i)),
+                module_type: ModuleType::Decoder,
+                loc: 100,
+                dependencies: vec![],
+                description: String::new(),
+                exports: vec![],
+            })
+            .collect();
+
         let mut analysis = CodebaseAnalysis {
             module_count: 25,
             total_loc: 1000,
-            modules: vec![],
+            modules: decoder_modules,
             changes: vec![],
             dependencies: Default::default(),
             architecture_summary: String::new(),
