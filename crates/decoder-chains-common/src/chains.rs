@@ -63,6 +63,15 @@ pub const LITECOIN: ChainInfo = ChainInfo::new(2, "Litecoin", ChainFamily::Utxo)
 /// Dogecoin mainnet
 pub const DOGECOIN: ChainInfo = ChainInfo::new(3, "Dogecoin", ChainFamily::Utxo);
 
+/// Dash mainnet
+pub const DASH: ChainInfo = ChainInfo::new(5, "Dash", ChainFamily::Utxo);
+
+/// Bitcoin Cash mainnet
+pub const BITCOIN_CASH: ChainInfo = ChainInfo::new(145, "Bitcoin Cash", ChainFamily::Utxo);
+
+/// Bitcoin SV mainnet
+pub const BITCOIN_SV: ChainInfo = ChainInfo::new(236, "Bitcoin SV", ChainFamily::Utxo);
+
 // ============================================================================
 // EVM-compatible Chains
 // ============================================================================
@@ -142,8 +151,31 @@ pub const CARDANO: ChainInfo = ChainInfo::new(1010, "Cardano", ChainFamily::Utxo
 
 /// All registered chains in a static array for easy iteration.
 pub const ALL_CHAINS: &[ChainInfo] = &[
-    BITCOIN, ETHEREUM, LITECOIN, DOGECOIN, POLYGON, BNB, AVALANCHE, ARBITRUM, OPTIMISM, BASE,
-    SOLANA, APTOS, SUI, NEAR, STELLAR, XRP, ALGORAND, TRON, COSMOS, OSMOSIS, POLKADOT, CARDANO,
+    BITCOIN,
+    ETHEREUM,
+    LITECOIN,
+    DOGECOIN,
+    DASH,
+    BITCOIN_CASH,
+    BITCOIN_SV,
+    POLYGON,
+    BNB,
+    AVALANCHE,
+    ARBITRUM,
+    OPTIMISM,
+    BASE,
+    SOLANA,
+    APTOS,
+    SUI,
+    NEAR,
+    STELLAR,
+    XRP,
+    ALGORAND,
+    TRON,
+    COSMOS,
+    OSMOSIS,
+    POLKADOT,
+    CARDANO,
 ];
 
 /// Looks up a chain by its ID.
