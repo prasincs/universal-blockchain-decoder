@@ -213,6 +213,16 @@ impl RlpItem {
 
         Ok(result)
     }
+
+    /// Encode RlpItem into RLP bytes
+    ///
+    /// This is primarily for testing purposes.
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            RlpItem::Data(data) => encode_data(data),
+            RlpItem::List(items) => encode_list(items),
+        }
+    }
 }
 
 /// Decode length from big-endian bytes
@@ -260,6 +270,66 @@ fn decode_list(bytes: &[u8]) -> Result<Vec<RlpItem>> {
     }
 
     Ok(items)
+}
+
+/// Encode data bytes as RLP
+fn encode_data(data: &[u8]) -> Vec<u8> {
+    if data.len() == 1 && data[0] < 0x80 {
+        // Single byte [0x00, 0x7f]
+        vec![data[0]]
+    } else if data.len() <= 55 {
+        // Short string [0x80, 0xb7]
+        let mut result = vec![0x80 + data.len() as u8];
+        result.extend_from_slice(data);
+        result
+    } else {
+        // Long string [0xb8, 0xbf]
+        let length_bytes = encode_length(data.len());
+        let mut result = vec![0xb7 + length_bytes.len() as u8];
+        result.extend_from_slice(&length_bytes);
+        result.extend_from_slice(data);
+        result
+    }
+}
+
+/// Encode list of RlpItems as RLP
+fn encode_list(items: &[RlpItem]) -> Vec<u8> {
+    // First encode all items to get total payload length
+    let mut payload = Vec::new();
+    for item in items {
+        payload.extend_from_slice(&item.encode());
+    }
+
+    if payload.len() <= 55 {
+        // Short list [0xc0, 0xf7]
+        let mut result = vec![0xc0 + payload.len() as u8];
+        result.extend_from_slice(&payload);
+        result
+    } else {
+        // Long list [0xf8, 0xff]
+        let length_bytes = encode_length(payload.len());
+        let mut result = vec![0xf7 + length_bytes.len() as u8];
+        result.extend_from_slice(&length_bytes);
+        result.extend_from_slice(&payload);
+        result
+    }
+}
+
+/// Encode length as big-endian bytes (minimal representation)
+fn encode_length(length: usize) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    let mut len = length;
+
+    // Build bytes in reverse (little-endian order)
+    while len > 0 {
+        bytes.push((len & 0xff) as u8);
+        len >>= 8;
+    }
+
+    // Reverse to get big-endian
+    bytes.reverse();
+
+    bytes
 }
 
 #[cfg(test)]
