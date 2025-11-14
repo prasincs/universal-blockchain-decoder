@@ -17,6 +17,9 @@ members = [
     "crates/decoder-xrp",           # XRP Ledger - Binary codec
     "crates/decoder-cardano",       # Cardano - eUTXO with CBOR
     "crates/decoder-dogecoin",      # Dogecoin - Bitcoin fork (no SegWit)
+    "crates/decoder-bitcoin-cash",  # Bitcoin Cash - Bitcoin fork (no SegWit, larger blocks)
+    "crates/decoder-bitcoin-sv",    # Bitcoin SV - Bitcoin fork (unlimited blocks)
+    "crates/decoder-dash",          # Dash - Bitcoin fork (InstantSend, PrivateSend)
     "crates/decoder-tron",          # Tron - Protobuf encoding
     "crates/decoder-polygon",       # Polygon - EVM-compatible L2
     "crates/decoder-avalanche",     # Avalanche C-Chain - EVM-compatible

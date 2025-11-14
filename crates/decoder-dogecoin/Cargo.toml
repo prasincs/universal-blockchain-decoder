@@ -10,6 +10,9 @@ description = "Dogecoin transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-bitcoin = { path = "../decoder-bitcoin" }
+decoder-chains-common = { path = "../decoder-chains-common" }
+sha2 = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 
