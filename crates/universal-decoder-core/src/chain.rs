@@ -75,6 +75,11 @@ pub enum ChainFamily {
     /// Examples: Solana, Aptos
     Instruction,
 
+    /// Privacy-focused: Shielded transactions with zero-knowledge proofs
+    ///
+    /// Examples: Zcash (shielded), Monero (RingCT), Aleo (Leo VM)
+    Privacy,
+
     /// Hybrid or other models
     Other,
 }
@@ -108,7 +113,8 @@ pub enum ChainFamilyEncoded {
     Utxo = 0,
     Account = 1,
     Instruction = 2,
-    Other = 3,
+    Privacy = 3,
+    Other = 4,
 }
 
 impl From<ChainFamily> for ChainFamilyEncoded {
@@ -117,6 +123,7 @@ impl From<ChainFamily> for ChainFamilyEncoded {
             ChainFamily::Utxo => ChainFamilyEncoded::Utxo,
             ChainFamily::Account => ChainFamilyEncoded::Account,
             ChainFamily::Instruction => ChainFamilyEncoded::Instruction,
+            ChainFamily::Privacy => ChainFamilyEncoded::Privacy,
             ChainFamily::Other => ChainFamilyEncoded::Other,
         }
     }
@@ -128,6 +135,7 @@ impl From<ChainFamilyEncoded> for ChainFamily {
             ChainFamilyEncoded::Utxo => ChainFamily::Utxo,
             ChainFamilyEncoded::Account => ChainFamily::Account,
             ChainFamilyEncoded::Instruction => ChainFamily::Instruction,
+            ChainFamilyEncoded::Privacy => ChainFamily::Privacy,
             ChainFamilyEncoded::Other => ChainFamily::Other,
         }
     }
