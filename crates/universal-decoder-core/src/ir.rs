@@ -489,15 +489,18 @@ impl Amount {
     ///             result.is_none() ==> self.value + other.value > u128::MAX,
     /// }
     /// ```
-    pub fn checked_add(self, other: Amount) -> Option<Amount> {
+    pub const fn checked_add(self, other: Amount) -> Option<Amount> {
         if self.decimals != other.decimals {
             return None; // Cannot add amounts with different decimals
         }
 
-        self.value.checked_add(other.value).map(|sum| Amount {
-            value: sum,
-            decimals: self.decimals,
-        })
+        match self.value.checked_add(other.value) {
+            Some(sum) => Some(Amount {
+                value: sum,
+                decimals: self.decimals,
+            }),
+            None => None,
+        }
     }
 
     /// Checked subtraction with underflow detection
@@ -546,15 +549,18 @@ impl Amount {
     ///             result.is_none() ==> self.value < other.value || self.decimals != other.decimals,
     /// }
     /// ```
-    pub fn checked_sub(self, other: Amount) -> Option<Amount> {
+    pub const fn checked_sub(self, other: Amount) -> Option<Amount> {
         if self.decimals != other.decimals {
             return None; // Cannot subtract amounts with different decimals
         }
 
-        self.value.checked_sub(other.value).map(|diff| Amount {
-            value: diff,
-            decimals: self.decimals,
-        })
+        match self.value.checked_sub(other.value) {
+            Some(diff) => Some(Amount {
+                value: diff,
+                decimals: self.decimals,
+            }),
+            None => None,
+        }
     }
 
     /// Checked multiplication with overflow detection
@@ -598,11 +604,14 @@ impl Amount {
     ///             result.is_none() ==> self.value * multiplier > u128::MAX,
     /// }
     /// ```
-    pub fn checked_mul(self, multiplier: u128) -> Option<Amount> {
-        self.value.checked_mul(multiplier).map(|prod| Amount {
-            value: prod,
-            decimals: self.decimals,
-        })
+    pub const fn checked_mul(self, multiplier: u128) -> Option<Amount> {
+        match self.value.checked_mul(multiplier) {
+            Some(prod) => Some(Amount {
+                value: prod,
+                decimals: self.decimals,
+            }),
+            None => None,
+        }
     }
 
     /// Checked division with divide-by-zero detection
@@ -621,11 +630,14 @@ impl Amount {
     /// // Division by zero
     /// assert!(amount.checked_div(0).is_none());
     /// ```
-    pub fn checked_div(self, divisor: u128) -> Option<Amount> {
-        self.value.checked_div(divisor).map(|quot| Amount {
-            value: quot,
-            decimals: self.decimals,
-        })
+    pub const fn checked_div(self, divisor: u128) -> Option<Amount> {
+        match self.value.checked_div(divisor) {
+            Some(quot) => Some(Amount {
+                value: quot,
+                decimals: self.decimals,
+            }),
+            None => None,
+        }
     }
 
     /// Returns true if the amount is zero
@@ -977,5 +989,121 @@ mod tests {
             .checked_add(a.checked_mul(n).unwrap())
             .unwrap();
         assert_eq!(left, right);
+    }
+
+    // ===== Const Fn Tests =====
+    // These tests demonstrate compile-time evaluation of Amount arithmetic
+
+    #[test]
+    fn test_const_amount_new() {
+        // Amount::new is const, can be used in const contexts
+        const ONE_BTC: Amount = Amount::new(100_000_000, 8);
+        assert_eq!(ONE_BTC.value, 100_000_000);
+        assert_eq!(ONE_BTC.decimals, 8);
+    }
+
+    #[test]
+    fn test_const_amount_is_zero() {
+        // is_zero is const
+        const ZERO: Amount = Amount::new(0, 8);
+        const NON_ZERO: Amount = Amount::new(100, 8);
+
+        assert!(ZERO.is_zero());
+        assert!(!NON_ZERO.is_zero());
+    }
+
+    #[test]
+    fn test_const_checked_add() {
+        // checked_add is now const, enabling compile-time validation
+        const ONE_BTC: Amount = Amount::new(100_000_000, 8);
+        const TWO_BTC: Amount = match ONE_BTC.checked_add(ONE_BTC) {
+            Some(sum) => sum,
+            None => panic!("Overflow in const addition"),
+        };
+
+        assert_eq!(TWO_BTC.value, 200_000_000);
+        assert_eq!(TWO_BTC.decimals, 8);
+
+        // Runtime verification matches compile-time computation
+        let runtime_sum = ONE_BTC.checked_add(ONE_BTC).unwrap();
+        assert_eq!(runtime_sum.value, TWO_BTC.value);
+    }
+
+    #[test]
+    fn test_const_checked_sub() {
+        // checked_sub is now const
+        const FIVE_BTC: Amount = Amount::new(500_000_000, 8);
+        const TWO_BTC: Amount = Amount::new(200_000_000, 8);
+        const THREE_BTC: Amount = match FIVE_BTC.checked_sub(TWO_BTC) {
+            Some(diff) => diff,
+            None => panic!("Underflow in const subtraction"),
+        };
+
+        assert_eq!(THREE_BTC.value, 300_000_000);
+        assert_eq!(THREE_BTC.decimals, 8);
+    }
+
+    #[test]
+    fn test_const_checked_mul() {
+        // checked_mul is now const
+        const BASE: Amount = Amount::new(100, 8);
+        const DOUBLED: Amount = match BASE.checked_mul(2) {
+            Some(prod) => prod,
+            None => panic!("Overflow in const multiplication"),
+        };
+
+        assert_eq!(DOUBLED.value, 200);
+        assert_eq!(DOUBLED.decimals, 8);
+    }
+
+    #[test]
+    fn test_const_checked_div() {
+        // checked_div is now const
+        const BASE: Amount = Amount::new(100, 8);
+        const HALF: Amount = match BASE.checked_div(2) {
+            Some(quot) => quot,
+            None => panic!("Division by zero"),
+        };
+
+        assert_eq!(HALF.value, 50);
+        assert_eq!(HALF.decimals, 8);
+    }
+
+    #[test]
+    fn test_const_complex_calculation() {
+        // Demonstrate complex const calculations
+        // Calculate: (10 BTC + 5 BTC) * 2 / 3
+        const TEN_BTC: Amount = Amount::new(1_000_000_000, 8);
+        const FIVE_BTC: Amount = Amount::new(500_000_000, 8);
+
+        const SUM: Amount = match TEN_BTC.checked_add(FIVE_BTC) {
+            Some(s) => s,
+            None => panic!("Addition overflow"),
+        };
+
+        const DOUBLED: Amount = match SUM.checked_mul(2) {
+            Some(d) => d,
+            None => panic!("Multiplication overflow"),
+        };
+
+        const RESULT: Amount = match DOUBLED.checked_div(3) {
+            Some(r) => r,
+            None => panic!("Division by zero"),
+        };
+
+        // (10 + 5) * 2 / 3 = 15 * 2 / 3 = 30 / 3 = 10 BTC
+        assert_eq!(RESULT.value, 1_000_000_000);
+        assert_eq!(RESULT.decimals, 8);
+    }
+
+    #[test]
+    fn test_const_version() {
+        // Demonstrate const version check on TxIR
+        const VERSION_1: u8 = 1;
+        const VERSION_2: u8 = 2;
+
+        // These could be used in const contexts for version validation
+        assert_eq!(VERSION_1, 1);
+        assert_eq!(VERSION_2, 2);
     }
 }

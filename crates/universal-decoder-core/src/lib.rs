@@ -2,6 +2,9 @@
 //!
 //! A compile-time safe, universal transaction decoder architecture for heterogeneous
 //! blockchains, leveraging canonical intermediate representations in Rust.
+
+// Clippy lints to enforce best practices
+#![warn(clippy::manual_let_else)]
 //!
 //! ## Overview
 //!
