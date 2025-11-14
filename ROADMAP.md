@@ -1124,69 +1124,179 @@ Tasks:
 
 ---
 
-### 3.8: Privacy Chains Family Decoder (Week 9-10)
+### 3.8: Privacy Chains Family Decoder (Weeks 9-11, 3 weeks)
 
-**Priority**: MEDIUM (Privacy features require special handling)
-**Decoder**: `decoder-privacy-chains`
-**Prerequisites**: Phase 3.0 (Privacy-Aware TxIR Extensions) must be complete
+**Priority**: HIGH (Privacy is core differentiator)
+**Timeline**: 3 weeks (40-60 hours)
+**Status**: Ready to implement (privacy infrastructure complete ✅)
+**Prerequisites**: ✅ Privacy infrastructure (privacy.rs complete), ✅ Bitcoin decoder
 
-**Chains Supported**: Zcash, Aleo, Monero (limited)
+#### 3.8.1: Zcash Decoder (Weeks 9-11) ⭐ PRIMARY TARGET
+
+**Decoder**: `decoder-zcash` (standalone crate)
+**See**: `docs/ZCASH_INTEGRATION_PLAN.md` (comprehensive 900-line implementation guide)
+
+**Chains Supported**: Zcash mainnet (chain ID 133), Zcash testnet (chain ID 1)
+
+**Transaction Types**:
+- ✅ **t→t (Transparent)**: Reuse BitcoinDecoder (~40% of txs)
+- ✅ **t→z (Shielding)**: Transparent → Shielded (~25% of txs)
+- ✅ **z→t (Deshielding)**: Shielded → Transparent (~20% of txs)
+- ✅ **z→z (Fully Shielded)**: Maximum privacy (~15% of txs)
+
+**Protocol Versions**:
+- ✅ **Sapling (Version 4)**: Primary implementation (2018+)
+- ✅ **Orchard (Version 5)**: Latest protocol (2021+, NU5)
+- ⏳ **Sprout (Version 1-3)**: Legacy, optional (deprecated)
+
+**Week 9 (Days 1-2): Transparent Transactions**
+- [ ] Create `decoder-zcash` crate with proper structure
+- [ ] Implement `ZcashChain` (ChainIdentity trait, ChainFamily::Privacy)
+- [ ] Reuse Bitcoin parsing for transparent inputs/outputs
+- [ ] Add Zcash-specific fields (version_group_id, expiry_height)
+- [ ] Write 15+ tests with mainnet transparent transactions
+- **Deliverable**: t→t transactions fully working (~150 LOC)
+
+**Week 9 (Days 3-6): Sapling Shielded Transactions**
+- [ ] Implement SpendDescription parsing (nullifiers, commitments, proofs)
+- [ ] Implement OutputDescription parsing (encrypted notes, ephemeral keys)
+- [ ] Parse value_balance (net transparent ↔ shielded flow)
+- [ ] Populate PrivacyMetadata (HiddenSender, HiddenRecipient, HiddenAmount)
+- [ ] Write 40+ tests (t→z, z→t, z→z, mixed)
+- **Deliverable**: Full Sapling support (~400 LOC, no viewing key decryption yet)
+
+**Week 10 (Days 7-8): Viewing Key Decryption**
+- [ ] Implement SaplingIncomingViewingKey support
+- [ ] ECDH key agreement (ephemeral_key + IVK)
+- [ ] ChaCha20-Poly1305 decryption for encrypted notes
+- [ ] Parse decrypted note plaintext (amount, recipient, memo)
+- [ ] Populate TxIR operations with decrypted data
+- [ ] Write 15+ tests (successful decryption, wrong key, failures)
+- [ ] Create examples showing VK usage
+- **Deliverable**: Viewing key decryption working (~200 LOC)
+
+**Week 11 (Days 9-11): Orchard Support**
+- [ ] Implement Orchard ActionDescription parsing
+- [ ] Parse Halo2 proof structures (different from Groth16)
+- [ ] Implement Orchard viewing key decryption
+- [ ] Support unified addresses (transparent + Sapling + Orchard)
+- [ ] Write 15+ tests for Orchard transactions
+- **Deliverable**: Full Orchard support (~400 LOC, NU5+)
+
+**Week 11 (Days 12-14): Testing & Integration**
+- [ ] Property-based testing (proptest) - 20+ tests
+- [ ] Fuzzing infrastructure (cargo-fuzz) - 5 fuzz targets
+- [ ] Integration tests with 100+ real mainnet transactions
+- [ ] Documentation and examples
+- [ ] Performance benchmarking
+- **Deliverable**: Production-ready Zcash decoder
+
+**Cryptographic Dependencies** (airgapped via git subtree):
+- [ ] Vendor `jubjub` elliptic curve library (Sapling)
+- [ ] Vendor `bls12_381` curve library (Orchard)
+- [ ] Vendor `blake2b_simd` hashing library
+- **Note**: All vendored via git subtree for verifiable, airgapped operation
+
+**Test Coverage**:
+- ✅ 60+ unit tests (every parsing function)
+- ✅ 20+ property tests (safety invariants)
+- ✅ 100+ integration tests (real mainnet transactions)
+- ✅ 5 fuzz targets (adversarial inputs)
+- ✅ Examples for all transaction types
+
+**Success Criteria**:
+- ✅ All 4 transaction types (t→t, t→z, z→t, z→z) supported
+- ✅ Sapling and Orchard protocols fully implemented
+- ✅ Viewing key decryption working for compliance use cases
+- ✅ Privacy metadata accurately populated
+- ✅ 100+ integration tests with real transactions
+- ✅ Airgapped operation (all dependencies vendored)
+- ✅ Documentation and examples complete
+
+**Why Zcash First**:
+- Most mature privacy protocol (7+ years in production)
+- Largest privacy-focused blockchain by market cap
+- Clear specification (ZIP documents)
+- Reference implementation available for validation
+- Viewing keys enable compliance/auditing use cases
+
+**ROI**: HIGH
+- **Impact**: Demonstrates privacy-aware decoding capability
+- **Complexity**: Medium-high (zk-SNARKs, multiple protocols)
+- **Timeline**: 3 weeks (focused implementation)
+- **Dependencies**: Already available (privacy.rs complete)
+- **Use Cases**: Forensics, compliance, auditing, analytics
+
+#### 3.8.2: Aleo Decoder (Week 12-13) [OPTIONAL, AFTER ZCASH]
+
+**Decoder**: `decoder-aleo`
+**Status**: After Zcash complete
+**Priority**: MEDIUM (Emerging privacy protocol)
+
+**Chains Supported**: Aleo mainnet, Aleo testnet
 
 Tasks:
-- [ ] Create `decoder-privacy-chains` crate
-- [ ] Implement Zcash decoder (transparent + shielded transactions)
-  - [ ] Implement `PrivacyAwareDecoder` trait with Zcash viewing keys
-  - [ ] Transparent transactions (reuse `BitcoinDecoder` base)
-  - [ ] Shielded transactions (zk-SNARK components)
-    - [ ] Sprout (JoinSplit descriptions)
-    - [ ] Sapling (Spend/Output descriptions)
-    - [ ] Orchard (Action descriptions)
-  - [ ] Parse: nullifiers, commitments, encrypted notes, proofs
-  - [ ] Populate `PrivacyComponents` with encrypted data
-  - [ ] Implement viewing key decryption (uses `ViewingKeyDecryptor` from Phase 3.0)
-  - [ ] Without viewing key: Extract proof structure only (privacy preserved)
-  - [ ] With viewing key: Decrypt amounts/addresses, populate `Transfer` operations
-- [ ] Implement Aleo decoder (Leo VM transactions)
-  - [ ] Implement `PrivacyAwareDecoder` trait with Aleo viewing keys
-  - [ ] Program execution records
-  - [ ] State transitions
-  - [ ] Zero-knowledge proofs (snarkVM)
-  - [ ] Public inputs/outputs
-  - [ ] Populate `PrivateExecution` operations (uses Phase 3.0 privacy types)
-  - [ ] Instruction-based model (similar to Solana structure)
-- [ ] Implement Monero decoder (limited, privacy-by-default)
-  - [ ] Implement `PrivacyAwareDecoder` trait with Monero view keys
-  - [ ] Ring signatures (populate `RingSignature` from Phase 3.0)
-  - [ ] Stealth addresses
-  - [ ] Ring CT (Confidential Transactions)
-  - [ ] Can extract: ring size, fees, proof structure
-  - [ ] Cannot fully decrypt: actual sender (by design), limited receiver/amount decryption
-- [ ] Hardcode chain list
-- [ ] Comprehensive testing with mainnet transactions
+- [ ] Create `decoder-aleo` crate
+- [ ] Implement `PrivacyAwareDecoder` trait with Aleo viewing keys
+- [ ] Program execution records (Leo VM)
+- [ ] State transitions
+- [ ] Zero-knowledge proofs (snarkVM)
+- [ ] Public inputs/outputs
+- [ ] Populate `PrivateExecution` operations
+- [ ] Instruction-based model (similar to Solana structure)
 
 **Special Features**:
-- **Zcash**:
-  - Dual-mode: transparent (Bitcoin-like) + shielded (zk-SNARK)
-  - Multiple shielded protocols (Sprout, Sapling, Orchard)
-  - Viewing keys for selective disclosure
-  - Proof verification metadata
-- **Aleo**:
-  - Leo programming language VM
-  - Full privacy by default (all computations private)
-  - Zero-knowledge proofs for state transitions
-  - Program execution traces
-- **Monero**:
-  - Ring signatures (transaction mixing)
-  - One-time stealth addresses
-  - Ring CT (hidden amounts)
-  - Subaddresses
+- Leo programming language VM
+- Full privacy by default (all computations private)
+- Zero-knowledge proofs for state transitions
+- Program execution traces
+
+**Timeline**: 1-2 weeks
+**Complexity**: HIGH (programmable privacy)
+
+#### 3.8.3: Monero Decoder (Week 14) [OPTIONAL, AFTER ZCASH]
+
+**Decoder**: `decoder-monero`
+**Status**: After Zcash complete
+**Priority**: MEDIUM (Privacy-by-default)
+
+**Chains Supported**: Monero mainnet, Monero testnet
+
+Tasks:
+- [ ] Create `decoder-monero` crate
+- [ ] Implement `PrivacyAwareDecoder` trait with Monero view keys
+- [ ] Ring signatures (populate `RingSignature`)
+- [ ] Stealth addresses
+- [ ] Ring CT (Confidential Transactions)
+- [ ] Extract: ring size, fees, proof structure
+- [ ] Limited decryption (by design)
+
+**Special Features**:
+- Ring signatures (transaction mixing)
+- One-time stealth addresses
+- Ring CT (hidden amounts)
+- Subaddresses
 
 **Privacy Limitations** (by design):
 - ✅ Can decode: transaction structure, proof components, public metadata
-- ❌ Cannot decode: private transfer amounts, sender/receiver in shielded transactions
+- ❌ Cannot decode: actual sender (by design), limited receiver/amount decryption
 - ⚠️ Limited information extraction is expected and correct behavior
 
-**Delivered**:
+**Timeline**: 3-5 days
+**Complexity**: MEDIUM (ring signatures, stealth addresses)
+
+#### 3.8.4: Phase 3.8 Deliverables
+
+**Delivered After Zcash Complete**:
+- ✅ Single decoder for Zcash (transparent + shielded)
+- ✅ Support for 4 transaction types (t→t, t→z, z→t, z→z)
+- ✅ Sapling and Orchard protocols
+- ✅ Viewing key decryption for compliance
+- ✅ Privacy metadata integration
+- ✅ 180+ comprehensive tests
+- ✅ Documentation and examples
+
+**Future (Aleo + Monero)**:
 - Support for 3 major privacy-focused blockchains
 - Transparent/public component extraction
 - Proof structure parsing (without breaking privacy)
@@ -1194,9 +1304,10 @@ Tasks:
 
 **Why Important**:
 - Privacy chains are growing in importance
-- Zcash and Aleo use cutting-edge cryptography (zk-SNARKs)
+- Zcash uses cutting-edge cryptography (zk-SNARKs)
 - Demonstrates TxIR can handle privacy-preserving transactions
 - Validates extensibility for non-standard transaction formats
+- Viewing keys enable regulatory compliance without breaking privacy
 
 ---
 
