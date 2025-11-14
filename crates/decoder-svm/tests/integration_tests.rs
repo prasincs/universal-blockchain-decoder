@@ -9,7 +9,7 @@ use universal_decoder_core::prelude::*;
 #[test]
 fn test_svm_chain_registry_initialization() {
     let registry = SvmChainRegistry::new();
-    assert_eq!(registry.chain_count(), 8, "Should have 8 SVM chains");
+    assert_eq!(registry.chain_count(), 11, "Should have 11 SVM chains");
 
     // Verify all chains are present
     assert!(registry.has_chain(SvmChainId::SolanaMainnet));
@@ -20,6 +20,9 @@ fn test_svm_chain_registry_initialization() {
     assert!(registry.has_chain(SvmChainId::PythNetwork));
     assert!(registry.has_chain(SvmChainId::DriftProtocol));
     assert!(registry.has_chain(SvmChainId::Jito));
+    assert!(registry.has_chain(SvmChainId::Sonic));
+    assert!(registry.has_chain(SvmChainId::Firedancer));
+    assert!(registry.has_chain(SvmChainId::NeonEvm));
 }
 
 #[test]

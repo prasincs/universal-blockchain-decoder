@@ -31,6 +31,15 @@ pub enum SvmChainId {
 
     /// Jito (MEV infrastructure)
     Jito = 501,
+
+    /// Sonic SVM (gaming-focused L2)
+    Sonic = 601,
+
+    /// Firedancer (high-performance Solana validator)
+    Firedancer = 701,
+
+    /// Neon EVM (Ethereum compatibility on Solana)
+    NeonEvm = 801,
 }
 
 impl SvmChainId {
@@ -45,6 +54,9 @@ impl SvmChainId {
             301 => Some(Self::PythNetwork),
             401 => Some(Self::DriftProtocol),
             501 => Some(Self::Jito),
+            601 => Some(Self::Sonic),
+            701 => Some(Self::Firedancer),
+            801 => Some(Self::NeonEvm),
             _ => None,
         }
     }
@@ -65,6 +77,9 @@ impl SvmChainId {
             Self::PythNetwork => "Pyth Network",
             Self::DriftProtocol => "Drift Protocol",
             Self::Jito => "Jito",
+            Self::Sonic => "Sonic SVM",
+            Self::Firedancer => "Firedancer",
+            Self::NeonEvm => "Neon EVM",
         }
     }
 
@@ -85,6 +100,9 @@ impl SvmChainId {
                 | Self::PythNetwork
                 | Self::DriftProtocol
                 | Self::Jito
+                | Self::Sonic
+                | Self::Firedancer
+                | Self::NeonEvm
         )
     }
 
@@ -162,6 +180,9 @@ impl SvmChainRegistry {
             SvmChainInfo::from_chain_id(SvmChainId::PythNetwork),
             SvmChainInfo::from_chain_id(SvmChainId::DriftProtocol),
             SvmChainInfo::from_chain_id(SvmChainId::Jito),
+            SvmChainInfo::from_chain_id(SvmChainId::Sonic),
+            SvmChainInfo::from_chain_id(SvmChainId::Firedancer),
+            SvmChainInfo::from_chain_id(SvmChainId::NeonEvm),
         ];
 
         Self { chains }
