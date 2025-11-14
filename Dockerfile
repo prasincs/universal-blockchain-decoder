@@ -2,8 +2,9 @@
 # This Dockerfile provides a complete environment for building WASM artifacts
 # from any machine that has Docker installed.
 
-# Use official Rust image as base
-FROM rust:1.75-bookworm as builder
+# Use official Rust image as base (latest stable)
+# Note: For reproducible builds, pin to specific version (e.g., rust:1.91-bookworm)
+FROM rust:bookworm as builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

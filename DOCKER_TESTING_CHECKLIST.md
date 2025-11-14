@@ -76,7 +76,7 @@ ls -lh crates/universal-decoder-wasm/www/pkg/*.wasm
 ```bash
 # Check Rust version
 rustc --version
-# Expected: rustc 1.75.x or later
+# Expected: rustc 1.91.x or later (latest stable)
 
 # Check wasm-pack
 wasm-pack --version

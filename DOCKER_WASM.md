@@ -272,8 +272,8 @@ docker run hello-world
 
 To speed up:
 ```bash
-# Pre-pull base image
-docker pull rust:1.75-bookworm
+# Pre-pull base image (uses latest stable Rust)
+docker pull rust:bookworm
 ```
 
 ### Issue: "No space left on device"
@@ -346,11 +346,11 @@ docker ps
 Edit `Dockerfile` to use a specific Rust version:
 
 ```dockerfile
-# Change this line:
-FROM rust:1.75-bookworm as builder
+# Current (uses latest stable):
+FROM rust:bookworm as builder
 
-# To:
-FROM rust:1.76-bookworm as builder
+# To pin to a specific version for reproducibility:
+FROM rust:1.91-bookworm as builder
 ```
 
 Then rebuild:
