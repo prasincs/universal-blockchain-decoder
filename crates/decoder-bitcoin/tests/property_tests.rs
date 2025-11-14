@@ -213,17 +213,16 @@ proptest! {
     /// 3. Be less than total input value
     #[test]
     fn prop_fee_calculation_properties(
-        input_value in 1u64..2_100_000_000_000_000_u64, // Max 21M BTC in satoshis
-        output_value in 0u64..2_100_000_000_000_000_u64,
+        (input_value, output_value) in (1u64..2_100_000_000_000_000_u64) // Max 21M BTC in satoshis
+            .prop_flat_map(|input| (Just(input), 0u64..=input))
     ) {
-        // Only test when input >= output (valid transactions)
-        prop_assume!(input_value >= output_value);
+        // output_value is now guaranteed to be <= input_value (no need for prop_assume!)
 
         // Create a simple transaction structure for testing
         // This is a simplified test - real transactions would be more complex
         let expected_fee = input_value - output_value;
 
-        // Fee should be non-negative (guaranteed by our assumption)
+        // Fee should be non-negative (guaranteed by our strategy)
         prop_assert!(expected_fee <= input_value, "Fee exceeds input value");
 
         // Fee should be reasonable (< 1 BTC for this test)
