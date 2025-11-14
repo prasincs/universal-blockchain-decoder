@@ -1192,9 +1192,11 @@ Tasks:
 - **Deliverable**: Production-ready Zcash decoder
 
 **Cryptographic Dependencies** (airgapped via git subtree):
-- [ ] Vendor `jubjub` elliptic curve library (Sapling)
-- [ ] Vendor `bls12_381` curve library (Orchard)
-- [ ] Vendor `blake2b_simd` hashing library
+- [ ] Vendor `jubjub` elliptic curve library (Sapling curve)
+- [ ] Vendor `pasta_curves` elliptic curve library (Orchard Pallas/Vallas curves)
+- [ ] Vendor `bls12_381` curve library (Sapling Groth16 pairing)
+- [ ] Vendor `blake2b_simd` hashing library (Sapling/Orchard hashing)
+- [ ] Optional: Vendor `halo2_proofs` (Orchard proof verification)
 - **Note**: All vendored via git subtree for verifiable, airgapped operation
 
 **Test Coverage**:

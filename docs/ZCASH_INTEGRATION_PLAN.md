@@ -227,23 +227,28 @@ crates/decoder-zcash/
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-encodings = { path = "../decoder-encodings" }  # VarInt
 sha2 = "0.10"       # SHA-256 hashing
-blake2b_simd = "1.0"  # BLAKE2b for Sapling
+blake2b_simd = "1.0"  # BLAKE2b for Sapling/Orchard
 borsh = "1.3"       # Canonical serialization
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 
-# Crypto (vendor via git subtree)
-# Option A: Vendor from ZCash official repos
-# Option B: Pure Rust implementations (preferred)
+# Crypto (vendor via git subtree - all from official ZCash/zkcrypto repos)
 [dependencies.jubjub]
-git = "https://github.com/zkcrypto/jubjub.git"
-tag = "v0.10.0"
-# TODO: Convert to git subtree vendoring
+path = "vendored/jubjub"  # Sapling curve
+# Vendored from: https://github.com/zkcrypto/jubjub v0.10.0
+
+[dependencies.pasta_curves]
+path = "vendored/pasta_curves"  # Orchard curves (Pallas/Vallas)
+# Vendored from: https://github.com/zcash/pasta_curves 0.5.1
 
 [dependencies.bls12_381]
-git = "https://github.com/zkcrypto/bls12_381.git"
-tag = "v0.8.0"
-# TODO: Convert to git subtree vendoring
+path = "vendored/bls12_381"  # Sapling Groth16 pairing
+# Vendored from: https://github.com/zkcrypto/bls12_381 v0.8.0
+
+# Optional: Halo2 for Orchard proof verification
+[dependencies.halo2_proofs]
+path = "vendored/halo2_proofs"  # Orchard Halo2 proofs
+# Vendored from: https://github.com/zcash/halo2 0.3.0
 ```
 
 **Dev Dependencies** (test validation only):
@@ -256,7 +261,7 @@ hex = "0.4"
 
 **Cryptographic Dependency Decision**:
 
-**Question**: How to handle zk-SNARK dependencies (jubjub, bls12_381)?
+**Question**: How to handle zk-SNARK dependencies (jubjub, pasta_curves, bls12_381)?
 
 **Options**:
 1. **Vendor via git subtree** (RECOMMENDED)
@@ -277,27 +282,48 @@ hex = "0.4"
 
 **Decision**: Use Option 1 (git subtree) for Phase 3.8 initial implementation. Crypto libraries are small, well-audited, and essential for Zcash support.
 
+**Cryptographic Libraries by Protocol**:
+
+| Protocol | Curve | Proof System | Hashing |
+|----------|-------|--------------|---------|
+| **Sapling** | jubjub | bls12_381 (Groth16) | blake2b_simd |
+| **Orchard** | pasta_curves (Pallas/Vallas) | Halo2 (no pairing) | blake2b_simd |
+
 **Action Items**:
 ```bash
-# Vendor jubjub elliptic curve library
+# Vendor jubjub elliptic curve library (Sapling)
 git subtree add \
     --prefix crates/decoder-zcash/vendored/jubjub \
     https://github.com/zkcrypto/jubjub.git \
     v0.10.0 \
     --squash
 
-# Vendor bls12_381 curve library (Orchard)
+# Vendor pasta_curves elliptic curve library (Orchard - Pallas/Vallas)
+git subtree add \
+    --prefix crates/decoder-zcash/vendored/pasta_curves \
+    https://github.com/zcash/pasta_curves.git \
+    0.5.1 \
+    --squash
+
+# Vendor bls12_381 curve library (Sapling Groth16 pairing)
 git subtree add \
     --prefix crates/decoder-zcash/vendored/bls12_381 \
     https://github.com/zkcrypto/bls12_381.git \
     v0.8.0 \
     --squash
 
-# Vendor blake2b for Sapling hashing
+# Vendor blake2b for Sapling/Orchard hashing
 git subtree add \
     --prefix crates/decoder-zcash/vendored/blake2b_simd \
     https://github.com/oconnor663/blake2_simd.git \
     v1.0.2 \
+    --squash
+
+# Optional: Vendor halo2_proofs for Orchard proof verification (large, ~100KB)
+git subtree add \
+    --prefix crates/decoder-zcash/vendored/halo2_proofs \
+    https://github.com/zcash/halo2.git \
+    0.3.0 \
     --squash
 ```
 
