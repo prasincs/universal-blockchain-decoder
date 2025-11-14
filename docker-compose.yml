@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Production WASM build service
+  wasm-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: universal-decoder-wasm-builder:latest
+    container_name: ubd-wasm-builder
+    volumes:
+      # Mount the wasm output directory to host
+      - ./crates/universal-decoder-wasm/www/pkg:/app/crates/universal-decoder-wasm/www/pkg
+      # Mount the wasm root directory for rebuild-wasm.sh
+      - ./wasm:/app/wasm
+    environment:
+      - RUST_BACKTRACE=1
+    command: bash crates/universal-decoder-wasm/build.sh
+
+  # Development environment with shell access
+  wasm-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    image: universal-decoder-wasm-dev:latest
+    container_name: ubd-wasm-dev
+    volumes:
+      # Mount entire project for live development
+      - .:/app
+      # Cache Cargo registry and git to speed up builds
+      - cargo-cache:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+    environment:
+      - RUST_BACKTRACE=1
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # Local web server for testing WASM demo
+  wasm-server:
+    image: python:3.11-slim
+    container_name: ubd-wasm-server
+    volumes:
+      - ./crates/universal-decoder-wasm/www:/www
+    working_dir: /www
+    ports:
+      - "8080:8080"
+    command: python3 -m http.server 8080
+    depends_on:
+      - wasm-builder
+
+  # Alternative: serve from root /wasm directory
+  wasm-server-root:
+    image: python:3.11-slim
+    container_name: ubd-wasm-server-root
+    volumes:
+      - ./wasm:/www
+    working_dir: /www
+    ports:
+      - "8081:8080"
+    command: python3 -m http.server 8080
+
+volumes:
+  cargo-cache:
+  cargo-git:

@@ -1,0 +1,120 @@
+# Universal Blockchain Decoder - Docker Ignore File
+# Excludes unnecessary files from Docker context for faster builds
+
+# Build artifacts
+target/
+**/target/
+*.wasm
+*.wasm.map
+
+# WASM build outputs (will be generated during build)
+crates/universal-decoder-wasm/www/pkg/
+wasm/pkg/
+
+# Rust artifacts
+**/*.rs.bk
+**/*.pdb
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation (not needed for build)
+docs/
+*.md
+!Cargo.toml
+!README.md
+
+# Test fixtures and test data
+**/fixtures/
+**/test-data/
+**/tests/fixtures/
+
+# Fuzz targets
+**/fuzz/target/
+**/corpus/
+
+# Scripts (except build scripts)
+scripts/
+*.sh
+!crates/universal-decoder-wasm/build.sh
+!rebuild-wasm.sh
+
+# Vendored registries (can be large)
+# Note: Comment these out if you need them in the container
+**/vendored/*/
+!**/vendored/**/*.rs
+!**/vendored/**/Cargo.toml
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules (if any)
+node_modules/
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Coverage reports
+coverage/
+*.profraw
+*.profdata
+
+# Benchmarking results
+**/benches/results/
+
+# Lock files (keep Cargo.lock for reproducibility)
+# package-lock.json
+# yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker files (no recursion)
+Dockerfile
+docker-compose.yml
+.dockerignore
