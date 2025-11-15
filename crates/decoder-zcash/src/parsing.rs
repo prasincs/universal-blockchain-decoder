@@ -6,6 +6,7 @@ use decoder_bitcoin::parsing::read_varint;
 use decoder_primitives::prelude::*;
 use std::io::{Cursor, Read};
 
+use crate::sapling::{parse_output_description, parse_spend_description, read_i64_le};
 use crate::transparent::parse_transparent_transaction;
 use crate::types::*;
 
@@ -40,8 +41,7 @@ pub fn parse_zcash_header(cursor: &mut Cursor<&[u8]>) -> Result<(u32, u32)> {
 
 /// Parse Zcash v4 transaction (Sapling)
 ///
-/// Phase 1: Only transparent component
-/// Phase 2+: Full Sapling support (shielded spends/outputs)
+/// Phase 2: Full Sapling support (transparent + shielded components)
 pub fn parse_zcash_v4_transaction(
     cursor: &mut Cursor<&[u8]>,
     version: u32,
@@ -70,34 +70,69 @@ pub fn parse_zcash_v4_transaction(
     // Parse transparent component (reuses Bitcoin decoder logic)
     let transparent = parse_transparent_transaction(cursor, version, version_group_id)?;
 
-    // Phase 1: Check for Sapling components
-    // In Phase 2+, we will parse:
+    // Phase 2: Parse Sapling components
     // - sapling_spends (varint count + spend descriptions)
     // - sapling_outputs (varint count + output descriptions)
-    // - value_balance (i64)
-    // - binding_sig (64 bytes)
-    //
-    // For now, we only support pure transparent transactions.
-    // If there are Sapling components, return an error.
+    // - value_balance (i64) - only if spends or outputs > 0
+    // - binding_sig (64 bytes) - only if spends or outputs > 0
 
+    // Parse Sapling spend count
     let sapling_spends_count = read_varint(cursor)?;
-    if sapling_spends_count > 0 {
-        return Err(DecoderError::chain_specific(format!(
-            "Sapling shielded transactions not yet supported (Phase 2 feature). Found {} spends.",
-            sapling_spends_count
-        )));
+
+    // Parse spend descriptions
+    let mut spends = Vec::with_capacity(sapling_spends_count as usize);
+    for i in 0..sapling_spends_count {
+        spends.push(parse_spend_description(cursor).map_err(|e| {
+            DecoderError::chain_decoding(format!("Failed to parse spend {}: {}", i, e))
+        })?);
     }
 
+    // Parse Sapling output count
     let sapling_outputs_count = read_varint(cursor)?;
-    if sapling_outputs_count > 0 {
-        return Err(DecoderError::chain_specific(format!(
-            "Sapling shielded transactions not yet supported (Phase 2 feature). Found {} outputs.",
-            sapling_outputs_count
-        )));
+
+    // Parse output descriptions
+    let mut outputs = Vec::with_capacity(sapling_outputs_count as usize);
+    for i in 0..sapling_outputs_count {
+        outputs.push(parse_output_description(cursor).map_err(|e| {
+            DecoderError::chain_decoding(format!("Failed to parse output {}: {}", i, e))
+        })?);
     }
 
-    // Phase 1: No Sapling components, pure transparent transaction
-    Ok(ZcashTransaction::Transparent(transparent))
+    // If no Sapling components, return pure transparent transaction
+    if sapling_spends_count == 0 && sapling_outputs_count == 0 {
+        return Ok(ZcashTransaction::Transparent(transparent));
+    }
+
+    // Parse value balance (i64, little-endian)
+    // Positive: Transparent → Shielded (shielding)
+    // Negative: Shielded → Transparent (deshielding)
+    // Zero: Pure shielded (z→z)
+    let value_balance = read_i64_le(cursor)?;
+
+    // Parse binding signature (64 bytes, RedJubjub signature)
+    // Proves: sum(value_commitments) - value_balance * G = 0
+    let binding_sig = read_fixed_bytes::<64>(cursor)
+        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read binding_sig: {}", e)))?;
+
+    // Return Sapling transaction
+    Ok(ZcashTransaction::Sapling(SaplingTransaction {
+        transparent,
+        spends,
+        outputs,
+        value_balance,
+        binding_sig,
+    }))
+}
+
+/// Read fixed-size byte array from cursor
+///
+/// Used for reading binding signature
+fn read_fixed_bytes<const N: usize>(cursor: &mut Cursor<&[u8]>) -> Result<[u8; N]> {
+    let mut buf = [0u8; N];
+    cursor
+        .read_exact(&mut buf)
+        .map_err(|e| DecoderError::chain_decoding(format!("Failed to read {} bytes: {}", N, e)))?;
+    Ok(buf)
 }
 
 /// Read u8 from cursor

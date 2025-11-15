@@ -57,6 +57,7 @@ use decoder_primitives::prelude::*;
 use std::io::Cursor;
 
 pub mod parsing;
+pub mod sapling;
 pub mod transparent;
 pub mod types;
 
