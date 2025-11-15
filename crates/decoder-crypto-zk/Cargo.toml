@@ -12,6 +12,24 @@ description = "Zero-Knowledge cryptographic primitives for blockchain decoders (
 serde = { workspace = true }
 thiserror = { workspace = true }
 
+# Field arithmetic (battle-tested, minimal, no_std compatible)
+# This provides the STARK field (252-bit) used across Starknet ecosystem
+starknet-types-core = { version = "0.2.0", default-features = false, features = ["curve", "hash"] }
+
+# Big integer arithmetic (used by vendored crypto)
+crypto-bigint = { version = "0.5.1", default-features = false, features = ["generic-array"] }
+num-bigint = { version = "0.4.3", default-features = false }
+num-integer = { version = "0.1.45", default-features = false }
+num-traits = { version = "0.2.18", default-features = false }
+
+# For ECDSA (used by vendored crypto)
+hmac = { version = "0.12.1", default-features = false }
+rfc6979 = { version = "0.4.0", default-features = false }
+sha2 = { workspace = true }
+
+# For hex encoding/decoding
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+
 # NOTE: All cryptographic implementations are vendored for:
 #   1. Minimal TCB (Trusted Computing Base)
 #   2. Airgapped operation (no external crypto dependencies)

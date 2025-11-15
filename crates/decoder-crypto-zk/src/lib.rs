@@ -67,14 +67,15 @@
 //! - `docs/STARKNET_RESEARCH.md` - Starknet architecture
 //! - `VENDORED.md` - Vendoring audit trail
 
-// Modules (to be implemented)
+// Modules
 pub mod error;
+pub mod field;
+pub mod hash;
 
 // Future modules (Phase 3.6a):
-// pub mod field;      // STARK field arithmetic
-// pub mod hash;       // Poseidon + Pedersen hashing
-// pub mod curve;      // STARK curve primitives
-// pub mod signature;  // ECDSA verification
+// pub mod curve;      // STARK curve primitives (Day 8-10)
+// pub mod signature;  // ECDSA verification (Day 8-10)
 
 // Re-exports
 pub use error::{CryptoError, Result};
+pub use field::{FieldElement, FieldExt};
