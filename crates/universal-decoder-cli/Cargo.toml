@@ -12,15 +12,37 @@ name = "universal-tx-decoder"
 path = "src/main.rs"
 
 [dependencies]
+# Core library
 universal-decoder-core = { path = "../universal-decoder-core" }
+
+# All available decoders
 decoder-bitcoin = { path = "../decoder-bitcoin" }
 decoder-ethereum = { path = "../decoder-ethereum" }
+decoder-zcash = { path = "../decoder-zcash" }
+decoder-evm = { path = "../decoder-evm" }
+decoder-svm = { path = "../decoder-svm" }
+decoder-litecoin = { path = "../decoder-litecoin" }
+decoder-dogecoin = { path = "../decoder-dogecoin" }
+decoder-bitcoin-cash = { path = "../decoder-bitcoin-cash" }
+decoder-bitcoin-sv = { path = "../decoder-bitcoin-sv" }
+decoder-dash = { path = "../decoder-dash" }
+decoder-bnb = { path = "../decoder-bnb" }
+decoder-polygon = { path = "../decoder-polygon" }
+decoder-avalanche = { path = "../decoder-avalanche" }
+decoder-optimism = { path = "../decoder-optimism" }
+decoder-arbitrum = { path = "../decoder-arbitrum" }
+decoder-chains-common = { path = "../decoder-chains-common" }
 
 # CLI-specific dependencies (not in core library)
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5", features = ["derive", "env"] }
 anyhow = "1.0.100"
+
+# Security: Protect sensitive data in memory
+secrecy = { version = "0.8", features = ["serde"] }
+zeroize = "1.8"
 
 [dev-dependencies]
 # For testing CLI
 assert_cmd = "2.0"
 predicates = "3.1"
+tempfile = "3.0"
