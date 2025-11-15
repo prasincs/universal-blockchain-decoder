@@ -120,6 +120,44 @@ impl OutputDescription {
 
     /// Size of zk-SNARK proof (Groth16)
     pub const ZKPROOF_SIZE: usize = 192;
+
+    /// Attempt to decrypt this output with an incoming viewing key
+    ///
+    /// ## Arguments
+    ///
+    /// - `ivk`: Incoming viewing key to try decryption with
+    ///
+    /// ## Returns
+    ///
+    /// - `Ok(Some(plaintext))`: Successfully decrypted (note is addressed to this IVK)
+    /// - `Ok(None)`: Decryption failed (note is NOT addressed to this IVK, not an error)
+    /// - `Err(...)`: Malformed ciphertext or cryptographic error
+    ///
+    /// ## Example
+    ///
+    /// ```rust,ignore
+    /// use decoder_zcash::sapling::OutputDescription;
+    /// use decoder_zcash::viewing_key::SaplingIncomingViewingKey;
+    ///
+    /// let output: OutputDescription = /* parsed from transaction */;
+    /// let ivk = SaplingIncomingViewingKey::from_bytes(&ivk_bytes)?;
+    ///
+    /// match output.try_decrypt(&ivk)? {
+    ///     Some(plaintext) => {
+    ///         println!("Received {} zatoshis", plaintext.value);
+    ///         if let Some(memo) = plaintext.memo_as_str() {
+    ///             println!("Memo: {}", memo);
+    ///         }
+    ///     }
+    ///     None => println!("Not addressed to this viewing key"),
+    /// }
+    /// ```
+    pub fn try_decrypt(
+        &self,
+        ivk: &crate::viewing_key::SaplingIncomingViewingKey,
+    ) -> Result<Option<crate::viewing_key::NotePlaintext>> {
+        crate::viewing_key::decrypt_sapling_note(&self.ephemeral_key, &self.enc_ciphertext, ivk)
+    }
 }
 
 /// Parse a Sapling OutputDescription from binary data

@@ -32,7 +32,7 @@ fn test_sapling_shielding_t2z() {
     // - 0 sapling spends
     // - 2 sapling outputs (recipient + change)
     // - value_balance: positive (shielding)
-    let tx_hex = concat!(
+    let _tx_hex = concat!(
         "0400008085202f89", // version 4, overwinter, sapling version_group_id
         "01",               // 1 transparent input
         // Input 0:
@@ -363,6 +363,7 @@ fn test_sapling_mixed_transaction() {
 }
 
 /// Helper: Parse transaction and verify basic structure
+#[allow(dead_code)]
 fn parse_and_verify(tx_hex: &str, expected_type: &str) -> ZcashTransaction {
     let tx_bytes = universal_decoder_core::hex::decode(tx_hex).expect("Valid hex");
 
@@ -379,6 +380,7 @@ fn parse_and_verify(tx_hex: &str, expected_type: &str) -> ZcashTransaction {
 }
 
 /// Helper: Verify Sapling transaction structure
+#[allow(dead_code)]
 fn verify_sapling_structure(
     tx: &ZcashTransaction,
     expected_spends: usize,
