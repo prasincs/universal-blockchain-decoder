@@ -136,6 +136,17 @@ pub const COSMOS: ChainInfo = ChainInfo::new(118, "Cosmos", ChainFamily::Account
 pub const OSMOSIS: ChainInfo = ChainInfo::new(1008, "Osmosis", ChainFamily::Account);
 
 // ============================================================================
+// Privacy-focused Chains
+// ============================================================================
+
+/// Zcash mainnet (Privacy chain with transparent + shielded transactions)
+///
+/// Chain ID: 133 (SLIP-44 coin type)
+/// Family: Privacy (hybrid UTXO + shielded transactions)
+/// Protocols: Transparent (Bitcoin-like), Sapling, Orchard
+pub const ZCASH: ChainInfo = ChainInfo::new(133, "Zcash", ChainFamily::Privacy);
+
+// ============================================================================
 // Other Chains
 // ============================================================================
 
@@ -174,6 +185,7 @@ pub const ALL_CHAINS: &[ChainInfo] = &[
     TRON,
     COSMOS,
     OSMOSIS,
+    ZCASH,
     POLKADOT,
     CARDANO,
 ];
