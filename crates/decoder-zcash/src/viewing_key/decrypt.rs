@@ -139,8 +139,8 @@ pub fn decrypt_sapling_note(
     let enc_key = derive_chacha_key(&shared_secret, ephemeral_key);
 
     // Step 5: ChaCha20-Poly1305 decryption
-    let plaintext_bytes = chacha_decrypt(&enc_key, enc_ciphertext)
-        .map_err(DecryptionError::DecryptionFailed)?;
+    let plaintext_bytes =
+        chacha_decrypt(&enc_key, enc_ciphertext).map_err(DecryptionError::DecryptionFailed)?;
 
     // If decryption failed (wrong key), return None (not an error)
     let plaintext_bytes = match plaintext_bytes {
