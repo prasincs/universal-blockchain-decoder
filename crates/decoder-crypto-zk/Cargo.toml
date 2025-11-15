@@ -41,7 +41,7 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 # For cross-validation with reference implementations
-starknet-crypto = "0.7"
+starknet-crypto = "0.8"
 serde_json = { workspace = true }
 proptest = { workspace = true }
 decoder-test-utils = { path = "../decoder-test-utils" }
