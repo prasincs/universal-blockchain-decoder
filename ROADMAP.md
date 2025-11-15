@@ -1,9 +1,11 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅ - Cosmos SDK Decoder)
+## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅, Phase 3.6a Research Complete ✅)
 
-**Latest**: Cosmos SDK Protobuf transaction decoder (1,856 lines, 228 chains)
-**Branch**: `claude/cosmos-sdk-phase-3.5-011CV5yFdhxiSFEu3Ztnxidm`
+**Latest**: Starknet & ZK Crypto Infrastructure Research Complete
+**Current Phase**: Phase 3.6a - ZK Cryptography Infrastructure (Ready to implement)
+**Previous**: Cosmos SDK Protobuf transaction decoder (1,856 lines, 228 chains)
+**Research Branch**: `claude/research-starknet-chains-01TKiKpvAsFe1KsmwoKxGtCQ`
 **Completed**:
   - ✅ Pure Rust Bitcoin decoder (47 tests passing)
   - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types, 6 tests passing)
@@ -20,6 +22,10 @@
   - ✅ Airgapped operation requirement documented
   - ✅ Chain registry vendoring strategy via git subtree
 **See**:
+  - **NEW**: `docs/STARKNET_RESEARCH.md` - Comprehensive Starknet architecture & feasibility (844 lines)
+  - **NEW**: `docs/STARKNET_REUSABLE_COMPONENTS.md` - Infrastructure reuse analysis (893 lines)
+  - **NEW**: `docs/CRYPTO_VENDORING_LEVERAGE.md` - ZK crypto strategic leverage (663 lines)
+  - **NEW**: `docs/STARKNET_ACTION_PLAN.md` - Implementation action plan (243 lines)
   - `crates/decoder-optimism/src/types.rs` - **NEW**: DepositTransaction implementation (437 lines)
   - `crates/decoder-optimism/src/parsing.rs` - **NEW**: RLP parsing for 0x7E deposits (431 lines)
   - `docs/COMMON_CRATES_ANALYSIS.md` - Comprehensive shared functionality analysis
@@ -1074,9 +1080,337 @@ Tasks:
 
 ---
 
-### 3.6: Move VM Family Decoder (Week 7-8)
+### 3.6a: ZK Cryptography Infrastructure (Weeks 7-9, 2-3 weeks) 🔥 NEW - STRATEGIC PRIORITY
+
+**Priority**: **CRITICAL** (Unlocks 300+ ZK chains)
+**Timeline**: 2-3 weeks
+**Status**: ✅ Research complete - Ready to implement
+**See**:
+- `docs/STARKNET_RESEARCH.md` (844 lines) - Starknet architecture & feasibility
+- `docs/STARKNET_REUSABLE_COMPONENTS.md` (893 lines) - Infrastructure reuse analysis
+- `docs/CRYPTO_VENDORING_LEVERAGE.md` (663 lines) - Strategic leverage analysis
+- `docs/STARKNET_ACTION_PLAN.md` (243 lines) - Implementation plan
+
+**Why This Phase is Critical**:
+
+This is a **strategic inflection point** that transforms the project from sequential chain implementation to parallel ecosystem unlocking. By vendoring ZK-friendly cryptographic primitives once, we unlock 300+ blockchain chains:
+
+- **Poseidon hash** → 265+ chains (Starknet, Polygon zkEVM, Aleo, Aztec, Mina, Filecoin, Scroll, Loopring)
+- **Pedersen hash** → 235+ chains (Starknet, Zcash, Aztec)
+- **STARK field arithmetic** → 230+ chains (Starknet ecosystem)
+- **ECDSA on STARK curve** → 230+ chains (Starknet ecosystem)
+
+**ROI**: 2-3 weeks investment → 9 weeks saved on 5 ZK chains + 300+ chains unlocked
+
+**Alternative Approach (Rejected)**:
+- Use `starknet-crypto` dependency for each chain (fast initial delivery)
+- Result: 16 weeks for 5 ZK chains, large TCB, external dependencies
+- **Strategic approach (this phase)**: 7 weeks for 5 ZK chains, minimal TCB, zero external crypto dependencies
+
+#### Week 1: STARK Field + Poseidon Hash
+
+**Tasks**:
+- [ ] Create `crates/decoder-crypto-zk/` structure
+- [ ] Vendor `starknet-crypto` using git subtree
+  ```bash
+  git subtree add \
+      --prefix crates/decoder-crypto-zk/vendored/starknet-crypto \
+      https://github.com/xJonathanLEI/starknet-rs.git \
+      starknet-crypto/v0.7.0 --squash
+  ```
+- [ ] Extract STARK field implementation (252-bit modular arithmetic) - 200 LOC
+- [ ] Extract Poseidon hash (Hades permutation) - 500 LOC
+- [ ] Implement property tests for field operations (determinism, commutativity, etc.)
+- [ ] Cross-validate with `starknet-crypto` in dev-dependencies
+
+#### Week 2: Pedersen Hash + STARK Curve + ECDSA
+
+**Tasks**:
+- [ ] Extract Pedersen hash implementation - 400 LOC
+- [ ] Implement elliptic curve point operations
+- [ ] Extract STARK curve primitives - 300 LOC
+- [ ] Extract ECDSA verification - 300 LOC
+- [ ] Write signature validation tests
+
+#### Week 3: Testing, Validation & Documentation
+
+**Tasks**:
+- [ ] Comprehensive testing (100+ test vectors from Starknet docs)
+- [ ] Property-based tests (roundtrip, determinism, correctness)
+- [ ] Performance benchmarks (vs external implementations)
+- [ ] Document all algorithms with references to specifications
+- [ ] Add VENDORED.md with complete audit trail
+- [ ] Update ROADMAP.md with completed tasks
+- [ ] Integrate with CI/CD pipeline
+
+**Deliverables**:
+- ✅ `crates/decoder-crypto-zk/` (~1,800 LOC)
+  - `src/field/stark_field.rs` - 252-bit field arithmetic
+  - `src/hash/poseidon/stark.rs` - Starknet Poseidon
+  - `src/hash/pedersen/stark.rs` - Starknet Pedersen
+  - `src/curve/stark_curve.rs` - Elliptic curve operations
+  - `src/signature/ecdsa_stark.rs` - ECDSA verification
+- ✅ 100+ test vectors passing
+- ✅ Cross-validated with `starknet-crypto` (dev-dependency)
+- ✅ Comprehensive documentation
+- ✅ Airgapped operation (zero runtime dependencies)
+- ✅ Minimal TCB (auditable, verifiable)
+
+**Impact**:
+- Unlocks Starknet (230+ chains) - Phase 3.6b takes 1 week instead of 2-3 weeks
+- Unlocks Zcash (1 chain) - Add Jubjub Pedersen variant (3 days)
+- Unlocks Polygon zkEVM (10+ chains) - Add Goldilocks Poseidon (3 days)
+- Unlocks Mina (1 chain) - Add Pallas Poseidon (2 days)
+- Unlocks Aleo (1 chain) - Add BLS12-377 Poseidon (3 days)
+- Future: Add other Poseidon variants as needed
+
+**Why Vendor Instead of Use Dependencies**:
+1. ✅ **Minimal TCB** - Core project goal (< 3000 LOC per decoder)
+2. ✅ **Airgapped operation** - Banks, financial institutions can use offline
+3. ✅ **Reproducible builds** - Git subtree provides complete audit trail
+4. ✅ **Single audit point** - Audit once vs auditing 5+ external crates
+5. ✅ **Formal verification ready** - Can prove crypto correctness with Verus
+6. ✅ **56% faster overall** - 7 weeks for 5 ZK chains vs 16 weeks with dependencies
+
+---
+
+### 3.6b: Starknet Family Decoder (Week 10, 1 week) ⚡ FAST IMPLEMENTATION
+
+**Priority**: **HIGH** (230+ Starknet chains)
+**Decoder**: `decoder-starknet`
+**Status**: Ready to implement (crypto infrastructure from Phase 3.6a)
+**Prerequisites**: ✅ Phase 3.6a complete (decoder-crypto-zk available)
+**See**: Research documents (Phase 3.6a)
+
+**Chains Supported**:
+- Starknet Mainnet (chain ID: 23448594291968336)
+- Starknet Sepolia Testnet (chain ID: 3.934021330259978e+23)
+- 228+ Starknet appchains via Madara/SN Stack (Kakarot zkEVM, PragmaX, Cartridge, etc.)
+- **Total: 230+ chains**
+
+**Transaction Types Supported**:
+- ✅ **INVOKE** (v1 & v3): Execute contract functions
+- ✅ **DECLARE** (v0 & v3): Register new contract classes
+- ✅ **DEPLOY_ACCOUNT** (v1 & v3): Deploy account contracts
+
+**Implementation Tasks** (Week 10):
+
+**Days 1-3: Transaction Parsing**
+- [ ] Create `decoder-starknet` crate structure
+- [ ] Implement field element wrapper using `decoder-crypto-zk::field::stark_field`
+- [ ] Implement transaction type detection (INVOKE/DECLARE/DEPLOY_ACCOUNT)
+- [ ] Parse INVOKE v1 transactions (legacy fee model)
+- [ ] Parse INVOKE v3 transactions (resource bounds model)
+- [ ] Parse DECLARE v0 (Cairo 0) and v3 (Cairo 1.0) transactions
+- [ ] Parse DEPLOY_ACCOUNT v1 and v3 transactions
+- [ ] Implement hash verification using `decoder-crypto-zk::hash::poseidon` (v3) and `pedersen` (v1)
+
+**Days 4-5: Signature Verification & TxIR Conversion**
+- [ ] Implement signature verification using `decoder-crypto-zk::signature::ecdsa_stark`
+- [ ] Convert Starknet transactions → TxIR (account model, operations, state deltas)
+- [ ] Extract operations from calldata (contract calls, deployments, account creation)
+- [ ] Populate authorization metadata (signatures, nonces)
+
+**Days 6-7: Testing & Integration**
+- [ ] Unit tests for all 3 transaction types (50+ tests)
+- [ ] Property tests (hash determinism, signature verification)
+- [ ] Integration tests with real mainnet/testnet transactions (20+ fixtures)
+- [ ] Validate against `starknet-core` in dev-dependencies
+- [ ] CI/CD integration
+
+**Deliverables**:
+- ✅ `crates/decoder-starknet/` (~1,000 LOC)
+- ✅ Support for 230+ Starknet chains
+- ✅ All 3 transaction types (6 variants: v1 + v3)
+- ✅ Hash verification (Poseidon + Pedersen)
+- ✅ Signature verification (ECDSA on STARK curve)
+- ✅ Full TxIR integration
+- ✅ 50+ tests passing
+- ✅ 20+ real transaction fixtures
+
+**Why Fast (1 week vs 2-3 weeks)**:
+- ✅ Reuses 60-80% of existing infrastructure (byte readers, traits, testing)
+- ✅ Crypto primitives already implemented (Phase 3.6a)
+- ✅ Only need to write transaction parsing (800 LOC) + TxIR conversion (200 LOC)
+
+**Ecosystem Impact**:
+- Largest ZK-rollup by ecosystem size (230+ chains)
+- Growing rapidly (168% project growth 2023-2024, SN Stack launched Jan 2025)
+- Unique architecture (STARK proofs, Cairo VM, not EVM)
+- Fills gap (only STARK-based chain in decoder)
+
+---
+
+### 3.7: Zcash Decoder (Weeks 11-12, 1-2 weeks) ⚡ LEVERAGES CRYPTO INFRASTRUCTURE
+
+**Priority**: HIGH (Privacy is core differentiator)
+**Decoder**: `decoder-zcash`
+**Status**: Ready to implement (crypto infrastructure from Phase 3.6a + Bitcoin decoder)
+**Prerequisites**: ✅ Phase 3.6a complete, ✅ Bitcoin decoder, ✅ Privacy infrastructure
+**See**: `docs/ZCASH_INTEGRATION_PLAN.md` (comprehensive 900-line implementation guide)
+
+**Chains Supported**: Zcash mainnet (chain ID 133), Zcash testnet (chain ID 1)
+
+**Transaction Types**:
+- ✅ **t→t (Transparent)**: Reuse BitcoinDecoder (~40% of txs)
+- ✅ **t→z (Shielding)**: Transparent → Shielded (~25% of txs)
+- ✅ **z→t (Deshielding)**: Shielded → Transparent (~20% of txs)
+- ✅ **z→z (Fully Shielded)**: Maximum privacy (~15% of txs)
+
+**Protocol Versions**:
+- ✅ **Sapling (Version 4)**: Primary implementation (2018+)
+- ✅ **Orchard (Version 5)**: Latest protocol (2021+, NU5)
+- ⏳ **Sprout (Version 1-3)**: Legacy, optional (deprecated)
+
+**Implementation Tasks** (Weeks 11-12):
+
+**Week 11 (Days 1-2): Setup + Transparent Transactions**
+- [ ] Create `decoder-zcash` crate with proper structure
+- [ ] Add Jubjub Pedersen variant to `decoder-crypto-zk` (300 LOC, 3 days)
+- [ ] Implement `ZcashChain` (ChainIdentity trait, ChainFamily::Privacy)
+- [ ] Reuse Bitcoin parsing for transparent inputs/outputs
+- [ ] Add Zcash-specific fields (version_group_id, expiry_height)
+- [ ] Write 15+ tests with mainnet transparent transactions
+- **Deliverable**: t→t transactions fully working (~150 LOC)
+
+**Week 11 (Days 3-7): Sapling Shielded Transactions**
+- [ ] Implement SpendDescription parsing (nullifiers, commitments, proofs)
+- [ ] Implement OutputDescription parsing (encrypted notes, ephemeral keys)
+- [ ] Parse value_balance (net transparent ↔ shielded flow)
+- [ ] Populate PrivacyMetadata (HiddenSender, HiddenRecipient, HiddenAmount)
+- [ ] Use `decoder-crypto-zk::hash::pedersen::jubjub` for commitments
+- [ ] Write 40+ tests (t→z, z→t, z→z, mixed)
+- **Deliverable**: Full Sapling support (~400 LOC)
+
+**Week 12 (Optional): Viewing Key Decryption + Orchard**
+- [ ] Implement SaplingIncomingViewingKey support
+- [ ] Decrypt Sapling notes (optional, for viewing key holders)
+- [ ] Implement Orchard protocol (Sinsemilla hash instead of Pedersen)
+- [ ] Orchard Action parsing (combines spends + outputs)
+
+**Deliverables**:
+- ✅ `crates/decoder-zcash/` (~800 LOC)
+- ✅ Transparent transaction support (reuses Bitcoin)
+- ✅ Sapling shielded transaction support
+- ✅ Jubjub Pedersen hash (added to decoder-crypto-zk)
+- ✅ Privacy metadata extraction (nullifiers, commitments)
+- ✅ 55+ tests passing
+- ⏳ Optional: Orchard support, viewing key decryption
+
+**Why Faster with Phase 3.6a**:
+- ✅ Jubjub Pedersen: 3 days to add variant vs 1 week to implement from scratch
+- ✅ Reuses Bitcoin parser (transparent transactions)
+- ✅ Reuses privacy infrastructure (PrivacyMetadata types)
+- **Total: 1-2 weeks vs 3 weeks without crypto infrastructure**
+
+---
+
+### 3.8: Polygon zkEVM Decoder (Week 13, 1 week) ⚡ LEVERAGES CRYPTO INFRASTRUCTURE
+
+**Priority**: MEDIUM (10+ Polygon zkEVM chains)
+**Decoder**: `decoder-polygon-zkevm`
+**Status**: Ready to implement (crypto infrastructure from Phase 3.6a)
+**Prerequisites**: ✅ Phase 3.6a complete, ✅ EVM decoder
+
+**Chains Supported**: Polygon zkEVM, Polygon Hermez, and future zkEVM chains
+
+**Implementation Tasks** (Week 13):
+
+**Days 1-3: Add Goldilocks Poseidon to decoder-crypto-zk**
+- [ ] Implement Goldilocks field (prime = 2^64 - 2^32 + 1)
+- [ ] Implement Poseidon hash for Goldilocks field
+- [ ] Test vectors from Polygon zkEVM documentation
+- **Deliverable**: Goldilocks Poseidon in `decoder-crypto-zk` (~400 LOC)
+
+**Days 4-7: zkEVM Transaction Decoder**
+- [ ] Create `decoder-polygon-zkevm` crate
+- [ ] Reuse EVM transaction parsing (RLP, EIP-2718)
+- [ ] Add zkTrie support (Poseidon-based Merkle tree)
+- [ ] Implement zkEVM-specific state proof verification
+- [ ] Parse batch proofs and L1 state updates
+- [ ] Write 30+ tests
+
+**Deliverables**:
+- ✅ Goldilocks Poseidon in `decoder-crypto-zk`
+- ✅ `crates/decoder-polygon-zkevm/` (~600 LOC)
+- ✅ Support for Polygon zkEVM ecosystem (10+ chains)
+- ✅ zkTrie state verification
+- ✅ 30+ tests passing
+
+**Why Fast**: Reuses EVM parser + crypto infrastructure
+
+---
+
+### 3.9: Mina Protocol Decoder (Week 14, 1 week) ⚡ LEVERAGES CRYPTO INFRASTRUCTURE
+
+**Priority**: MEDIUM (1 chain, unique architecture)
+**Decoder**: `decoder-mina`
+**Status**: Ready to implement (crypto infrastructure from Phase 3.6a)
+**Prerequisites**: ✅ Phase 3.6a complete
+
+**Chains Supported**: Mina Protocol (world's lightest blockchain - 22KB constant size)
+
+**Implementation Tasks** (Week 14):
+
+**Days 1-2: Add Pallas Poseidon to decoder-crypto-zk**
+- [ ] Implement Pallas field (from Pallas/Vesta curve cycle)
+- [ ] Implement Poseidon hash for Pallas field
+- [ ] Test vectors from Mina o1js documentation
+- **Deliverable**: Pallas Poseidon in `decoder-crypto-zk` (~350 LOC)
+
+**Days 3-7: Mina Transaction Decoder**
+- [ ] Create `decoder-mina` crate
+- [ ] Parse zkApp transactions (zkSNARK-based smart contracts)
+- [ ] Implement account update parsing
+- [ ] Parse recursive SNARK proofs
+- [ ] Write 25+ tests
+
+**Deliverables**:
+- ✅ Pallas Poseidon in `decoder-crypto-zk`
+- ✅ `crates/decoder-mina/` (~500 LOC)
+- ✅ Support for zkApp transactions
+- ✅ 25+ tests passing
+
+**Why Important**: Unique recursive SNARK architecture (22KB blockchain!)
+
+---
+
+### 3.10: Aleo Decoder (Week 15, 1 week) ⚡ LEVERAGES CRYPTO INFRASTRUCTURE
+
+**Priority**: MEDIUM (1 chain, privacy-focused)
+**Decoder**: `decoder-aleo`
+**Status**: Ready to implement (crypto infrastructure from Phase 3.6a)
+**Prerequisites**: ✅ Phase 3.6a complete
+
+**Chains Supported**: Aleo (privacy-focused programmable blockchain)
+
+**Implementation Tasks** (Week 15):
+
+**Days 1-3: Add BLS12-377 Poseidon to decoder-crypto-zk**
+- [ ] Implement BLS12-377 scalar field
+- [ ] Implement Poseidon hash for BLS12-377 field
+- [ ] Test vectors from Aleo documentation
+- **Deliverable**: BLS12-377 Poseidon in `decoder-crypto-zk` (~400 LOC)
+
+**Days 4-7: Aleo Transaction Decoder**
+- [ ] Create `decoder-aleo` crate
+- [ ] Parse Aleo transactions (Leo programs)
+- [ ] Implement program execution decoding
+- [ ] Parse zero-knowledge proofs
+- [ ] Write 20+ tests
+
+**Deliverables**:
+- ✅ BLS12-377 Poseidon in `decoder-crypto-zk`
+- ✅ `crates/decoder-aleo/` (~500 LOC)
+- ✅ Support for Leo program transactions
+- ✅ 20+ tests passing
+
+---
+
+### 3.11: Move VM Family Decoder (Week 16-17)
 
 **Priority**: MEDIUM (3+ Move chains)
+**Decoder**: `decoder-move` (renumbered from old 3.6)
 **Decoder**: `decoder-move`
 
 **Chains Supported**: Aptos, Sui, Movement, etc.
