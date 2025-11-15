@@ -1,0 +1,44 @@
+[package]
+name = "decoder-crypto-zk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Zero-Knowledge cryptographic primitives for blockchain decoders (Poseidon, Pedersen, STARK field)"
+
+[dependencies]
+# Minimal dependencies for cryptographic operations
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+# Field arithmetic (battle-tested, minimal, no_std compatible)
+# This provides the STARK field (252-bit) used across Starknet ecosystem
+starknet-types-core = { version = "0.2.0", default-features = false, features = ["curve", "hash"] }
+
+# Big integer arithmetic (used by vendored crypto)
+crypto-bigint = { version = "0.5.1", default-features = false, features = ["generic-array"] }
+num-bigint = { version = "0.4.3", default-features = false }
+num-integer = { version = "0.1.45", default-features = false }
+num-traits = { version = "0.2.18", default-features = false }
+
+# For ECDSA (used by vendored crypto)
+hmac = { version = "0.12.1", default-features = false }
+rfc6979 = { version = "0.4.0", default-features = false }
+sha2 = { workspace = true }
+
+# For hex encoding/decoding
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+
+# NOTE: All cryptographic implementations are vendored for:
+#   1. Minimal TCB (Trusted Computing Base)
+#   2. Airgapped operation (no external crypto dependencies)
+#   3. Formal verification readiness
+#   4. Security audit (single audit point)
+
+[dev-dependencies]
+# For cross-validation with reference implementations
+starknet-crypto = "0.7"
+serde_json = { workspace = true }
+proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }
