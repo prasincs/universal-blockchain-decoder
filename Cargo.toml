@@ -5,6 +5,7 @@ members = [
     "crates/decoder-encodings",     # Shared encoding utilities (Phase 2.5)
     "crates/decoder-chains-common", # Common decoder patterns and utilities
     "crates/decoder-test-utils",    # Test utilities (Phase 2.5.2)
+    "crates/decoder-crypto-zk",     # ZK cryptography infrastructure (Phase 3.6a)
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     "crates/decoder-solana",
