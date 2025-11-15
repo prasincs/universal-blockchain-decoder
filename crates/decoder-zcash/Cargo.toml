@@ -1,0 +1,35 @@
+[package]
+name = "decoder-zcash"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Zcash transaction decoder for universal-decoder (transparent + shielded)"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
+decoder-chains-common = { path = "../decoder-chains-common" }
+decoder-bitcoin = { path = "../decoder-bitcoin" }
+serde = { workspace = true }
+serde_bytes = "0.11"
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+blake2b_simd = "1.0"
+# hex - Use vendored version via: use universal_decoder_core::hex;
+
+# Cryptographic dependencies (to be vendored via git subtree)
+# jubjub - Sapling elliptic curve
+# pasta_curves - Orchard curves (Pallas/Vallas)
+# bls12_381 - Sapling Groth16 pairing
+# (Initially using crates.io, will vendor in Phase 3.8 Week 11+)
+
+[dev-dependencies]
+# Blockchain libraries for test validation ONLY
+# Production code uses pure Rust parsing
+# zcash_primitives = "0.13"  # TODO: Enable after resolving dependency conflicts
+serde_json = { workspace = true }
+proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }

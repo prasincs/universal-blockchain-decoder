@@ -33,6 +33,7 @@ members = [
     "crates/decoder-arbitrum",      # Arbitrum - EVM L2 (Optimistic rollup)
     "crates/decoder-sui",           # Sui - Move-based with BCS
     "crates/decoder-aptos",         # Aptos - Move-based with BCS
+    "crates/decoder-zcash",         # Zcash - Privacy chain (transparent + Sapling + Orchard)
 
     # WASM Demo (Phase 3.10)
     "crates/universal-decoder-wasm", # WebAssembly bindings for browser demo
