@@ -5,6 +5,9 @@
 use decoder_bitcoin::parsing::{TxInput, TxOutput};
 use decoder_primitives::prelude::*;
 
+// Re-export Sapling types from sapling module
+pub use crate::sapling::{OutputDescription, SpendDescription};
+
 /// Zcash transaction representation
 ///
 /// Zcash supports multiple transaction types:
@@ -81,68 +84,41 @@ pub struct TransparentTransaction {
 
 /// Sapling shielded transaction
 ///
-/// Phase 2: Not yet implemented
+/// Phase 2: Implemented
 /// See: docs/ZCASH_INTEGRATION_PLAN.md, Phase 2
 #[derive(Debug, Clone, PartialEq)]
 pub struct SaplingTransaction {
     /// Base transparent transaction data
+    ///
+    /// Contains version, inputs, outputs, locktime, expiry_height
     pub transparent: TransparentTransaction,
 
     /// Sapling spend descriptions (consume shielded notes)
+    ///
+    /// Each spend reveals a nullifier and proves knowledge of a note
+    /// without revealing the note's value or recipient.
     pub spends: Vec<SpendDescription>,
 
     /// Sapling output descriptions (create shielded notes)
+    ///
+    /// Each output creates an encrypted note that only the recipient
+    /// (or someone with the viewing key) can decrypt.
     pub outputs: Vec<OutputDescription>,
 
     /// Net value balance (transparent ↔ shielded)
+    ///
+    /// Positive: Transparent → Shielded (shielding)
+    /// Negative: Shielded → Transparent (deshielding)
+    /// Zero: Pure shielded (z→z) or pure transparent (t→t)
     pub value_balance: i64,
 
     /// Binding signature (proves value conservation, 64 bytes)
-    pub binding_sig: Vec<u8>,
-}
-
-/// Sapling spend description (Phase 2)
-#[derive(Debug, Clone, PartialEq)]
-pub struct SpendDescription {
-    /// Value commitment (32 bytes)
-    pub cv: Vec<u8>,
-
-    /// Merkle tree anchor (32 bytes)
-    pub anchor: Vec<u8>,
-
-    /// Nullifier (prevents double-spend, 32 bytes)
-    pub nullifier: Vec<u8>,
-
-    /// Randomized public key (32 bytes)
-    pub rk: Vec<u8>,
-
-    /// zk-SNARK proof (Groth16, 192 bytes)
-    pub zkproof: Vec<u8>,
-
-    /// Spend authorization signature (64 bytes)
-    pub spend_auth_sig: Vec<u8>,
-}
-
-/// Sapling output description (Phase 2)
-#[derive(Debug, Clone, PartialEq)]
-pub struct OutputDescription {
-    /// Value commitment (32 bytes)
-    pub cv: Vec<u8>,
-
-    /// Note commitment (32 bytes)
-    pub cmu: Vec<u8>,
-
-    /// Ephemeral public key (for ECDH, 32 bytes)
-    pub ephemeral_key: Vec<u8>,
-
-    /// Encrypted note ciphertext (ChaCha20-Poly1305, 580 bytes)
-    pub enc_ciphertext: Vec<u8>,
-
-    /// Encrypted outgoing ciphertext (for sender recovery, 80 bytes)
-    pub out_ciphertext: Vec<u8>,
-
-    /// zk-SNARK proof (Groth16, 192 bytes)
-    pub zkproof: Vec<u8>,
+    ///
+    /// RedJubjub signature that proves:
+    /// `sum(value_commitments) - value_balance * G = 0`
+    ///
+    /// Ensures no value is created or destroyed.
+    pub binding_sig: [u8; 64],
 }
 
 /// Orchard shielded transaction (Phase 4)
@@ -204,9 +180,7 @@ impl<'a> Canonicalizer<'a> for ZcashTransaction {
     fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
         match self {
             ZcashTransaction::Transparent(tx) => tx.canonicalize(),
-            ZcashTransaction::Sapling(_) => Err(DecoderError::chain_specific(
-                "Sapling transaction canonicalization not yet implemented (Phase 2)".to_string(),
-            )),
+            ZcashTransaction::Sapling(tx) => tx.canonicalize(),
             ZcashTransaction::Orchard(_) => Err(DecoderError::chain_specific(
                 "Orchard transaction canonicalization not yet implemented (Phase 4)".to_string(),
             )),
@@ -311,6 +285,221 @@ impl<'a> Canonicalizer<'a> for TransparentTransaction {
             features: vec![],
             observability: ObservabilityLevel::FullyObservable,
             viewing_key: None,
+        });
+
+        Ok(TxIR::with_privacy(
+            &decoder_chains_common::chains::ZCASH,
+            metadata,
+            authorization,
+            operations,
+            state_deltas,
+            privacy,
+        ))
+    }
+}
+
+impl<'a> Canonicalizer<'a> for SaplingTransaction {
+    const VERSION: u8 = 1;
+
+    fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
+        use universal_decoder_core::ir::*;
+        use universal_decoder_core::privacy::{
+            ObservabilityLevel, PrivacyFeature, PrivacyMetadata,
+        };
+
+        // Metadata (include Sapling-specific info)
+        let metadata = TxMetadata {
+            tx_hash: vec![], // Will be computed by caller
+            block_height: None,
+            timestamp: None,
+            size: 0, // Will be populated by decoder
+            extra: format!(
+                "{{\"version\":{},\"version_group_id\":{},\"locktime\":{},\"expiry_height\":{},\"sapling_spends\":{},\"sapling_outputs\":{},\"value_balance\":{}}}",
+                self.transparent.version,
+                self.transparent.version_group_id,
+                self.transparent.locktime,
+                self.transparent.expiry_height,
+                self.spends.len(),
+                self.outputs.len(),
+                self.value_balance
+            ),
+        };
+
+        // Authorization package (Phase 1: empty, no signature extraction yet)
+        let authorization = AuthorizationPackage {
+            signatures: vec![],
+            public_keys: vec![],
+            signature_scheme: SignatureScheme::Ecdsa,
+        };
+
+        // Operations: Include both transparent and shielded operations
+        let mut operations = Vec::new();
+
+        // Transparent inputs
+        for (idx, input) in self.transparent.inputs.iter().enumerate() {
+            operations.push(Operation::Generic(GenericOperation {
+                op_type: "UTXO_Input".to_string(),
+                data: format!(
+                    "{{\"index\":{},\"prev_txid\":\"{}\",\"prev_vout\":{},\"sequence\":{}}}",
+                    idx,
+                    universal_decoder_core::hex::encode(input.prev_hash),
+                    input.prev_index,
+                    input.sequence
+                )
+                .as_bytes()
+                .to_vec(),
+                metadata: "{}".to_string(),
+            }));
+        }
+
+        // Transparent outputs
+        for (idx, output) in self.transparent.outputs.iter().enumerate() {
+            operations.push(Operation::Generic(GenericOperation {
+                op_type: "UTXO_Output".to_string(),
+                data: format!(
+                    "{{\"index\":{},\"value\":{},\"script_pubkey_hex\":\"{}\"}}",
+                    idx,
+                    output.value,
+                    universal_decoder_core::hex::encode(&output.script_pubkey)
+                )
+                .as_bytes()
+                .to_vec(),
+                metadata: "{}".to_string(),
+            }));
+        }
+
+        // Sapling spends (shielded inputs)
+        for (idx, spend) in self.spends.iter().enumerate() {
+            operations.push(Operation::Generic(GenericOperation {
+                op_type: "Sapling_Spend".to_string(),
+                data: format!(
+                    "{{\"index\":{},\"nullifier\":\"{}\",\"cv\":\"{}\",\"anchor\":\"{}\"}}",
+                    idx,
+                    universal_decoder_core::hex::encode(spend.nullifier),
+                    universal_decoder_core::hex::encode(spend.cv),
+                    universal_decoder_core::hex::encode(spend.anchor)
+                )
+                .as_bytes()
+                .to_vec(),
+                metadata: "{}".to_string(),
+            }));
+        }
+
+        // Sapling outputs (shielded outputs)
+        for (idx, output) in self.outputs.iter().enumerate() {
+            operations.push(Operation::Generic(GenericOperation {
+                op_type: "Sapling_Output".to_string(),
+                data: format!(
+                    "{{\"index\":{},\"cmu\":\"{}\",\"cv\":\"{}\",\"ephemeral_key\":\"{}\"}}",
+                    idx,
+                    universal_decoder_core::hex::encode(output.cmu),
+                    universal_decoder_core::hex::encode(output.cv),
+                    universal_decoder_core::hex::encode(output.ephemeral_key)
+                )
+                .as_bytes()
+                .to_vec(),
+                metadata: "{}".to_string(),
+            }));
+        }
+
+        // State deltas (UTXO inputs and outputs)
+        let mut inputs = Vec::new();
+        for input in &self.transparent.inputs {
+            inputs.push(InputReference {
+                prev_tx: input.prev_hash.to_vec(),
+                output_index: input.prev_index,
+                value: Amount::new(0, 8), // Unknown without UTXO set, ZEC has 8 decimals
+                script: input.script_sig.clone(),
+            });
+        }
+
+        let mut outputs = Vec::new();
+        for (idx, output) in self.transparent.outputs.iter().enumerate() {
+            outputs.push(OutputValue {
+                index: idx as u32,
+                address: Address {
+                    bytes: output.script_pubkey.clone(),
+                    human_readable: None,
+                },
+                value: Amount::new(output.value as u128, 8), // ZEC has 8 decimals
+                script: output.script_pubkey.clone(),
+            });
+        }
+
+        let state_deltas = StateDeltas {
+            inputs,
+            outputs,
+            account_changes: vec![],
+        };
+
+        // Privacy metadata: Sapling transactions have privacy features
+        let mut privacy_features = Vec::new();
+
+        // Add privacy features based on transaction structure
+        if !self.spends.is_empty() {
+            // Sapling spends use nullifiers (not directly linkable to addresses)
+            privacy_features.push(PrivacyFeature::HiddenSender(
+                universal_decoder_core::privacy::PrivateAddress {
+                    privacy_type: universal_decoder_core::privacy::AddressPrivacyType::Custom {
+                        mechanism_name: "Sapling_Nullifier".to_string(),
+                        metadata: self.spends[0].nullifier.to_vec(),
+                    },
+                    public_address: self.spends[0].nullifier.to_vec(),
+                    viewing_hint: None,
+                },
+            ));
+        }
+        if !self.outputs.is_empty() {
+            // Sapling outputs use encrypted note commitments
+            privacy_features.push(PrivacyFeature::HiddenRecipient(
+                universal_decoder_core::privacy::PrivateAddress {
+                    privacy_type: universal_decoder_core::privacy::AddressPrivacyType::Custom {
+                        mechanism_name: "Sapling_NoteCommitment".to_string(),
+                        metadata: self.outputs[0].cmu.to_vec(),
+                    },
+                    public_address: self.outputs[0].cmu.to_vec(),
+                    viewing_hint: Some(self.outputs[0].ephemeral_key.to_vec()),
+                },
+            ));
+        }
+        if !self.spends.is_empty() || !self.outputs.is_empty() {
+            // Sapling uses homomorphic commitments to hide amounts
+            privacy_features.push(PrivacyFeature::HiddenAmount(
+                universal_decoder_core::privacy::ConfidentialAmount {
+                    commitment: if !self.spends.is_empty() {
+                        self.spends[0].cv.to_vec()
+                    } else {
+                        self.outputs[0].cv.to_vec()
+                    },
+                    range_proof: Some(if !self.spends.is_empty() {
+                        self.spends[0].zkproof.to_vec()
+                    } else {
+                        self.outputs[0].zkproof.to_vec()
+                    }),
+                    proof_system: universal_decoder_core::privacy::RangeProofSystem::Custom(
+                        16, // Groth16 zk-SNARK (custom ID for Sapling)
+                    ),
+                },
+            ));
+        }
+
+        // Determine observability level
+        let observability =
+            if self.transparent.inputs.is_empty() && self.transparent.outputs.is_empty() {
+                // Pure shielded (z→z)
+                ObservabilityLevel::FullyPrivate
+            } else if !self.spends.is_empty() || !self.outputs.is_empty() {
+                // Mixed (t→z, z→t, or complex)
+                ObservabilityLevel::PartiallyObservable
+            } else {
+                // Pure transparent (fallback, should not happen in SaplingTransaction)
+                ObservabilityLevel::FullyObservable
+            };
+
+        let privacy = Some(PrivacyMetadata {
+            features: privacy_features,
+            observability,
+            viewing_key: None, // Phase 3: Will support viewing key decryption
         });
 
         Ok(TxIR::with_privacy(
