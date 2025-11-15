@@ -211,27 +211,27 @@ mod tests {
         assert_ne!(ALPHA, FieldElement::ZERO);
         assert_ne!(BETA, FieldElement::ZERO);
 
-        assert_ne!(GENERATOR.x, FieldElement::ZERO);
-        assert_ne!(GENERATOR.y, FieldElement::ZERO);
+        assert_ne!(GENERATOR.x(), FieldElement::ZERO);
+        assert_ne!(GENERATOR.y(), FieldElement::ZERO);
 
-        assert_ne!(SHIFT_POINT.x, FieldElement::ZERO);
-        assert_ne!(SHIFT_POINT.y, FieldElement::ZERO);
+        assert_ne!(SHIFT_POINT.x(), FieldElement::ZERO);
+        assert_ne!(SHIFT_POINT.y(), FieldElement::ZERO);
     }
 
     #[test]
     fn test_pedersen_points_non_zero() {
         // Ensure all Pedersen constant points are properly initialized
-        assert_ne!(PEDERSEN_P0.x, FieldElement::ZERO);
-        assert_ne!(PEDERSEN_P0.y, FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P0.x(), FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P0.y(), FieldElement::ZERO);
 
-        assert_ne!(PEDERSEN_P1.x, FieldElement::ZERO);
-        assert_ne!(PEDERSEN_P1.y, FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P1.x(), FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P1.y(), FieldElement::ZERO);
 
-        assert_ne!(PEDERSEN_P2.x, FieldElement::ZERO);
-        assert_ne!(PEDERSEN_P2.y, FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P2.x(), FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P2.y(), FieldElement::ZERO);
 
-        assert_ne!(PEDERSEN_P3.x, FieldElement::ZERO);
-        assert_ne!(PEDERSEN_P3.y, FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P3.x(), FieldElement::ZERO);
+        assert_ne!(PEDERSEN_P3.y(), FieldElement::ZERO);
     }
 
     #[test]

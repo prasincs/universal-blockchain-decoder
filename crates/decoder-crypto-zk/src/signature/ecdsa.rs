@@ -46,7 +46,7 @@ pub struct Signature {
 }
 
 /// Errors when performing ECDSA verification
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum VerifyError {
     /// The public key is not a valid point on the STARK curve
     #[error("Invalid public key")]
@@ -229,7 +229,6 @@ fn bigint_to_felt(value: BigInt) -> FieldElement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::FieldExt;
 
     #[test]
     fn test_verify_runs_without_panic() {
