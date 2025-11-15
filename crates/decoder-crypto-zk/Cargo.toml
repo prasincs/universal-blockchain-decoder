@@ -35,6 +35,9 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 #   2. Airgapped operation (no external crypto dependencies)
 #   3. Formal verification readiness
 #   4. Security audit (single audit point)
+#
+# ECDSA implementation is extracted from vendored/starknet-crypto/ (git subtree)
+# See src/signature/ecdsa.rs for the vendored implementation
 
 [dev-dependencies]
 # For cross-validation with reference implementations
