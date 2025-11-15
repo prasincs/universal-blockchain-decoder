@@ -801,6 +801,14 @@ transaction_decoder! {
 
 ## Testing Template
 
+**NEW**: Ready-to-use test templates are available in `docs/templates/`:
+- ✅ `PROPERTY_TEST_TEMPLATE.rs` - 8 property tests ready to copy-paste (150 lines)
+- ✅ `INTEGRATION_TEST_TEMPLATE.rs` - Fixture-based testing patterns (200 lines)
+- ✅ Usage: Copy templates, replace `{{CHAIN}}` with your chain name, customize
+- ✅ See: `CLAUDE_PROPOSED.md` "Testing Quick Start" section for detailed instructions
+
+**Recommended workflow**: Use templates first (10 min), then customize based on patterns below.
+
 ### 1. Unit Tests (Required for ALL chains)
 
 ```rust
