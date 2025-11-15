@@ -48,19 +48,10 @@ impl PedersenHash {
     /// let hash = PedersenHash::hash_pair(&a, &b);
     /// ```
     pub fn hash_pair(x: &FieldElement, y: &FieldElement) -> FieldElement {
-        // Use vendored pedersen hash implementation
-        // For now, we'll implement a placeholder that will be replaced with
-        // the actual vendored implementation once we resolve dependency issues
-        //
-        // TODO: Extract and integrate the vendored Pedersen implementation
-        // from crates/decoder-crypto-zk/vendored/starknet-crypto/starknet-crypto/src/pedersen_hash/
-
-        // Temporary: Use Poseidon as a placeholder
-        // This ensures the API compiles while we resolve the vendoring strategy
-        use starknet_types_core::hash::Poseidon;
-        let mut state = [*x, *y, FieldElement::TWO];
-        Poseidon::hades_permutation(&mut state);
-        state[0]
+        // Use Pedersen hash from starknet_types_core
+        // This is the same implementation used by the entire Starknet ecosystem
+        use starknet_types_core::hash::{Pedersen, StarkHash};
+        Pedersen::hash(x, y)
     }
 
     /// Hash many field elements using Pedersen

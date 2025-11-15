@@ -68,14 +68,14 @@
 //! - `VENDORED.md` - Vendoring audit trail
 
 // Modules
+pub mod curve;
 pub mod error;
 pub mod field;
 pub mod hash;
-
-// Future modules (Phase 3.6a):
-// pub mod curve;      // STARK curve primitives (Day 8-10)
-// pub mod signature;  // ECDSA verification (Day 8-10)
+pub mod signature;
 
 // Re-exports
+pub use curve::{AffinePoint, ALPHA, BETA, EC_ORDER, GENERATOR};
 pub use error::{CryptoError, Result};
 pub use field::{FieldElement, FieldExt};
+pub use signature::{verify, Signature, VerifyError};
