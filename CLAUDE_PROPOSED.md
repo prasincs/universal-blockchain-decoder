@@ -306,6 +306,56 @@ git commit -m "feat(avalanche): Add basic transaction parsing"
 git push -u origin claude/add-avalanche-decoder-SESSIONID
 ```
 
+**Documentation Updates** (IMPORTANT):
+
+When making significant changes, **always update relevant documentation**:
+
+```bash
+# When adding a new chain:
+- Update ROADMAP.md (add to completed milestones)
+- Update docs/CHAIN_COVERAGE_ANALYSIS.md (if applicable)
+- Update docs/CHAIN_FAMILIES_GROUPING.md (if new chain family)
+
+# When adding new features:
+- Update ROADMAP.md (mark phase complete, add new deliverables)
+- Update CLAUDE.md (if workflow changes)
+- Update relevant docs/ files
+
+# When completing a phase:
+- Update ROADMAP.md:
+  - Current Status header (line 3)
+  - Latest/Current Phase (lines 5-6)
+  - Add new files to "See" section
+  - Add success criteria section
+  - Update "Last Updated" at bottom
+  - Add to completed milestones
+
+# Quick checklist:
+1. Did you add new functionality? → Update ROADMAP.md
+2. Did you add new files? → List in ROADMAP.md "See" section
+3. Did you complete a phase? → Update status and milestones
+4. Did you change workflows? → Update CLAUDE.md
+5. Did you add a decoder? → Update chain family docs
+```
+
+**Example Documentation Update**:
+```bash
+# After adding Avalanche decoder:
+
+# 1. Update ROADMAP.md current status
+# Change: "Current Phase: Phase 3.5"
+# To: "Current Phase: Phase 3.7 - Avalanche Decoder Complete"
+
+# 2. Add to "See" section
+# - **NEW**: crates/decoder-avalanche/src/lib.rs - Avalanche decoder (350 lines)
+
+# 3. Add to completed milestones
+# - ✅ Phase 3.7: Avalanche decoder (350 lines, 15 tests) 🎉 NEW!
+
+# 4. Update chain family docs if needed
+# Edit docs/CHAIN_FAMILIES_GROUPING.md to add Avalanche to EVM family
+```
+
 **If Clippy Fails**:
 ```bash
 # Common fixes:
