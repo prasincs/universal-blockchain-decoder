@@ -22,6 +22,8 @@
   - ✅ Airgapped operation requirement documented
   - ✅ Chain registry vendoring strategy via git subtree
 **See**:
+  - **NEW**: `docs/AUTOMATION_OPPORTUNITIES_ANALYSIS.md` - Comprehensive tooling automation analysis (1,164 lines)
+  - **NEW**: `docs/AUTOMATION_QUICK_SUMMARY.md` - Developer tooling strategy and prioritization (214 lines)
   - **NEW**: `docs/STARKNET_RESEARCH.md` - Comprehensive Starknet architecture & feasibility (844 lines)
   - **NEW**: `docs/STARKNET_REUSABLE_COMPONENTS.md` - Infrastructure reuse analysis (893 lines)
   - **NEW**: `docs/CRYPTO_VENDORING_LEVERAGE.md` - ZK crypto strategic leverage (663 lines)
@@ -2280,6 +2282,281 @@ Tasks:
 - [ ] Discord/forum setup
 - [ ] Monthly contributor calls
 
+## Phase 7: Developer Experience & Automation (Ongoing)
+
+**Target**: Continuous improvement
+**Focus**: Developer productivity, code quality, maintenance reduction
+**See**: `docs/AUTOMATION_OPPORTUNITIES_ANALYSIS.md` (1,164 lines) for comprehensive analysis
+
+### Overview
+
+This phase focuses on **internal development tooling** to reduce manual toil, eliminate code duplication, and improve developer productivity. Analysis shows potential to save **50-70 developer hours per quarter** through automation.
+
+**Key Documents**:
+- 📊 `docs/AUTOMATION_OPPORTUNITIES_ANALYSIS.md` - Complete analysis with examples
+- 📋 `docs/AUTOMATION_QUICK_SUMMARY.md` - Executive summary and tool prioritization
+
+### 7.1: Trait-Based Generic Decoders (P0 - High Impact)
+
+**Priority**: CRITICAL (eliminates 60-70% code duplication)
+**Time Savings**: 50-60 hours/quarter
+**Current Status**: Design exists (`decoder-generator/examples/trait_based_approach.rs`), not implemented
+
+**Problem**:
+- 37 decoder crates with significant duplication
+- UTXO family: 8 chains × 170 LOC each = ~1,360 LOC (80% duplicated)
+- EVM family: 12 chains, nearly identical implementations
+
+**Solution**:
+
+```rust
+// Current (167 LOC per chain):
+decoder-bitcoin/      167 LOC - concrete implementation
+decoder-litecoin/     167 LOC - wraps Bitcoin
+decoder-dogecoin/     194 LOC - wraps Bitcoin
+
+// Target (trait-based, 10 LOC per chain):
+decoder-bitcoin/      300 LOC - Generic UtxoDecoder<C>
+decoder-litecoin/      10 LOC - Just config
+decoder-dogecoin/      12 LOC - Just config
+
+// Reduction: 1,360 LOC → ~350 LOC (74% reduction)
+```
+
+**Tasks**:
+- [ ] **7.1.1**: Refactor Bitcoin to `UtxoDecoder<C: UtxoChainConfig>` (1 week)
+  - [ ] Extract configuration parameters (chain ID, SegWit, hash algorithm)
+  - [ ] Implement generic decoder using config
+  - [ ] Validate with existing Bitcoin tests
+- [ ] **7.1.2**: Migrate UTXO family to config-only (3 days)
+  - [ ] Litecoin, Dogecoin, Bitcoin Cash, Dash, Zcash, Decred, Komodo, Horizen
+  - [ ] Each decoder: 170 LOC → 10 LOC
+- [ ] **7.1.3**: Refactor Ethereum to `EvmDecoder<C: EvmChainConfig>` (1 week)
+- [ ] **7.1.4**: Create `decoder-families` crate (3 days)
+  - [ ] `decoder-families/utxo` - Generic UTXO decoder
+  - [ ] `decoder-families/evm` - Generic EVM decoder
+  - [ ] `decoder-families/account` - Generic account-based decoder
+
+**Deliverables**:
+- Generic trait-based decoders for UTXO and EVM families
+- 74% LOC reduction for UTXO family
+- Pattern established for other chain families
+- Comprehensive tests ensuring no regressions
+
+### 7.2: Chain Registry Code Generation (P0 - High Value)
+
+**Priority**: CRITICAL (unifies registry handling across all chains)
+**Time Savings**: 5-7 hours/quarter
+**Current Status**: EVM has build.rs, Cosmos/OP Stack don't
+
+**Problem**:
+- EVM: Has `build.rs` + registry generation ✅
+- Cosmos: No `build.rs`, manual JSON handling ❌
+- OP Stack: No `build.rs`, manual JSON handling ❌
+- No unified tool for registry code generation
+
+**Solution**: Create `chain-registry-codegen` unified tool
+
+```bash
+# Generate Rust code from vendored registries
+chain-registry-codegen \
+    --registry cosmos-chain-registry \
+    --input vendored/chain-registry \
+    --output src/generated/chains.rs \
+    --format borsh \
+    --verify
+```
+
+**Tasks**:
+- [ ] **7.2.1**: Extract and enhance `registry-generator` (3 days)
+  - [ ] Refactor from EVM-specific to generic
+  - [ ] Support multiple registry formats (Chainlist, Cosmos, OP Stack)
+  - [ ] Generate type-safe Rust structs from JSON
+  - [ ] Embed data at compile time (airgapped operation)
+- [ ] **7.2.2**: Add Cosmos registry support (2 days)
+  - [ ] Create `decoder-cosmos/build.rs`
+  - [ ] Generate chain configs from vendored registry
+  - [ ] Validate against existing manual configs
+- [ ] **7.2.3**: Add OP Stack registry support (2 days)
+  - [ ] Create `decoder-optimism/build.rs`
+  - [ ] Generate superchain configs
+  - [ ] Support deposit transaction detection
+- [ ] **7.2.4**: Publish as standalone crate (1 day)
+  - [ ] `chain-registry-codegen` crate
+  - [ ] CLI tool for external projects
+  - [ ] Documentation and examples
+
+**Deliverables**:
+- Unified `chain-registry-codegen` tool
+- All chain families have build.rs integration
+- Standalone published crate for ecosystem
+
+### 7.3: Test Infrastructure Automation (P1 - Quality)
+
+**Priority**: HIGH (eliminates 200+ LOC test boilerplate per decoder)
+**Time Savings**: 12-15 hours/quarter
+**Current Status**: 7,400+ lines of duplicated test code
+
+**Problem**:
+- Every decoder has ~200 LOC of identical test boilerplate
+- Property tests duplicated across 35+ decoders
+- Integration test patterns repeated manually
+
+**Solution**: Proc macros for test generation
+
+```rust
+use decoder_test_macros::*;
+
+#[derive(DecoderTests)]
+#[decoder(
+    chain_id = 2,
+    chain_name = "Litecoin",
+    family = "Utxo",
+    fixtures = "tests/fixtures"
+)]
+struct LitecoinDecoder;
+
+// Expands to ~200 LOC:
+// - test_chain_identity()
+// - test_canonical_serialization()
+// - prop_decoder_never_panics()
+// - prop_canonical_is_deterministic()
+// - integration tests for all fixtures
+```
+
+**Tasks**:
+- [ ] **7.3.1**: Create `decoder-test-macros` crate (1 week)
+  - [ ] `#[derive(DecoderTests)]` proc macro
+  - [ ] Generate standard test suite
+  - [ ] Property-based test generation (proptest)
+  - [ ] Fixture-based integration tests
+- [ ] **7.3.2**: Migrate existing decoders (1 week)
+  - [ ] Bitcoin, Ethereum, Solana (reference implementations)
+  - [ ] 10+ additional decoders
+  - [ ] Validate all tests still pass
+- [ ] **7.3.3**: Test fixture manager (3 days)
+  - [ ] Automated fixture fetching from sources
+  - [ ] Standardized fixture format
+  - [ ] Verification with decoder
+
+**Deliverables**:
+- `decoder-test-macros` published crate
+- 200+ LOC reduction per decoder
+- Standardized test quality across all decoders
+
+### 7.4: Dependency Vendoring Automation (P1 - Supply Chain)
+
+**Priority**: HIGH (reduces manual vendoring steps)
+**Time Savings**: 3-4 hours/quarter
+**Current Status**: Manual 5-10 step process
+
+**Problem**:
+- Vendoring dependencies requires 5-10 manual steps
+- Easy to forget cleanup (prune unnecessary files)
+- No audit trail tracking
+- Error-prone for updates
+
+**Solution**: `git-subtree-vendor` wrapper tool
+
+```bash
+# Add vendored dependency
+git-subtree-vendor add \
+    --name chainlist \
+    --prefix crates/decoder-evm/vendored/chainlist \
+    --repo https://github.com/ethereum-lists/chains.git \
+    --tag master \
+    --prune '.ci,tools,website' \
+    --verify
+
+# Update all vendored deps
+git-subtree-vendor update-all --verify --commit
+```
+
+**Tasks**:
+- [ ] **7.4.1**: Create `git-subtree-vendor` tool (3 days)
+  - [ ] Wraps git subtree with safety checks
+  - [ ] Auto-prunes unnecessary files
+  - [ ] Verifies integrity after operations
+  - [ ] Tracks vendored deps in manifest
+- [ ] **7.4.2**: Add update automation (2 days)
+  - [ ] `update-all` command
+  - [ ] Integrity verification
+  - [ ] Auto-commit with audit trail
+- [ ] **7.4.3**: Documentation and migration (1 day)
+  - [ ] Update vendoring documentation
+  - [ ] Migrate existing vendored deps to manifest
+
+**Deliverables**:
+- `git-subtree-vendor` standalone tool
+- One-command vendoring and updates
+- Audit trail for all vendored dependencies
+
+### 7.5: Development Tooling Suite (P2 - Nice to Have)
+
+**Priority**: MEDIUM (developer quality of life)
+**Time Savings**: 10-20 hours/quarter (combined)
+
+**Tools**:
+
+#### 7.5.1: `blockchain-decoder-scaffold` (Enhanced)
+- Enhance existing `decoder-generator` tool
+- Production-ready decoder scaffolding
+- Template-based generation with tests
+
+#### 7.5.2: `verus-derive` (Formal Verification)
+- Derive macros for common Verus annotations
+- `#[derive(VerusDeterministic)]`
+- `#[derive(VerusPanicFree)]`
+- Integration with Verus verifier
+
+#### 7.5.3: `minimal-tcb-checker` (Security)
+- Automated TCB analysis
+- LOC counting (excluding tests/comments)
+- Dependency tree depth analysis
+- CI/CD integration
+
+#### 7.5.4: `blockchain-test-fixtures` (Testing)
+- Automated fixture fetching
+- Standardized fixture format
+- Live chain data extraction (dev-dep only)
+
+**Tasks**:
+- [ ] **7.5.1**: Enhance decoder-scaffold (1 week)
+- [ ] **7.5.2**: Implement verus-derive (2 weeks)
+- [ ] **7.5.3**: Create minimal-tcb-checker (3 days)
+- [ ] **7.5.4**: Build test-fixtures manager (1 week)
+
+### Success Criteria
+
+**Phase 7.1 (Trait-based decoders)**:
+- ✅ Bitcoin refactored to generic `UtxoDecoder<C>`
+- ✅ 8 UTXO decoders migrated to config-only (74% LOC reduction)
+- ✅ All existing tests pass
+- ✅ Pattern documented for other families
+
+**Phase 7.2 (Registry codegen)**:
+- ✅ Unified `chain-registry-codegen` tool
+- ✅ All chain families have build.rs
+- ✅ Published as standalone crate
+
+**Phase 7.3 (Test automation)**:
+- ✅ `decoder-test-macros` crate published
+- ✅ 10+ decoders migrated to generated tests
+- ✅ 200+ LOC reduction per decoder
+
+**Phase 7.4 (Vendoring automation)**:
+- ✅ `git-subtree-vendor` tool created
+- ✅ All vendored deps tracked in manifest
+- ✅ One-command updates working
+
+**Overall Impact**:
+- 🎯 **50-70 developer hours saved per quarter**
+- 🎯 **60-70% reduction in code duplication**
+- 🎯 **Consistent quality across all decoders**
+- 🎯 **4-8 reusable open-source tools published**
+
+---
+
 ## Post-1.0: Advanced Features
 
 ### Research Directions
@@ -2354,10 +2631,10 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-11-13
-**Current Phase**: Phase 3.5 Complete ✅ (Cosmos SDK Decoder)
-**Status**: Cosmos SDK decoder complete with 228 chains support
-**Branch**: `claude/cosmos-sdk-phase-3.5-011CV5yFdhxiSFEu3Ztnxidm`
+**Last Updated**: 2025-11-15
+**Current Phase**: Phase 3.6a Complete ✅ (ZK Crypto Infrastructure Research)
+**Status**: Tooling automation analysis complete + Phase 7 roadmap defined
+**Branch**: `claude/rust-tooling-exploration-01TNePeATMz3nEb5aHopNzMD`
 
 **Completed Milestones**:
   - ✅ Phase 2.1: Bitcoin decoder (pure Rust, 186 tests)
@@ -2367,26 +2644,28 @@ See `CONTRIBUTING.md` for:
   - ✅ Phase 2.5: Common crates extraction (decoder-encodings, decoder-test-utils)
   - ✅ Phase 1.5.1: Chain registry vendoring (cosmos + superchain, 14.5MB)
   - ✅ Phase 1.5.1b: Borsh transformation (14.5MB → 24KB, 99.8% reduction!)
-  - ✅ Phase 3.5: Cosmos SDK decoder (1,856 lines, 228 chains, 31 tests) 🎉 NEW!
+  - ✅ Phase 3.5: Cosmos SDK decoder (1,856 lines, 228 chains, 31 tests)
+  - ✅ Phase 3.6a: ZK Crypto Infrastructure Research (Starknet analysis, crypto vendoring strategy)
+  - ✅ **NEW**: Tooling automation analysis (Phase 7 planning)
   - 🚧 Phase 3.2: OP Stack deposit transactions (90% complete, 1,026 lines)
 
 **Next Milestones**:
-  - **Phase 3.2: Complete OP Stack implementation (~4 hours)** ⭐ IMMEDIATE NEXT PRIORITY
+  - **Phase 7.1: Trait-based generic decoders** ⭐ HIGH IMPACT (50-60h/quarter savings)
+    - Refactor Bitcoin to `UtxoDecoder<C: UtxoChainConfig>`
+    - Migrate 8 UTXO chains to config-only (74% LOC reduction)
+    - See Phase 7 roadmap for full details
+  - **Phase 7.2: Chain registry code generation** ⭐ HIGH VALUE
+    - Unified `chain-registry-codegen` tool
+    - Add build.rs for Cosmos and OP Stack
+    - Published as standalone crate
+  - **Phase 3.2: Complete OP Stack implementation (~4 hours)**
     - Status: 90% complete (core implementation done, needs trait fixes)
     - Fix EthereumTransaction trait implementations
     - Implement Canonicalizer for OptimismTransaction
     - Add integration tests with real deposit transactions
     - Connect to superchain registry (already vendored)
-  - **Phase 3.5 Enhancement: IBC & CosmWasm support** 🔧 FOLLOW-UP (Optional)
-    - Enable IBC feature flags in cosmos-sdk-proto
-    - Enable CosmWasm feature flags
-    - Add mainnet integration tests
-    - Estimated: 1-2 days
+  - Phase 3.6a Week 2: ZK crypto infrastructure implementation - 1 week
   - Phase 3.3: Arbitrum Orbit family decoder (retryable tickets) - 1-2 days
   - Phase 1.5.2: More property tests (need 34 more, currently 16/50) - ongoing
-  - Phase 3.4: SVM family decoder - 1 week
-  - Phase 3.6: Move VM family decoder - 1 week
-  - Phase 3.7: Bitcoin forks family decoder - 3 days
-  - Phase 3.8: Privacy chains family decoder (Zcash, Aleo, Monero) - 2 weeks
-  - Phase 3.9: Universal decoder integration - 1 week
+  - Phase 7.3-7.5: Additional developer tooling (test macros, vendoring automation)
   - v0.2.0 (Phase 3 complete: 620+ chains + privacy chains supported) - 2-3 months
