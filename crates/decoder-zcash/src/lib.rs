@@ -60,6 +60,7 @@ pub mod parsing;
 pub mod sapling;
 pub mod transparent;
 pub mod types;
+pub mod viewing_key;
 
 use parsing::*;
 pub use types::ZcashTransaction;

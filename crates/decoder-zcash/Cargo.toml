@@ -20,11 +20,11 @@ sha2 = { workspace = true }
 blake2b_simd = "1.0"
 # hex - Use vendored version via: use universal_decoder_core::hex;
 
-# Cryptographic dependencies (to be vendored via git subtree)
-# jubjub - Sapling elliptic curve
-# pasta_curves - Orchard curves (Pallas/Vallas)
-# bls12_381 - Sapling Groth16 pairing
-# (Initially using crates.io, will vendor in Phase 3.8 Week 11+)
+# Cryptographic dependencies (to be vendored via git subtree in Phase 3.8)
+# Phase 3: Viewing key decryption support
+jubjub = "0.10.0"           # Sapling elliptic curve (ECDH key agreement)
+chacha20poly1305 = "0.10"   # ChaCha20-Poly1305 AEAD (note decryption)
+# Future: pasta_curves, bls12_381 for Orchard and proof verification
 
 [dev-dependencies]
 # Blockchain libraries for test validation ONLY
