@@ -277,9 +277,24 @@ autoDetectBtn.addEventListener('click', async () => {
 
 // Display decode result
 function displayResult(result) {
+    console.log('displayResult called with:', result);
+    console.log('Result keys:', Object.keys(result));
+    console.log('result.json:', result.json);
+    console.log('result.borsh_fields:', result.borsh_fields);
+    console.log('outputJson element:', outputJson);
+    console.log('outputCanonical element:', outputCanonical);
+
     // JSON output (pretty-printed)
     try {
-        outputJson.value = JSON.stringify(result.json, null, 2);
+        const jsonData = result.json;
+        console.log('JSON data type:', typeof jsonData);
+        console.log('JSON data:', jsonData);
+
+        if (jsonData === null || jsonData === undefined) {
+            outputJson.value = 'Error: JSON data is null or undefined';
+        } else {
+            outputJson.value = JSON.stringify(jsonData, null, 2);
+        }
     } catch (e) {
         outputJson.value = 'Error displaying JSON: ' + e.message;
         console.error('JSON display error:', e);
@@ -287,9 +302,18 @@ function displayResult(result) {
 
     // Canonical Borsh output - INVERTED: Show fields first, then raw payload
     try {
-        console.log('Borsh fields:', result.borsh_fields);
+        const borshFields = result.borsh_fields;
+        console.log('Borsh fields type:', typeof borshFields);
+        console.log('Borsh fields:', borshFields);
+
         let borshOutput = '// Borsh Fields (Structured Representation)\n';
-        borshOutput += JSON.stringify(result.borsh_fields, null, 2);
+
+        if (borshFields === null || borshFields === undefined) {
+            borshOutput += 'Error: Borsh fields are null or undefined\n';
+        } else {
+            borshOutput += JSON.stringify(borshFields, null, 2);
+        }
+
         borshOutput += '\n\n';
         borshOutput += '// Raw Borsh Payload (Hex)\n';
         borshOutput += formatHexWithLineBreaks(result.canonical_hex);
