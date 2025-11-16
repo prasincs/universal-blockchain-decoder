@@ -1,5 +1,6 @@
 // Chain Ecosystem Treemap Visualization
-// Shows 2200+ chains hierarchically with filters and drill-down
+// Shows 500+ mainnet chains hierarchically with filters and drill-down
+// (2200+ total including testnets)
 
 // Chain data structure
 // In production, this would be fetched from live APIs (DeFiLlama, chain-specific endpoints)

@@ -12,7 +12,6 @@ const NODES = [
     { id: 'zcash', name: 'Zcash', family: 'privacy', size: 16, mainnet: true, unique: true },
     { id: 'monero', name: 'Monero', family: 'privacy', size: 18, mainnet: true, unique: true },
     { id: 'dash', name: 'Dash', family: 'utxo', size: 14, mainnet: true, unique: true },
-    { id: 'bitcoin-testnet', name: 'Bitcoin Testnet', family: 'utxo', size: 8, mainnet: false, unique: false },
 
     // Account Family - Ethereum and major L1s
     { id: 'ethereum', name: 'Ethereum', family: 'account', size: 35, mainnet: true, unique: true, evm: true },
@@ -35,7 +34,6 @@ const NODES = [
 
     // Instruction Family
     { id: 'solana', name: 'Solana', family: 'instruction', size: 32, mainnet: true, unique: true },
-    { id: 'solana-testnet', name: 'Solana Testnet', family: 'instruction', size: 10, mainnet: false, unique: false },
 
     // Cosmos Ecosystem
     { id: 'cosmos', name: 'Cosmos Hub', family: 'account', size: 22, mainnet: true, unique: true, cosmos: true },
@@ -52,11 +50,6 @@ const NODES = [
     { id: 'aurora', name: 'Aurora', family: 'account', size: 13, mainnet: true, unique: false, evm: true },
     { id: 'gnosis', name: 'Gnosis Chain', family: 'account', size: 14, mainnet: true, unique: false, evm: true },
     { id: 'evmos', name: 'Evmos', family: 'account', size: 13, mainnet: true, unique: false, evm: true, cosmos: true },
-
-    // Testnets
-    { id: 'sepolia', name: 'Sepolia', family: 'account', size: 10, mainnet: false, unique: false, evm: true },
-    { id: 'goerli', name: 'Goerli', family: 'account', size: 9, mainnet: false, unique: false, evm: true },
-    { id: 'mumbai', name: 'Mumbai', family: 'account', size: 8, mainnet: false, unique: false, evm: true },
 
     // Other notable chains
     { id: 'polkadot', name: 'Polkadot', family: 'account', size: 20, mainnet: true, unique: true },
@@ -78,13 +71,8 @@ const EDGES = [
     { source: 'bitcoin', target: 'litecoin', type: 'fork', strength: 0.25 },
     { source: 'bitcoin', target: 'dogecoin', type: 'fork', strength: 0.2 },
     { source: 'bitcoin', target: 'dash', type: 'fork', strength: 0.2 },
-    { source: 'bitcoin', target: 'bitcoin-testnet', type: 'fork', strength: 0.15 },
     { source: 'ethereum', target: 'ethereum-classic', type: 'fork', strength: 0.3 },
-    { source: 'ethereum', target: 'sepolia', type: 'fork', strength: 0.15 },
-    { source: 'ethereum', target: 'goerli', type: 'fork', strength: 0.15 },
-    { source: 'polygon', target: 'mumbai', type: 'fork', strength: 0.15 },
     { source: 'polkadot', target: 'kusama', type: 'fork', strength: 0.25 },
-    { source: 'solana', target: 'solana-testnet', type: 'fork', strength: 0.15 },
 
     // Shared decoder relationships (blue, medium) - EVM chains share decoder
     { source: 'ethereum', target: 'bsc', type: 'decoder', strength: 0.2 },
