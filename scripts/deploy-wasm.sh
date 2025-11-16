@@ -10,24 +10,24 @@ set -e
 #   ./scripts/deploy-wasm.sh [platform]
 #
 # Platforms:
-#   netlify   - Deploy to Netlify (preview or production)
-#   vercel    - Deploy to Vercel (preview or production)
-#   github    - Deploy to GitHub Pages (production only)
-#   local     - Start local server for testing
+#   netlify   - Deploy to Netlify (preview or production) [ACTIVE]
+#   github    - Deploy to GitHub Pages (production only) [ACTIVE]
+#   local     - Start local server for testing [ACTIVE]
+#   vercel    - Deploy to Vercel (preview or production) [FUTURE - not yet enabled]
 #
 # Required Environment Variables:
 #
-# For Netlify:
+# For Netlify (Active):
 #   NETLIFY_AUTH_TOKEN - Your Netlify personal access token
 #   NETLIFY_SITE_ID - Your Netlify site ID (optional for new sites)
 #
-# For Vercel:
+# For GitHub Pages (Active):
+#   (Uses git credentials, no additional env vars needed)
+#
+# For Vercel (Future - uncomment in code to enable):
 #   VERCEL_TOKEN - Your Vercel personal access token
 #   VERCEL_ORG_ID - Your Vercel organization/team ID
 #   VERCEL_PROJECT_ID - Your Vercel project ID
-#
-# For GitHub Pages:
-#   (Uses git credentials, no additional env vars needed)
 
 # Colors for output
 RED='\033[0;31m'
@@ -223,9 +223,10 @@ case $PLATFORM in
     netlify)
         deploy_netlify
         ;;
-    vercel)
-        deploy_vercel
-        ;;
+    # vercel)
+    #     # FUTURE: Uncomment when Vercel support is needed
+    #     deploy_vercel
+    #     ;;
     github)
         deploy_github
         ;;
@@ -233,7 +234,7 @@ case $PLATFORM in
         deploy_local
         ;;
     *)
-        error "Unknown platform: $PLATFORM. Use: netlify, vercel, github, or local"
+        error "Unknown platform: $PLATFORM. Use: netlify, github, or local (vercel not yet enabled)"
         ;;
 esac
 
