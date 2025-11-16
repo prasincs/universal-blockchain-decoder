@@ -204,6 +204,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupControls() {
+    // Ecosystem navigator
+    document.getElementById('ecosystem-select').addEventListener('change', (e) => {
+        const target = e.target.value;
+        if (!target) {
+            // Navigate to root
+            currentView = CHAIN_DATA;
+            renderTreemap();
+            return;
+        }
+
+        // Find the target node in the hierarchy
+        const targetNode = findNodeByIdentifier(CHAIN_DATA, target);
+        if (targetNode) {
+            currentView = targetNode;
+            renderTreemap();
+        }
+    });
+
     // Metric selector
     document.getElementById('metric-select').addEventListener('change', (e) => {
         currentMetric = e.target.value;
@@ -221,8 +239,61 @@ function setupControls() {
     // Breadcrumb root
     document.getElementById('breadcrumb-root').addEventListener('click', () => {
         currentView = CHAIN_DATA;
+        document.getElementById('ecosystem-select').value = '';
         renderTreemap();
     });
+}
+
+// Helper function to find a node by its identifier
+function findNodeByIdentifier(node, identifier) {
+    // Check by family
+    if (node.family === identifier) {
+        return node;
+    }
+
+    // Check by ecosystem type
+    if (identifier === 'evm' && node.evmChains) {
+        return node;
+    }
+    if (identifier === 'cosmos' && node.cosmosChains) {
+        return node;
+    }
+    if (identifier === 'svm' && node.svmChains) {
+        return node;
+    }
+    if (identifier === 'other-account' && node.name === 'Other Account-Based (~10 chains)') {
+        return node;
+    }
+
+    // Check by evmSubtype
+    if (node.evmSubtype === identifier) {
+        return node;
+    }
+    if (identifier === 'opstack' && node.evmSubtype === 'opstack') {
+        return node;
+    }
+    if (identifier === 'arbitrum' && node.evmSubtype === 'arbitrum') {
+        return node;
+    }
+    if (identifier === 'polygon' && node.evmSubtype === 'polygon') {
+        return node;
+    }
+    if (identifier === 'zkevm' && node.evmSubtype === 'zkevm') {
+        return node;
+    }
+    if (identifier === 'evm-standard' && node.evmSubtype === 'standard') {
+        return node;
+    }
+
+    // Recursively search children
+    if (node.children) {
+        for (const child of node.children) {
+            const found = findNodeByIdentifier(child, identifier);
+            if (found) return found;
+        }
+    }
+
+    return null;
 }
 
 function getMetricValue(node, metric) {
@@ -330,6 +401,7 @@ function renderTreemap() {
             event.stopPropagation();
             if (d.data.children && d.data.children.length > 0) {
                 currentView = d.data;
+                updateDropdownSelection(d.data);
                 renderTreemap();
             } else {
                 showDetails(d.data);
@@ -506,24 +578,104 @@ function showDetails(node) {
 
 function updateBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
-    const root = document.getElementById('breadcrumb-root');
 
     if (currentView === CHAIN_DATA) {
         breadcrumb.innerHTML = '<a id="breadcrumb-root">All Chains</a>';
         document.getElementById('breadcrumb-root').addEventListener('click', () => {
             currentView = CHAIN_DATA;
+            document.getElementById('ecosystem-select').value = '';
             renderTreemap();
         });
     } else {
-        breadcrumb.innerHTML = `
-            <a id="breadcrumb-root">All Chains</a>
-            <span style="color: #95a5a6;"> / </span>
-            <span style="color: #ecf0f1;">${currentView.name}</span>
-        `;
+        // Build breadcrumb path
+        const path = buildBreadcrumbPath(currentView);
+        let breadcrumbHTML = '<a id="breadcrumb-root">All Chains</a>';
+
+        path.forEach((node, index) => {
+            breadcrumbHTML += ' <span style="color: #95a5a6;">/</span> ';
+            if (index === path.length - 1) {
+                // Current level - not clickable
+                breadcrumbHTML += `<span style="color: #ecf0f1; font-weight: 600;">${node.name}</span>`;
+            } else {
+                // Parent level - clickable
+                breadcrumbHTML += `<a class="breadcrumb-link" data-index="${index}" style="color: #3498db; cursor: pointer;">${node.name}</a>`;
+            }
+        });
+
+        breadcrumb.innerHTML = breadcrumbHTML;
+
+        // Add click handlers
         document.getElementById('breadcrumb-root').addEventListener('click', () => {
             currentView = CHAIN_DATA;
+            document.getElementById('ecosystem-select').value = '';
             renderTreemap();
         });
+
+        document.querySelectorAll('.breadcrumb-link').forEach(link => {
+            link.addEventListener('click', () => {
+                const index = parseInt(link.getAttribute('data-index'));
+                currentView = path[index];
+                updateDropdownSelection(currentView);
+                renderTreemap();
+            });
+        });
+    }
+}
+
+// Build breadcrumb path from root to current node
+function buildBreadcrumbPath(targetNode) {
+    const path = [];
+
+    function findPath(node, target, currentPath) {
+        if (node === target) {
+            path.push(...currentPath, node);
+            return true;
+        }
+
+        if (node.children) {
+            for (const child of node.children) {
+                if (findPath(child, target, [...currentPath, node])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    findPath(CHAIN_DATA, targetNode, []);
+    return path.slice(1); // Remove root from path
+}
+
+// Update dropdown to match current view
+function updateDropdownSelection(node) {
+    const select = document.getElementById('ecosystem-select');
+
+    // Try to find matching option
+    if (node === CHAIN_DATA) {
+        select.value = '';
+        return;
+    }
+
+    // Check by family
+    if (node.family && !node.children) {
+        select.value = node.family;
+        return;
+    }
+
+    // Check by ecosystem markers
+    if (node.evmChains) {
+        select.value = 'evm';
+    } else if (node.cosmosChains) {
+        select.value = 'cosmos';
+    } else if (node.svmChains) {
+        select.value = 'svm';
+    } else if (node.evmSubtype) {
+        select.value = node.evmSubtype;
+    } else if (node.name === 'Other Account-Based (~10 chains)') {
+        select.value = 'other-account';
+    } else if (node.family) {
+        select.value = node.family;
     }
 }
 

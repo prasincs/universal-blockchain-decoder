@@ -305,6 +305,34 @@
         <div class="treemap-container">
             <div class="controls">
                 <div class="filter-group">
+                    <label for="ecosystem-select">Navigate to:</label>
+                    <select id="ecosystem-select">
+                        <optgroup label="All Chains">
+                            <option value="">All Chains (1575 mainnets)</option>
+                        </optgroup>
+                        <optgroup label="Chain Families">
+                            <option value="utxo">UTXO Family (9 mainnets)</option>
+                            <option value="account">Account Family (1564 mainnets)</option>
+                            <option value="instruction">Instruction Family</option>
+                            <option value="privacy">Privacy Family (2 mainnets)</option>
+                        </optgroup>
+                        <optgroup label="EVM Ecosystems (1453 mainnets)">
+                            <option value="evm">All EVM Chains</option>
+                            <option value="opstack">OP Stack (~50 chains)</option>
+                            <option value="arbitrum">Arbitrum Ecosystem (~30 chains)</option>
+                            <option value="polygon">Polygon Ecosystem (~20 chains)</option>
+                            <option value="zkevm">zkEVM L2s (~12 chains)</option>
+                            <option value="evm-standard">L1s & Other L2s (~1341 chains)</option>
+                        </optgroup>
+                        <optgroup label="Other Account Ecosystems">
+                            <option value="cosmos">Cosmos SDK (~100 chains)</option>
+                            <option value="svm">SVM (Solana)</option>
+                            <option value="other-account">Other Account-Based (~10 chains)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <label for="metric-select">Size by:</label>
                     <select id="metric-select">
                         <option value="chain_count">Chain Count</option>
