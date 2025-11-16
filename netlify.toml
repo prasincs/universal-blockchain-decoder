@@ -10,13 +10,16 @@
   base = "crates/universal-decoder-wasm"
 
   # Build command
-  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
+  command = "./build.sh"
 
   # Output directory (what gets deployed)
   publish = "www"
 
   # Environment variables for build
   [build.environment]
+    # Disable submodule initialization (vendored deps have broken .gitmodules)
+    NETLIFY_USE_SUBMODULES = "false"
+
     # Rust version (Netlify uses rustup)
     RUST_VERSION = "1.75.0"  # Or "stable"
 
@@ -25,17 +28,17 @@
 
 # Production deploy settings (main branch)
 [context.production]
-  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
+  command = "./build.sh"
   publish = "www"
 
 # Deploy previews (all other branches)
 [context.deploy-preview]
-  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
+  command = "./build.sh"
   publish = "www"
 
 # Branch-specific settings (if needed)
 [context.branch-deploy]
-  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
+  command = "./build.sh"
   publish = "www"
 
 # Headers for proper WASM serving
