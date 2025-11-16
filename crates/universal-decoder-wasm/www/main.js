@@ -61,6 +61,15 @@ async function initWasm() {
         // Dynamically populate example dropdown (scoped to first chain)
         const firstChain = chainSelect.value;
         populateExampleDropdown(firstChain);
+
+        // Restore saved input for the initially selected chain
+        if (firstChain) {
+            const savedInput = localStorage.getItem(`decoder-input-${firstChain}`);
+            if (savedInput) {
+                console.log(`Restoring saved input for initial chain ${firstChain}`);
+                inputEditor.value = savedInput;
+            }
+        }
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
         showError('Failed to initialize decoder. Please refresh the page.');
@@ -165,22 +174,36 @@ tabBtns.forEach(btn => {
     });
 });
 
-// Chain selection change - update examples and clear input
+// Chain selection change - update examples and restore saved input
 chainSelect.addEventListener('change', (e) => {
     const selectedChain = e.target.value;
 
     // Update examples dropdown to show only examples for this chain
     populateExampleDropdown(selectedChain);
 
-    // Clear the input editor when changing chains
-    if (inputEditor.value.trim()) {
-        console.log(`Chain changed to ${selectedChain}, clearing old input`);
+    // Restore saved input for this chain from localStorage
+    const savedInput = localStorage.getItem(`decoder-input-${selectedChain}`);
+    if (savedInput) {
+        console.log(`Restoring saved input for chain ${selectedChain}`);
+        inputEditor.value = savedInput;
+    } else {
+        // Clear input if no saved value for this chain
+        console.log(`No saved input for chain ${selectedChain}, clearing`);
         inputEditor.value = '';
+    }
 
-        // Clear output too
-        outputJson.value = '';
-        outputCanonical.value = '';
-        outputMetadata.style.display = 'none';
+    // Clear output when changing chains
+    outputJson.value = '';
+    outputCanonical.value = '';
+    outputMetadata.style.display = 'none';
+});
+
+// Save input to localStorage when it changes
+inputEditor.addEventListener('input', () => {
+    const currentChain = chainSelect.value;
+    if (currentChain) {
+        localStorage.setItem(`decoder-input-${currentChain}`, inputEditor.value);
+        console.log(`Saved input to localStorage for chain ${currentChain}`);
     }
 });
 
@@ -197,6 +220,12 @@ exampleSelect.addEventListener('change', (e) => {
 
     // Only populate the input text box, don't auto-select chain
     inputEditor.value = example.hex;
+
+    // Save to localStorage for current chain
+    const currentChain = chainSelect.value;
+    if (currentChain) {
+        localStorage.setItem(`decoder-input-${currentChain}`, example.hex);
+    }
 
     console.log(`Loaded example: ${example.description} (for ${example.chain})`);
 });
@@ -449,6 +478,22 @@ function showError(message) {
         errorToast.classList.remove('show');
     }, 5000);
 }
+
+// Helper function to clear saved inputs (available in console)
+window.clearDecoderInputs = function(chain = null) {
+    if (chain) {
+        localStorage.removeItem(`decoder-input-${chain}`);
+        console.log(`Cleared saved input for chain: ${chain}`);
+    } else {
+        // Clear all decoder inputs
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('decoder-input-')) {
+                localStorage.removeItem(key);
+            }
+        });
+        console.log('Cleared all saved decoder inputs');
+    }
+};
 
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
