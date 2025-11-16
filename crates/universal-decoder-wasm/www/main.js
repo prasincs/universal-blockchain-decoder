@@ -1,48 +1,113 @@
 // Universal Blockchain Decoder - WASM Demo
 // Main JavaScript module for UI interactions and WASM integration
 
-import init, { decode_transaction, supported_chains, auto_detect_chain } from './pkg/universal_decoder_wasm.js';
-
 // Example transactions for quick testing
 import { EXAMPLES } from './examples.js';
 
-// Loading quotes and code snippets
-import { getRandomLoadingMessage } from './loading-quotes.js';
-
 // Global state
 let wasmModule = null;
+let decode_transaction = null;
+let supported_chains = null;
+let get_chains_metadata = null;
+let auto_detect_chain = null;
 
 // Initialize WASM module on page load
 async function initWasm() {
     try {
-        // Disable buttons during initialization
-        decodeBtn.disabled = true;
-        autoDetectBtn.disabled = true;
+        // Store and temporarily remove window.ethereum to avoid conflicts with MetaMask
+        const originalEthereum = window.ethereum;
+        const ethereumDescriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
 
-        // Show random loading message
-        const loadingMsg = getRandomLoadingMessage();
-        showLoadingMessage(loadingMsg);
+        // Temporarily make ethereum configurable if it exists
+        if (ethereumDescriptor && !ethereumDescriptor.configurable) {
+            try {
+                delete window.ethereum;
+            } catch (e) {
+                console.warn('Could not delete window.ethereum, trying alternative approach');
+            }
+        }
 
-        wasmModule = await init();
+        // Dynamic import to avoid conflicts
+        wasmModule = await import('./pkg/universal_decoder_wasm.js');
+
+        // Restore window.ethereum
+        if (originalEthereum) {
+            try {
+                Object.defineProperty(window, 'ethereum', {
+                    value: originalEthereum,
+                    writable: ethereumDescriptor?.writable ?? true,
+                    configurable: ethereumDescriptor?.configurable ?? true,
+                    enumerable: ethereumDescriptor?.enumerable ?? true
+                });
+            } catch (e) {
+                window.ethereum = originalEthereum;
+            }
+        }
+
+        // Initialize WASM
+        await wasmModule.default();
+
+        // Store functions globally
+        decode_transaction = wasmModule.decode_transaction;
+        supported_chains = wasmModule.supported_chains;
+        get_chains_metadata = wasmModule.get_chains_metadata;
+        auto_detect_chain = wasmModule.auto_detect_chain;
+
         console.log('✅ WASM module loaded successfully');
-        const chains = supported_chains();
-        console.log('Supported chains:', chains);
 
-        // Hide loading overlay
-        hideLoadingMessage();
+        // Dynamically populate chain dropdown
+        populateChainDropdown();
 
-        // Enable buttons after successful initialization
-        decodeBtn.disabled = false;
-        autoDetectBtn.disabled = false;
-        decodeBtn.textContent = 'Decode Transaction';
+        // Dynamically populate example dropdown
+        populateExampleDropdown();
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
-        hideLoadingMessage();
         showError('Failed to initialize decoder. Please refresh the page.');
-        decodeBtn.textContent = 'Failed to Load';
-        decodeBtn.disabled = true;
-        autoDetectBtn.disabled = true;
     }
+}
+
+// Populate chain dropdown dynamically from WASM
+function populateChainDropdown() {
+    try {
+        const chainsMetadata = get_chains_metadata();
+        const chainSelect = document.getElementById('chain-select');
+
+        // Clear existing options
+        chainSelect.innerHTML = '';
+
+        // Add chains from WASM
+        chainsMetadata.forEach(chain => {
+            const option = document.createElement('option');
+            option.value = chain.id;
+            option.textContent = `${chain.name} (${chain.family})`;
+            chainSelect.appendChild(option);
+        });
+
+        console.log(`Populated ${chainsMetadata.length} chains in dropdown`);
+    } catch (error) {
+        console.error('Failed to populate chain dropdown:', error);
+    }
+}
+
+// Populate example dropdown dynamically from examples.js
+function populateExampleDropdown() {
+    const exampleSelect = document.getElementById('example-select');
+
+    // Clear existing options (except placeholder)
+    exampleSelect.innerHTML = '<option value="">-- Select Example --</option>';
+
+    // Add examples
+    Object.entries(EXAMPLES).forEach(([key, example]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = example.description;
+        if (example.note) {
+            option.title = example.note;
+        }
+        exampleSelect.appendChild(option);
+    });
+
+    console.log(`Populated ${Object.keys(EXAMPLES).length} examples in dropdown`);
 }
 
 // UI Elements
@@ -163,10 +228,25 @@ autoDetectBtn.addEventListener('click', async () => {
 // Display decode result
 function displayResult(result) {
     // JSON output (pretty-printed)
-    outputJson.value = JSON.stringify(result.json, null, 2);
+    try {
+        outputJson.value = JSON.stringify(result.json, null, 2);
+    } catch (e) {
+        outputJson.value = 'Error displaying JSON: ' + e.message;
+        console.error('JSON display error:', e);
+    }
 
-    // Canonical Borsh output
-    outputCanonical.value = formatHexWithLineBreaks(result.canonical_hex);
+    // Canonical Borsh output - INVERTED: Show fields first, then raw payload
+    try {
+        let borshOutput = '// Borsh Fields (Structured Representation)\n';
+        borshOutput += JSON.stringify(result.borsh_fields, null, 2);
+        borshOutput += '\n\n';
+        borshOutput += '// Raw Borsh Payload (Hex)\n';
+        borshOutput += formatHexWithLineBreaks(result.canonical_hex);
+        outputCanonical.value = borshOutput;
+    } catch (e) {
+        outputCanonical.value = 'Error displaying Borsh: ' + e.message;
+        console.error('Borsh display error:', e);
+    }
 
     // Privacy analysis
     displayPrivacyAnalysis(result);
@@ -174,8 +254,15 @@ function displayResult(result) {
     // Metadata
     outputMetadata.style.display = 'block';
     document.getElementById('meta-chain').textContent = `${result.chain_name} (ID: ${result.chain_id})`;
+
+    // Original transaction hash
+    document.getElementById('meta-txid').textContent = result.tx_hash.substring(0, 32) + '...';
+    document.getElementById('meta-txid').title = result.tx_hash;
+
+    // Canonical Borsh hash
     document.getElementById('meta-hash').textContent = result.canonical_hash.substring(0, 32) + '...';
     document.getElementById('meta-hash').title = result.canonical_hash;
+
     document.getElementById('meta-size').textContent = `${result.canonical_size} bytes`;
 
     // Privacy badge
@@ -262,41 +349,7 @@ function showError(message) {
     }, 5000);
 }
 
-// Show loading message overlay
-function showLoadingMessage(msg) {
-    const overlay = document.getElementById('loading-overlay');
-    const content = document.getElementById('loading-content');
-
-    if (msg.type === 'quote') {
-        content.innerHTML = `
-            <div class="loading-quote">
-                <p class="quote-text">"${msg.text}"</p>
-                <p class="quote-author">— ${msg.author}</p>
-            </div>
-            <div class="loading-spinner"></div>
-            <p class="loading-status">Initializing WASM decoder...</p>
-        `;
-    } else {
-        content.innerHTML = `
-            <div class="loading-code">
-                <pre><code>${msg.code}</code></pre>
-                <p class="code-caption">${msg.caption}</p>
-            </div>
-            <div class="loading-spinner"></div>
-            <p class="loading-status">Compiling blockchain magic...</p>
-        `;
-    }
-
-    overlay.style.display = 'flex';
-}
-
-// Hide loading message overlay
-function hideLoadingMessage() {
-    const overlay = document.getElementById('loading-overlay');
-    overlay.style.display = 'none';
-}
-
-// Initialize on page load - MUST await to prevent race condition
-window.addEventListener('DOMContentLoaded', async () => {
-    await initWasm();
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', () => {
+    initWasm();
 });
