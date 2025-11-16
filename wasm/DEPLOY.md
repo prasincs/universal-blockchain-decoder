@@ -1,5 +1,14 @@
 # Universal Blockchain Decoder - WASM Demo Deployment Guide
 
+> **🚀 NEW: Automated Preview Deployments**
+>
+> For **quick feedback** and **preview URLs** using environment variables (Netlify/Vercel), see:
+> **[`docs/WASM_DEPLOYMENT_SETUP.md`](../docs/WASM_DEPLOYMENT_SETUP.md)**
+>
+> This guide covers **manual deployments** for production environments.
+
+---
+
 ## Quick Start - Manual Deployment
 
 This directory contains a fully functional WASM-based blockchain transaction decoder that runs entirely in the browser.

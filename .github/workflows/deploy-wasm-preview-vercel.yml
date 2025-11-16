@@ -1,0 +1,121 @@
+name: Deploy WASM Preview (Vercel)
+
+on:
+  pull_request:
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+      - '.github/workflows/deploy-wasm-preview-vercel.yml'
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+
+# Environment variables from repository secrets
+# Required secrets:
+#   VERCEL_TOKEN - Your Vercel personal access token
+#   VERCEL_ORG_ID - Your Vercel organization/team ID
+#   VERCEL_PROJECT_ID - Your Vercel project ID
+
+jobs:
+  build-and-deploy-preview:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-wasm-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install wasm-opt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binaryen
+
+      - name: Build WASM module
+        run: |
+          cd crates/universal-decoder-wasm
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Show bundle size
+        run: |
+          echo "📦 WASM Bundle Size:"
+          ls -lh crates/universal-decoder-wasm/www/pkg/*.wasm
+          echo ""
+          echo "📊 Total www/ directory size:"
+          du -sh crates/universal-decoder-wasm/www/
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./crates/universal-decoder-wasm/www
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./crates/universal-decoder-wasm/www
+
+      - name: Deploy Preview to Vercel
+        id: vercel
+        run: |
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview-url=$URL" >> $GITHUB_OUTPUT
+          echo "✅ WASM Preview deployed successfully!"
+          echo "🔗 Preview URL: $URL"
+        working-directory: ./crates/universal-decoder-wasm/www
+
+      - name: Comment PR with preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const url = '${{ steps.vercel.outputs.preview-url }}';
+            const body = `### 🚀 WASM Preview Deployed (Vercel)
+
+            **Preview URL:** ${url}
+
+            📦 **Bundle Size:** See workflow logs for details
+            🔧 **Build:** ${{ github.sha }}
+
+            ---
+            *Automatically deployed by Vercel preview workflow*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
