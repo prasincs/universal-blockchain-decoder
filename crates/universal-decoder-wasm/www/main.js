@@ -12,13 +12,26 @@ let wasmModule = null;
 // Initialize WASM module on page load
 async function initWasm() {
     try {
+        // Disable buttons during initialization
+        decodeBtn.disabled = true;
+        autoDetectBtn.disabled = true;
+        decodeBtn.textContent = 'Loading WASM...';
+
         wasmModule = await init();
         console.log('✅ WASM module loaded successfully');
         const chains = supported_chains();
         console.log('Supported chains:', chains);
+
+        // Enable buttons after successful initialization
+        decodeBtn.disabled = false;
+        autoDetectBtn.disabled = false;
+        decodeBtn.textContent = 'Decode Transaction';
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
         showError('Failed to initialize decoder. Please refresh the page.');
+        decodeBtn.textContent = 'Failed to Load';
+        decodeBtn.disabled = true;
+        autoDetectBtn.disabled = true;
     }
 }
 
@@ -239,7 +252,7 @@ function showError(message) {
     }, 5000);
 }
 
-// Initialize on page load
-window.addEventListener('DOMContentLoaded', () => {
-    initWasm();
+// Initialize on page load - MUST await to prevent race condition
+window.addEventListener('DOMContentLoaded', async () => {
+    await initWasm();
 });
