@@ -129,8 +129,8 @@ fn prefix_to_field(prefix: &str) -> Result<FieldElement> {
     let mut buf = [0u8; 32];
     buf[32 - bytes.len()..].copy_from_slice(bytes);
 
-    FieldElement::from_bytes_be(&buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Invalid prefix: {:?}", e)))
+    // from_bytes_be always succeeds for 32-byte arrays
+    Ok(FieldElement::from_bytes_be(&buf))
 }
 
 fn hash_calldata_pedersen(calldata: &[FieldElement]) -> Result<FieldElement> {
@@ -198,14 +198,14 @@ mod tests {
 
     #[test]
     fn test_hash_calldata_empty() {
-        let hash = hash_calldata(&[]).unwrap();
+        let hash = hash_calldata_poseidon(&[]).unwrap();
         assert_eq!(hash, FieldElement::ZERO);
     }
 
     #[test]
     fn test_hash_calldata_single() {
         let calldata = vec![FieldElement::from(123u64)];
-        let hash = hash_calldata(&calldata).unwrap();
+        let hash = hash_calldata_poseidon(&calldata).unwrap();
         assert_ne!(hash, FieldElement::ZERO);
     }
 

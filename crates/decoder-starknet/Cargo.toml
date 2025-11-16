@@ -18,6 +18,7 @@ hex = "0.4"
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
-# Reference implementation for cross-validation
-starknet-core = "0.13"
 decoder-test-utils = { path = "../decoder-test-utils" }
+# Note: starknet-core has dependency issues with size-of crate on some platforms
+# Will add back for cross-validation tests once platform compatibility is resolved
+# starknet-core = "0.13"

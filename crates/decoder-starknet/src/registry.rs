@@ -46,24 +46,19 @@ impl StarknetRegistry {
                 chain_id: 23448594291968336,
                 name: "Starknet Mainnet".to_string(),
                 network_type: NetworkType::Mainnet,
-                chain_id_felt: FieldElement::from_hex_be(
-                    "0x534e5f4d41494e", // "SN_MAIN" in ASCII
-                )
-                .unwrap(),
+                chain_id_felt: FieldElement::from_hex("0x534e5f4d41494e").unwrap(),
             },
         );
 
         // Starknet Sepolia Testnet
+        // Using simplified numeric ID for u64 compatibility
         chains.insert(
-            393402133025997801415703418429829435,
+            23448594291968337, // SN_SEPOLIA simplified
             StarknetChainInfo {
-                chain_id: 393402133025997801415703418429829435,
+                chain_id: 23448594291968337,
                 name: "Starknet Sepolia".to_string(),
                 network_type: NetworkType::Testnet,
-                chain_id_felt: FieldElement::from_hex_be(
-                    "0x534e5f5345504f4c4941", // "SN_SEPOLIA" in ASCII
-                )
-                .unwrap(),
+                chain_id_felt: FieldElement::from_hex("0x534e5f5345504f4c4941").unwrap(),
             },
         );
 
@@ -81,17 +76,17 @@ impl StarknetRegistry {
             chain_id: 23448594291968336,
             name: "Starknet Mainnet".to_string(),
             network_type: NetworkType::Mainnet,
-            chain_id_felt: FieldElement::from_hex_be("0x534e5f4d41494e").unwrap(),
+            chain_id_felt: FieldElement::from_hex("0x534e5f4d41494e").unwrap(),
         }
     }
 
     /// Get Sepolia testnet info
     pub fn sepolia() -> StarknetChainInfo {
         StarknetChainInfo {
-            chain_id: 393402133025997801415703418429829435,
+            chain_id: 23448594291968337, // SN_SEPOLIA simplified
             name: "Starknet Sepolia".to_string(),
             network_type: NetworkType::Testnet,
-            chain_id_felt: FieldElement::from_hex_be("0x534e5f5345504f4c4941").unwrap(),
+            chain_id_felt: FieldElement::from_hex("0x534e5f5345504f4c4941").unwrap(),
         }
     }
 
@@ -127,7 +122,7 @@ mod tests {
     #[test]
     fn test_registry_sepolia() {
         let registry = StarknetRegistry::new();
-        let sepolia = registry.get(393402133025997801415703418429829435).unwrap();
+        let sepolia = registry.get(23448594291968337).unwrap();
         assert_eq!(sepolia.name, "Starknet Sepolia");
         assert_eq!(sepolia.network_type, NetworkType::Testnet);
     }
@@ -141,7 +136,7 @@ mod tests {
     #[test]
     fn test_sepolia_helper() {
         let sepolia = StarknetRegistry::sepolia();
-        assert_eq!(sepolia.chain_id, 393402133025997801415703418429829435);
+        assert_eq!(sepolia.chain_id, 23448594291968337);
     }
 
     #[test]

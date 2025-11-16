@@ -232,8 +232,8 @@ fn read_field_element(cursor: &mut Cursor<&[u8]>) -> Result<FieldElement> {
         DecoderError::invalid_structure(format!("Failed to read field element: {}", e))
     })?;
 
-    FieldElement::from_bytes_be(&buf)
-        .map_err(|e| DecoderError::invalid_structure(format!("Invalid field element: {:?}", e)))
+    // from_bytes_be always succeeds for 32-byte arrays
+    Ok(FieldElement::from_bytes_be(&buf))
 }
 
 fn read_field_element_array(cursor: &mut Cursor<&[u8]>) -> Result<Vec<FieldElement>> {

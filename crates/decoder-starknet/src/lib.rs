@@ -31,7 +31,7 @@
 //! println!("Tx hash: {:?}", tx.tx_hash);
 //! ```
 
-use decoder_crypto_zk::{hash::pedersen, hash::poseidon, FieldElement};
+use decoder_crypto_zk::FieldElement;
 use decoder_primitives::prelude::*;
 
 pub mod hashing;
@@ -208,6 +208,8 @@ fn create_address(addr: FieldElement) -> Address {
     }
 }
 
+// Helper function for converting FieldElement to Amount (reserved for future use)
+#[allow(dead_code)]
 fn field_to_amount(field: FieldElement) -> Amount {
     // Starknet uses 18 decimals for ETH
     // Convert FieldElement to u128 (with overflow check)

@@ -6,7 +6,6 @@
 //! - DEPLOY_ACCOUNT (v1, v3): Account contract deployment
 
 use decoder_crypto_zk::FieldElement;
-use decoder_primitives::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Starknet transaction type identifier
