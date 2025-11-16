@@ -279,48 +279,74 @@ autoDetectBtn.addEventListener('click', async () => {
 function displayResult(result) {
     console.log('displayResult called with:', result);
     console.log('Result keys:', Object.keys(result));
-    console.log('result.json:', result.json);
-    console.log('result.borsh_fields:', result.borsh_fields);
+    console.log('Result type:', typeof result);
+
+    // Try accessing as properties vs methods
+    console.log('result.json (property):', result.json);
+    console.log('result.borsh_fields (property):', result.borsh_fields);
+
+    // Check if they're functions
+    console.log('typeof result.json:', typeof result.json);
+    console.log('typeof result.borsh_fields:', typeof result.borsh_fields);
+
     console.log('outputJson element:', outputJson);
     console.log('outputCanonical element:', outputCanonical);
 
     // JSON output (pretty-printed)
     try {
+        // Access as getter property (wasm-bindgen should handle this)
         const jsonData = result.json;
+        console.log('JSON data retrieved');
         console.log('JSON data type:', typeof jsonData);
-        console.log('JSON data:', jsonData);
+        console.log('JSON data value:', jsonData);
+        console.log('JSON data is null?', jsonData === null);
+        console.log('JSON data is undefined?', jsonData === undefined);
 
         if (jsonData === null || jsonData === undefined) {
+            console.error('JSON data is null or undefined!');
             outputJson.value = 'Error: JSON data is null or undefined';
         } else {
-            outputJson.value = JSON.stringify(jsonData, null, 2);
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            console.log('JSON stringified successfully, length:', jsonString.length);
+            console.log('First 100 chars:', jsonString.substring(0, 100));
+            outputJson.value = jsonString;
+            console.log('Set outputJson.value, new value length:', outputJson.value.length);
         }
     } catch (e) {
-        outputJson.value = 'Error displaying JSON: ' + e.message;
-        console.error('JSON display error:', e);
+        console.error('JSON display exception:', e);
+        outputJson.value = 'Error displaying JSON: ' + e.message + '\nStack: ' + e.stack;
     }
 
     // Canonical Borsh output - INVERTED: Show fields first, then raw payload
     try {
         const borshFields = result.borsh_fields;
+        console.log('Borsh fields retrieved');
         console.log('Borsh fields type:', typeof borshFields);
-        console.log('Borsh fields:', borshFields);
+        console.log('Borsh fields value:', borshFields);
+        console.log('Borsh fields is null?', borshFields === null);
+        console.log('Borsh fields is undefined?', borshFields === undefined);
 
         let borshOutput = '// Borsh Fields (Structured Representation)\n';
 
         if (borshFields === null || borshFields === undefined) {
+            console.error('Borsh fields are null or undefined!');
             borshOutput += 'Error: Borsh fields are null or undefined\n';
         } else {
-            borshOutput += JSON.stringify(borshFields, null, 2);
+            const borshString = JSON.stringify(borshFields, null, 2);
+            console.log('Borsh fields stringified successfully, length:', borshString.length);
+            borshOutput += borshString;
         }
 
         borshOutput += '\n\n';
         borshOutput += '// Raw Borsh Payload (Hex)\n';
         borshOutput += formatHexWithLineBreaks(result.canonical_hex);
+
+        console.log('Setting outputCanonical.value, total length:', borshOutput.length);
         outputCanonical.value = borshOutput;
+        console.log('Set outputCanonical.value, new value length:', outputCanonical.value.length);
     } catch (e) {
-        outputCanonical.value = 'Error displaying Borsh: ' + e.message;
-        console.error('Borsh display error:', e);
+        console.error('Borsh display exception:', e);
+        outputCanonical.value = 'Error displaying Borsh: ' + e.message + '\nStack: ' + e.stack;
     }
 
     // Privacy analysis
