@@ -1,0 +1,44 @@
+name: Deploy WASM (Netlify Native Build)
+
+# This workflow triggers Netlify to build from source
+# instead of building in GitHub Actions.
+#
+# Use this if you want Netlify to handle the entire build process.
+# Requires netlify.toml configuration in the repository.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+  pull_request:
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+
+jobs:
+  trigger-netlify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Netlify Deploy
+        run: |
+          echo "✅ Netlify will automatically build and deploy this commit"
+          echo "📋 Check build status at: https://app.netlify.com"
+          echo ""
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Event: ${{ github.event_name }}"
+
+      # Optional: Wait for Netlify deploy to complete and get URL
+      # Requires: NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID secrets
+      - name: Wait for Netlify Deploy (Optional)
+        if: false  # Set to true to enable
+        uses: kamranayub/wait-for-netlify-action@v2
+        with:
+          site_id: ${{ secrets.NETLIFY_SITE_ID }}
+          max_timeout: 600
+        env:
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
