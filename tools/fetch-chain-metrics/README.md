@@ -36,7 +36,14 @@ pip install requests
 ### Fetch Latest Snapshot
 
 ```bash
+# Fetch to local data directory
 python fetch_metrics.py --output data/snapshot_$(date +%Y-%m-%d).json
+
+# Also create/update snapshot_latest.json
+python fetch_metrics.py --output data/snapshot_latest.json
+
+# For deployment (Netlify), copy to www directory:
+cp data/snapshot_latest.json ../../crates/universal-decoder-wasm/www/data/snapshot_latest.json
 ```
 
 ### Dry Run (Preview Only)

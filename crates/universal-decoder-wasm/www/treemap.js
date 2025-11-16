@@ -254,7 +254,7 @@ function setupControls() {
 // Snapshot loading
 async function loadSnapshot(snapshotId = 'latest') {
     try {
-        const response = await fetch(`../../tools/fetch-chain-metrics/data/snapshot_${snapshotId}.json`);
+        const response = await fetch(`data/snapshot_${snapshotId}.json`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
