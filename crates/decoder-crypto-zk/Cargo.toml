@@ -14,7 +14,7 @@ thiserror = { workspace = true }
 
 # Field arithmetic (battle-tested, minimal, no_std compatible)
 # This provides the STARK field (252-bit) used across Starknet ecosystem
-starknet-types-core = { version = "0.2.0", default-features = false, features = ["curve", "hash"] }
+starknet-types-core = { version = "0.2.0", default-features = false, features = ["curve", "hash", "serde"] }
 
 # Big integer arithmetic (used by vendored crypto)
 crypto-bigint = { version = "0.5.1", default-features = false, features = ["generic-array"] }
