@@ -304,6 +304,28 @@ autoDetectBtn.addEventListener('click', async () => {
     }
 });
 
+// Helper function to convert Map to plain object recursively
+function mapToObject(map) {
+    if (map instanceof Map) {
+        const obj = {};
+        for (const [key, value] of map.entries()) {
+            obj[key] = mapToObject(value);
+        }
+        return obj;
+    } else if (Array.isArray(map)) {
+        return map.map(item => mapToObject(item));
+    } else if (map && typeof map === 'object') {
+        // Already a plain object, but might have nested Maps
+        const obj = {};
+        for (const [key, value] of Object.entries(map)) {
+            obj[key] = mapToObject(value);
+        }
+        return obj;
+    } else {
+        return map;
+    }
+}
+
 // Display decode result
 function displayResult(result) {
     console.log('displayResult called with:', result);
@@ -328,14 +350,17 @@ function displayResult(result) {
         console.log('JSON data retrieved');
         console.log('JSON data type:', typeof jsonData);
         console.log('JSON data value:', jsonData);
-        console.log('JSON data is null?', jsonData === null);
-        console.log('JSON data is undefined?', jsonData === undefined);
+        console.log('JSON data is Map?', jsonData instanceof Map);
 
         if (jsonData === null || jsonData === undefined) {
             console.error('JSON data is null or undefined!');
             outputJson.value = 'Error: JSON data is null or undefined';
         } else {
-            const jsonString = JSON.stringify(jsonData, null, 2);
+            // Convert Map to plain object
+            const jsonObject = mapToObject(jsonData);
+            console.log('Converted to plain object:', jsonObject);
+
+            const jsonString = JSON.stringify(jsonObject, null, 2);
             console.log('JSON stringified successfully, length:', jsonString.length);
             console.log('First 100 chars:', jsonString.substring(0, 100));
             outputJson.value = jsonString;
@@ -352,8 +377,7 @@ function displayResult(result) {
         console.log('Borsh fields retrieved');
         console.log('Borsh fields type:', typeof borshFields);
         console.log('Borsh fields value:', borshFields);
-        console.log('Borsh fields is null?', borshFields === null);
-        console.log('Borsh fields is undefined?', borshFields === undefined);
+        console.log('Borsh fields is Map?', borshFields instanceof Map);
 
         let borshOutput = '// Borsh Fields (Structured Representation)\n';
 
@@ -361,7 +385,11 @@ function displayResult(result) {
             console.error('Borsh fields are null or undefined!');
             borshOutput += 'Error: Borsh fields are null or undefined\n';
         } else {
-            const borshString = JSON.stringify(borshFields, null, 2);
+            // Convert Map to plain object
+            const borshObject = mapToObject(borshFields);
+            console.log('Converted to plain object:', borshObject);
+
+            const borshString = JSON.stringify(borshObject, null, 2);
             console.log('Borsh fields stringified successfully, length:', borshString.length);
             borshOutput += borshString;
         }
