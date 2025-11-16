@@ -11,13 +11,30 @@ use decoder_bitcoin::BitcoinDecoder;
 use decoder_cosmos::CosmosDecoder;
 use decoder_ethereum::EthereumDecoder;
 use decoder_solana::SolanaDecoder;
-use universal_decoder_core::prelude::{CanonicalSerialize, Canonicalizer, ChainDecoder};
+use universal_decoder_core::prelude::{CanonicalSerialize, Canonicalizer, ChainDecoder, TxIR};
+
+/// Chain metadata for frontend display
+#[derive(Serialize, Deserialize)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct ChainMetadata {
+    /// Chain identifier (lowercase, e.g., "bitcoin", "ethereum")
+    pub id: String,
+
+    /// Human-readable name (e.g., "Bitcoin", "Ethereum")
+    pub name: String,
+
+    /// Chain family type
+    pub family: String,
+
+    /// Whether privacy features are supported
+    pub has_privacy: bool,
+}
 
 /// Result of decoding a transaction (serializable to JavaScript).
 #[derive(Serialize, Deserialize)]
 #[wasm_bindgen(getter_with_clone)]
 pub struct DecodeResult {
-    /// Hex-encoded canonical Borsh bytes
+    /// Hex-encoded canonical Borsh bytes (raw payload)
     pub canonical_hex: String,
 
     /// Hex-encoded canonical hash (for quick comparison)
@@ -27,6 +44,10 @@ pub struct DecodeResult {
     #[wasm_bindgen(skip)]
     pub json: serde_json::Value,
 
+    /// Borsh-decoded fields (structured representation)
+    #[wasm_bindgen(skip)]
+    pub borsh_fields: serde_json::Value,
+
     /// Chain name
     pub chain_name: String,
 
@@ -35,6 +56,16 @@ pub struct DecodeResult {
 
     /// Canonical size in bytes
     pub canonical_size: usize,
+
+    /// Privacy score (0-100)
+    pub privacy_score: u8,
+
+    /// Privacy features detected
+    #[wasm_bindgen(skip)]
+    pub privacy_features: Vec<String>,
+
+    /// Transaction type
+    pub transaction_type: String,
 }
 
 #[wasm_bindgen]
@@ -43,6 +74,18 @@ impl DecodeResult {
     #[wasm_bindgen(getter)]
     pub fn json(&self) -> JsValue {
         serde_wasm_bindgen::to_value(&self.json).unwrap_or(JsValue::NULL)
+    }
+
+    /// Get Borsh fields as JsValue for JavaScript interop
+    #[wasm_bindgen(getter)]
+    pub fn borsh_fields(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.borsh_fields).unwrap_or(JsValue::NULL)
+    }
+
+    /// Get privacy features as JsValue for JavaScript interop
+    #[wasm_bindgen(getter)]
+    pub fn privacy_features(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.privacy_features).unwrap_or(JsValue::NULL)
     }
 }
 
@@ -96,6 +139,39 @@ pub fn supported_chains() -> Vec<String> {
     ]
 }
 
+/// Get detailed metadata for all supported chains
+#[wasm_bindgen]
+pub fn get_chains_metadata() -> JsValue {
+    let chains = vec![
+        ChainMetadata {
+            id: "bitcoin".to_string(),
+            name: "Bitcoin".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "ethereum".to_string(),
+            name: "Ethereum".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "solana".to_string(),
+            name: "Solana".to_string(),
+            family: "Instruction".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "cosmos".to_string(),
+            name: "Cosmos".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+    ];
+
+    serde_wasm_bindgen::to_value(&chains).unwrap_or(JsValue::NULL)
+}
+
 /// Attempt to automatically detect which blockchain a transaction belongs to
 /// by trying decoders in order of popularity.
 #[wasm_bindgen]
@@ -147,14 +223,132 @@ fn decode_with<D: ChainDecoder>(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
     let json = serde_json::to_value(&tx_ir)
         .map_err(|e| JsValue::from_str(&format!("JSON error: {}", e)))?;
 
+    // Extract privacy information
+    let (privacy_score, privacy_features) = extract_privacy_info(&tx_ir);
+
+    // Create Borsh fields representation (structured view)
+    let borsh_fields = create_borsh_fields(&tx_ir)?;
+
+    // Determine transaction type
+    let transaction_type = determine_tx_type(&tx_ir);
+
     Ok(DecodeResult {
         canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
         canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
         json,
+        borsh_fields,
         chain_name: tx_ir.chain.name.clone(),
         chain_id: tx_ir.chain.id,
         canonical_size: canonical_bytes.len(),
+        privacy_score,
+        privacy_features,
+        transaction_type,
     })
+}
+
+/// Extract privacy information from TxIR
+fn extract_privacy_info(tx_ir: &TxIR<'_, 1>) -> (u8, Vec<String>) {
+    match &tx_ir.privacy {
+        Some(privacy) => {
+            let features: Vec<String> = privacy
+                .features
+                .iter()
+                .map(|f| format!("{:?}", f))
+                .collect();
+
+            // Calculate privacy score based on features
+            let score = if features.is_empty() {
+                0
+            } else {
+                ((features.len() * 25).min(100)) as u8
+            };
+
+            (score, features)
+        }
+        None => (0, vec![]),
+    }
+}
+
+/// Create structured Borsh fields representation
+fn create_borsh_fields(tx_ir: &TxIR<'_, 1>) -> Result<serde_json::Value, JsValue> {
+    use serde_json::json;
+    use universal_decoder_core::prelude::Operation;
+
+    // Create a structured view of the Borsh-encoded data
+    Ok(json!({
+        "chain": {
+            "id": tx_ir.chain.id,
+            "name": &tx_ir.chain.name,
+        },
+        "metadata": {
+            "timestamp": tx_ir.metadata.timestamp,
+            "block_height": tx_ir.metadata.block_height,
+            "tx_hash": universal_decoder_core::hex::encode(&tx_ir.metadata.tx_hash),
+            "size": tx_ir.metadata.size,
+        },
+        "authorization": {
+            "signature_scheme": format!("{:?}", tx_ir.authorization.signature_scheme),
+            "public_keys_count": tx_ir.authorization.public_keys.len(),
+            "signatures_count": tx_ir.authorization.signatures.len(),
+        },
+        "operations": tx_ir.operations.iter().map(|op| {
+            match op {
+                Operation::Transfer(t) => json!({
+                    "type": "Transfer",
+                    "from": universal_decoder_core::hex::encode(&t.from.bytes),
+                    "to": universal_decoder_core::hex::encode(&t.to.bytes),
+                    "amount": t.amount.value.to_string(),
+                }),
+                Operation::ContractCall(c) => json!({
+                    "type": "ContractCall",
+                    "contract": universal_decoder_core::hex::encode(&c.contract.bytes),
+                    "value": c.value.as_ref().map(|v| v.value.to_string()),
+                }),
+                Operation::ContractDeploy(d) => json!({
+                    "type": "ContractDeploy",
+                    "bytecode_size": d.bytecode.len(),
+                    "value": d.value.value.to_string(),
+                }),
+                Operation::Stake(s) => json!({
+                    "type": "Stake",
+                    "validator": universal_decoder_core::hex::encode(&s.validator.bytes),
+                    "amount": s.amount.value.to_string(),
+                    "operation": format!("{:?}", s.operation_type),
+                }),
+                Operation::Generic(g) => json!({
+                    "type": "Generic",
+                    "op_type": &g.op_type,
+                }),
+            }
+        }).collect::<Vec<_>>(),
+        "state_deltas": {
+            "inputs": tx_ir.state_deltas.inputs.len(),
+            "outputs": tx_ir.state_deltas.outputs.len(),
+            "account_changes": tx_ir.state_deltas.account_changes.len(),
+        },
+        "privacy": tx_ir.privacy.as_ref().map(|p| json!({
+            "features": p.features.iter().map(|f| format!("{:?}", f)).collect::<Vec<_>>(),
+            "observability": format!("{:?}", p.observability),
+        })),
+    }))
+}
+
+/// Determine transaction type from TxIR
+fn determine_tx_type(tx_ir: &TxIR<'_, 1>) -> String {
+    use universal_decoder_core::prelude::Operation;
+
+    if tx_ir.operations.is_empty() {
+        return "Unknown".to_string();
+    }
+
+    let first_op = &tx_ir.operations[0];
+    match first_op {
+        Operation::Transfer(_) => "Transfer".to_string(),
+        Operation::ContractCall(_) => "ContractCall".to_string(),
+        Operation::ContractDeploy(_) => "ContractDeploy".to_string(),
+        Operation::Stake(_) => "Stake".to_string(),
+        Operation::Generic(g) => format!("Generic({})", g.op_type),
+    }
 }
 
 #[cfg(test)]

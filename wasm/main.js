@@ -8,6 +8,7 @@ import { EXAMPLES } from './examples.js';
 let wasmModule = null;
 let decode_transaction = null;
 let supported_chains = null;
+let get_chains_metadata = null;
 let auto_detect_chain = null;
 
 // Initialize WASM module on page load
@@ -27,7 +28,7 @@ async function initWasm() {
         }
 
         // Dynamic import to avoid conflicts
-        const wasmModule = await import('./pkg/universal_decoder_wasm.js');
+        wasmModule = await import('./pkg/universal_decoder_wasm.js');
 
         // Restore window.ethereum
         if (originalEthereum) {
@@ -49,15 +50,64 @@ async function initWasm() {
         // Store functions globally
         decode_transaction = wasmModule.decode_transaction;
         supported_chains = wasmModule.supported_chains;
+        get_chains_metadata = wasmModule.get_chains_metadata;
         auto_detect_chain = wasmModule.auto_detect_chain;
 
         console.log('✅ WASM module loaded successfully');
-        const chains = supported_chains();
-        console.log('Supported chains:', chains);
+
+        // Dynamically populate chain dropdown
+        populateChainDropdown();
+
+        // Dynamically populate example dropdown
+        populateExampleDropdown();
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
         showError('Failed to initialize decoder. Please refresh the page.');
     }
+}
+
+// Populate chain dropdown dynamically from WASM
+function populateChainDropdown() {
+    try {
+        const chainsMetadata = get_chains_metadata();
+        const chainSelect = document.getElementById('chain-select');
+
+        // Clear existing options
+        chainSelect.innerHTML = '';
+
+        // Add chains from WASM
+        chainsMetadata.forEach(chain => {
+            const option = document.createElement('option');
+            option.value = chain.id;
+            option.textContent = `${chain.name} (${chain.family})`;
+            chainSelect.appendChild(option);
+        });
+
+        console.log(`Populated ${chainsMetadata.length} chains in dropdown`);
+    } catch (error) {
+        console.error('Failed to populate chain dropdown:', error);
+    }
+}
+
+// Populate example dropdown dynamically from examples.js
+function populateExampleDropdown() {
+    const exampleSelect = document.getElementById('example-select');
+
+    // Clear existing options (except placeholder)
+    exampleSelect.innerHTML = '<option value="">-- Select Example --</option>';
+
+    // Add examples
+    Object.entries(EXAMPLES).forEach(([key, example]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = example.description;
+        if (example.note) {
+            option.title = example.note;
+        }
+        exampleSelect.appendChild(option);
+    });
+
+    console.log(`Populated ${Object.keys(EXAMPLES).length} examples in dropdown`);
 }
 
 // UI Elements
@@ -178,10 +228,25 @@ autoDetectBtn.addEventListener('click', async () => {
 // Display decode result
 function displayResult(result) {
     // JSON output (pretty-printed)
-    outputJson.value = JSON.stringify(result.json, null, 2);
+    try {
+        outputJson.value = JSON.stringify(result.json, null, 2);
+    } catch (e) {
+        outputJson.value = 'Error displaying JSON: ' + e.message;
+        console.error('JSON display error:', e);
+    }
 
-    // Canonical Borsh output
-    outputCanonical.value = formatHexWithLineBreaks(result.canonical_hex);
+    // Canonical Borsh output - INVERTED: Show fields first, then raw payload
+    try {
+        let borshOutput = '// Borsh Fields (Structured Representation)\n';
+        borshOutput += JSON.stringify(result.borsh_fields, null, 2);
+        borshOutput += '\n\n';
+        borshOutput += '// Raw Borsh Payload (Hex)\n';
+        borshOutput += formatHexWithLineBreaks(result.canonical_hex);
+        outputCanonical.value = borshOutput;
+    } catch (e) {
+        outputCanonical.value = 'Error displaying Borsh: ' + e.message;
+        console.error('Borsh display error:', e);
+    }
 
     // Privacy analysis
     displayPrivacyAnalysis(result);
