@@ -104,11 +104,12 @@
   - ✅ Cosmos chains: cosmos/chain-registry → `decoder-cosmos/vendored/chain-registry` (7.4MB, 406 chains)
   - ✅ OP Stack: ethereum-optimism/superchain-registry → `decoder-optimism/vendored/superchain-registry` (7.1MB, 35+ chains)
   - ✅ Document vendoring in VENDORED.md for each registry
-  - ⚠️ **Next Priority**: Borsh transformation (14.5MB → <2MB target)
-    - [ ] Create unified `registry-generator` tool with subcommands
-    - [ ] Transform cosmos: 7.4MB JSON → ~1MB Borsh
-    - [ ] Transform superchain: 7.1MB JSON → ~200KB Borsh
-    - [ ] Remove raw JSON files after transformation
+- ✅ **Borsh transformation** (14.5MB → 24KB achieved - 99.8% reduction!)
+    - ✅ Create unified `registry-generator` tool with subcommands
+    - ✅ Transform cosmos: 7.4MB JSON → 17KB Borsh
+    - ✅ Transform superchain: 7.1MB JSON → 7KB Borsh
+    - ✅ Remove raw JSON files after transformation
+    - ✅ Remove unnecessary vendored assets (421KB banner image)
 - ✅ **Move `serde_json` to dev-dependencies** (display/test only)
   - ✅ Audited: No public JSON APIs in core
   - ✅ JSON only used for debugging/tests/examples
