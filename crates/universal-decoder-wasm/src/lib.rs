@@ -60,6 +60,9 @@ pub struct DecodeResult {
     /// Hex-encoded canonical hash (for quick comparison)
     pub canonical_hash: String,
 
+    /// Original transaction hash/ID from the blockchain
+    pub tx_hash: String,
+
     /// Human-readable JSON representation
     #[wasm_bindgen(skip)]
     pub json: serde_json::Value,
@@ -451,6 +454,7 @@ fn decode_with<D: ChainDecoder>(bytes: &[u8]) -> Result<DecodeResult, JsValue> {
     Ok(DecodeResult {
         canonical_hex: universal_decoder_core::hex::encode(&canonical_bytes),
         canonical_hash: universal_decoder_core::hex::encode(&canonical_hash),
+        tx_hash: universal_decoder_core::hex::encode(&tx_ir.metadata.tx_hash),
         json,
         borsh_fields,
         chain_name: tx_ir.chain.name.clone(),
@@ -538,9 +542,26 @@ fn create_borsh_fields(tx_ir: &TxIR<'_, 1>) -> Result<serde_json::Value, JsValue
             }
         }).collect::<Vec<_>>(),
         "state_deltas": {
-            "inputs": tx_ir.state_deltas.inputs.len(),
-            "outputs": tx_ir.state_deltas.outputs.len(),
-            "account_changes": tx_ir.state_deltas.account_changes.len(),
+            "inputs": tx_ir.state_deltas.inputs.iter().map(|input| json!({
+                "prev_txid": universal_decoder_core::hex::encode(&input.prev_tx),
+                "output_index": input.output_index,
+                "value": input.value.value.to_string(),
+                "decimals": input.value.decimals,
+            })).collect::<Vec<_>>(),
+            "outputs": tx_ir.state_deltas.outputs.iter().map(|output| json!({
+                "index": output.index,
+                "address": universal_decoder_core::hex::encode(&output.address.bytes),
+                "address_readable": output.address.human_readable.as_ref().unwrap_or(&"".to_string()),
+                "value": output.value.value.to_string(),
+                "decimals": output.value.decimals,
+            })).collect::<Vec<_>>(),
+            "account_changes": tx_ir.state_deltas.account_changes.iter().map(|change| json!({
+                "address": universal_decoder_core::hex::encode(&change.address.bytes),
+                "address_readable": change.address.human_readable.as_ref().unwrap_or(&"".to_string()),
+                "nonce": change.nonce,
+                "balance_change": change.balance_change.to_string(),
+                "storage_changes_count": change.storage_changes.len(),
+            })).collect::<Vec<_>>(),
         },
         "privacy": tx_ir.privacy.as_ref().map(|p| json!({
             "features": p.features.iter().map(|f| format!("{:?}", f)).collect::<Vec<_>>(),

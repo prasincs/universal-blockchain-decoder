@@ -254,8 +254,15 @@ function displayResult(result) {
     // Metadata
     outputMetadata.style.display = 'block';
     document.getElementById('meta-chain').textContent = `${result.chain_name} (ID: ${result.chain_id})`;
+
+    // Original transaction hash
+    document.getElementById('meta-txid').textContent = result.tx_hash.substring(0, 32) + '...';
+    document.getElementById('meta-txid').title = result.tx_hash;
+
+    // Canonical Borsh hash
     document.getElementById('meta-hash').textContent = result.canonical_hash.substring(0, 32) + '...';
     document.getElementById('meta-hash').title = result.canonical_hash;
+
     document.getElementById('meta-size').textContent = `${result.canonical_size} bytes`;
 
     // Privacy badge
