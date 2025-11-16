@@ -6,6 +6,7 @@ members = [
     "crates/decoder-chains-common", # Common decoder patterns and utilities
     "crates/decoder-test-utils",    # Test utilities (Phase 2.5.2)
     "crates/decoder-crypto-zk",     # ZK cryptography infrastructure (Phase 3.6a)
+    "crates/decoder-starknet",      # Starknet decoder (Phase 3.6b) - 230+ chains
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
     "crates/decoder-solana",

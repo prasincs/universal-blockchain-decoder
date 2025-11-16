@@ -1,0 +1,23 @@
+[package]
+name = "decoder-starknet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Starknet transaction decoder for universal-decoder"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-crypto-zk = { path = "../decoder-crypto-zk" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+hex = "0.4"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
+# Reference implementation for cross-validation
+starknet-core = "0.13"
+decoder-test-utils = { path = "../decoder-test-utils" }
