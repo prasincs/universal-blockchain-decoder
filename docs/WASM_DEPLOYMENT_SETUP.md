@@ -1,83 +1,89 @@
 # WASM Deployment Setup Guide
 
-## Quick Feedback Deployment with Netlify
+## Quick Feedback Deployment with Cloudflare Pages
 
-This guide shows how to set up **preview deployments** for the Universal Blockchain Decoder WASM demo using Netlify and environment variables. This enables:
+This guide shows how to set up **preview deployments** for the Universal Blockchain Decoder WASM demo using Cloudflare Pages and environment variables. This enables:
 
 - ✅ **No build artifacts in git** (WASM blobs stay out of version control)
 - ✅ **Preview URLs for every PR/branch** (test before merging)
 - ✅ **Fast feedback loop** (deploy in < 2 minutes)
 - ✅ **Auto PR comments** with preview links
-- ✅ **Production deployment** to GitHub Pages
+- ✅ **No payment info required** (truly free tier)
+- ✅ **Global CDN** (Cloudflare's edge network)
+
+> **Why Cloudflare Pages?** Netlify requires billing information even for the free tier. Cloudflare Pages has a genuinely free tier with no payment info required, unlimited sites, and unlimited requests.
 
 ---
 
 ## Table of Contents
 
-1. [Netlify Setup (Preview Deployments)](#netlify-setup-preview-deployments)
+1. [Cloudflare Pages Setup (Preview Deployments)](#cloudflare-pages-setup-preview-deployments)
 2. [GitHub Pages Setup (Production Only)](#github-pages-setup-production-only)
 3. [Local Development](#local-development)
 4. [Manual Deployment Script](#manual-deployment-script)
 5. [Troubleshooting](#troubleshooting)
-6. [Future Options (Vercel, etc.)](#future-options)
+6. [Alternative Platforms (Netlify, Vercel, etc.)](#alternative-platforms)
 
 ---
 
-## Netlify Setup (Preview Deployments)
+## Cloudflare Pages Setup (Preview Deployments)
 
-Netlify provides the **fastest and easiest** preview deployments with automatic PR comments.
+Cloudflare Pages provides **completely free** preview deployments with automatic PR comments and **no payment information required**.
 
-### Step 1: Create Netlify Site
+### Step 1: Create Cloudflare Account
 
-1. **Sign up/Login** at [netlify.com](https://netlify.com)
+1. **Sign up** at [cloudflare.com](https://dash.cloudflare.com/sign-up/pages) (free account, no credit card)
+2. **Verify your email**
+3. **Login** to the Cloudflare dashboard
 
-2. **Create a new site**:
-   - Option A: Manual deploy (drag & drop `crates/universal-decoder-wasm/www/` after building)
-   - Option B: Skip this step and let the GitHub Action create the site automatically
+### Step 2: Get Cloudflare API Token
 
-3. **Get your Site ID** (if you created manually):
-   ```bash
-   # Navigate to: Site Settings → General → Site Details
-   # Copy the "Site ID" (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-   ```
+1. Go to [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Click **"Create Token"**
+3. Click **"Use template"** next to **"Edit Cloudflare Workers"**
+   - Or create custom token with these permissions:
+     - Account Settings: Read
+     - Cloudflare Pages: Edit
+4. Click **"Continue to summary"**
+5. Click **"Create Token"**
+6. **Copy the token** (you won't see it again!)
 
-### Step 2: Get Netlify Auth Token
+### Step 3: Get Cloudflare Account ID
 
-1. Go to [app.netlify.com/user/applications](https://app.netlify.com/user/applications)
-2. Click **"New access token"**
-3. Give it a descriptive name: `GitHub Actions - universal-blockchain-decoder`
-4. Click **"Generate token"**
-5. **Copy the token** (you won't see it again!)
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
+2. Select any website (or click "Workers & Pages" in sidebar)
+3. Scroll down on the right side → **Account ID**
+4. Click to copy (format: `32-character hex string`)
 
-### Step 3: Add GitHub Secrets
+### Step 4: Add GitHub Secrets
 
 1. Go to your repository: **Settings → Secrets and variables → Actions**
 
-2. Click **"New repository secret"** and add:
+2. Click **"New repository secret"** and add **two secrets**:
 
-   **NETLIFY_AUTH_TOKEN**
+   **CLOUDFLARE_API_TOKEN**
    ```
-   <paste your Netlify token here>
-   ```
-
-   **NETLIFY_SITE_ID** (optional, but recommended)
-   ```
-   <paste your Netlify site ID here>
+   <paste your Cloudflare API token here>
    ```
 
-   > **Note**: If you skip `NETLIFY_SITE_ID`, Netlify will create a new site on first deployment.
+   **CLOUDFLARE_ACCOUNT_ID**
+   ```
+   <paste your Cloudflare account ID here>
+   ```
 
-### Step 4: Enable Workflow
+### Step 5: Enable Workflow
 
-The workflow is already created at `.github/workflows/deploy-wasm-preview-netlify.yml`.
+The workflow is already created at `.github/workflows/deploy-wasm-preview-cloudflare.yml`.
 
 **It will automatically**:
 - ✅ Build WASM on every PR or branch push
-- ✅ Deploy to a unique preview URL
+- ✅ Deploy to Cloudflare Pages
+- ✅ Create unique preview URL per branch
 - ✅ Comment on PRs with the preview link
 - ✅ Show bundle size in workflow logs
+- ✅ Use Cloudflare's global CDN (fast worldwide)
 
-### Step 5: Test It!
+### Step 6: Test It!
 
 1. Create a new branch:
    ```bash
@@ -95,11 +101,12 @@ The workflow is already created at `.github/workflows/deploy-wasm-preview-netlif
 
 4. **Get your preview URL** from:
    - Workflow output (look for "🔗 Preview URL")
-   - PR comment (auto-posted by Netlify action)
+   - PR comment (auto-posted by Cloudflare Pages action)
 
 **Preview URL Format**:
 ```
-https://deploy-preview-123--your-site-name.netlify.app
+https://universal-blockchain-decoder.pages.dev
+https://branch-name.universal-blockchain-decoder.pages.dev
 ```
 
 ---
@@ -208,15 +215,12 @@ export VERCEL_PRODUCTION="false"  # or "true" for production
 
 ## Environment Variables Reference
 
-### Netlify
+### Cloudflare Pages
 
 | Variable | Required | Description | Where to Find |
 |----------|----------|-------------|---------------|
-| `NETLIFY_AUTH_TOKEN` | Yes | Personal access token | [app.netlify.com/user/applications](https://app.netlify.com/user/applications) |
-| `NETLIFY_SITE_ID` | No* | Site ID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | Site Settings → General → Site Details |
-| `NETLIFY_PRODUCTION` | No | Set to `"true"` for production deploy | Default: `"false"` |
-
-*If not provided, Netlify will create a new site automatically.
+| `CLOUDFLARE_API_TOKEN` | Yes | API token with Pages edit permissions | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) |
+| `CLOUDFLARE_ACCOUNT_ID` | Yes | Your Cloudflare account ID (32-char hex) | Dashboard → Account ID (right sidebar) |
 
 ### GitHub Pages
 
@@ -229,14 +233,26 @@ export VERCEL_PRODUCTION="false"  # or "true" for production
 
 ## Troubleshooting
 
-### "NETLIFY_AUTH_TOKEN environment variable is required"
+### "Cloudflare API authentication failed"
 
-**Cause**: GitHub secret not set or workflow doesn't have access
+**Cause**: Invalid API token or missing permissions
 
 **Fix**:
 1. Verify secret exists: **Settings → Secrets and variables → Actions**
-2. Check secret name matches exactly: `NETLIFY_AUTH_TOKEN` (case-sensitive)
-3. Re-save the secret and re-run workflow
+2. Check secret names match exactly: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` (case-sensitive)
+3. Regenerate API token with correct permissions:
+   - Account Settings: Read
+   - Cloudflare Pages: Edit
+4. Re-save the secret and re-run workflow
+
+### "Cloudflare account ID not found"
+
+**Cause**: Wrong account ID or account doesn't exist
+
+**Fix**:
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
+2. Copy Account ID from right sidebar (32-character hex string)
+3. Update `CLOUDFLARE_ACCOUNT_ID` secret in GitHub
 
 ### "GitHub Pages deployment failed: 404"
 
@@ -381,11 +397,24 @@ Add analytics to track:
 
 ---
 
-## Future Options
+## Alternative Platforms
+
+### Netlify (Requires Billing Info)
+
+**Status**: Disabled (workflow commented out)
+
+**Why not used**:
+- ❌ Requires billing/payment information even for free tier
+- ❌ Blocks deployments if payment info not on file
+- ✅ Cloudflare Pages provides same features without billing requirement
+
+**Workflow**: `.github/workflows/deploy-wasm-preview-netlify.yml` (disabled via `workflow_dispatch` only)
+
+If you have Netlify billing configured, you can re-enable it by changing the workflow trigger.
 
 ### Vercel (Not Yet Implemented)
 
-Vercel can be added as an alternative deployment platform if needed. The setup would be similar to Netlify:
+Vercel can be added as an alternative deployment platform if needed:
 
 **What you'd need**:
 - Vercel account and auth token
@@ -393,18 +422,16 @@ Vercel can be added as an alternative deployment platform if needed. The setup w
 - Workflow file (see `docs/NETLIFY_BUILD_COMPARISON.md` for reference)
 
 **Why it's not enabled now**:
-- Netlify already provides everything we need
-- No need to maintain two similar platforms
+- Cloudflare Pages already provides everything we need
+- No need to maintain multiple similar platforms
 - Can add later if required
-
-**If you want to enable Vercel**, see the detailed comparison in `docs/NETLIFY_BUILD_COMPARISON.md`.
 
 ### Other Platforms
 
 The deployment script (`scripts/deploy-wasm.sh`) can be extended to support:
-- **Cloudflare Pages**: Similar to Netlify/Vercel
 - **AWS S3 + CloudFront**: For enterprise deployments
 - **Azure Static Web Apps**: For Microsoft-centric teams
+- **Firebase Hosting**: Google Cloud integration
 - **Self-hosted**: Any web server with static file support
 
 All platforms receive the same pre-built WASM artifacts from GitHub Actions.
@@ -416,10 +443,10 @@ All platforms receive the same pre-built WASM artifacts from GitHub Actions.
 - **Documentation**: See `docs/WASM_DEMO.md` for architecture details
 - **Issues**: Report at [GitHub Issues](https://github.com/prasincs/universal-blockchain-decoder/issues)
 - **Deployment Guide**: See `wasm/DEPLOY.md` for alternative deployment methods
-- **Build Comparison**: See `docs/NETLIFY_BUILD_COMPARISON.md` for Netlify vs other options
+- **Build Comparison**: See `docs/NETLIFY_BUILD_COMPARISON.md` for platform comparisons
 
 ---
 
 **Last Updated**: 2025-11-16
-**Version**: 1.0.0
-**Workflows**: Netlify (preview), GitHub Pages (production)
+**Version**: 2.0.0
+**Workflows**: Cloudflare Pages (preview), GitHub Pages (production)
