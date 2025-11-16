@@ -1,0 +1,97 @@
+name: Deploy WASM Preview (Netlify)
+
+on:
+  pull_request:
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+      - '.github/workflows/deploy-wasm-preview-netlify.yml'
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - 'crates/universal-decoder-wasm/**'
+      - 'crates/universal-decoder-core/**'
+      - 'crates/decoder-*/**'
+
+# Environment variables from repository secrets
+# Required secrets:
+#   NETLIFY_AUTH_TOKEN - Your Netlify personal access token
+#   NETLIFY_SITE_ID - Your Netlify site ID (optional for new sites)
+
+jobs:
+  build-and-deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-wasm-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install wasm-opt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binaryen
+
+      - name: Build WASM module
+        run: |
+          cd crates/universal-decoder-wasm
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Show bundle size
+        run: |
+          echo "📦 WASM Bundle Size:"
+          ls -lh crates/universal-decoder-wasm/www/pkg/*.wasm
+          echo ""
+          echo "📊 Total www/ directory size:"
+          du -sh crates/universal-decoder-wasm/www/
+
+      # Deploy to Netlify (preview)
+      - name: Deploy to Netlify
+        id: netlify
+        uses: nwtgck/actions-netlify@v2
+        with:
+          publish-dir: './crates/universal-decoder-wasm/www'
+          production-deploy: false  # Always create preview
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy preview from ${{ github.event_name }}"
+          alias: ${{ github.head_ref || github.ref_name }}
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5
+
+      - name: Output deployment URL
+        run: |
+          echo "✅ WASM Preview deployed successfully!"
+          echo "🔗 Preview URL: ${{ steps.netlify.outputs.deploy-url }}"
+          echo "📋 Logs: ${{ steps.netlify.outputs.logs }}"

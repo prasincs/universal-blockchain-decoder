@@ -1,0 +1,10 @@
+# Git LFS and submodule configuration
+
+# Skip submodule initialization (vendored dependencies have broken refs)
+*.gitmodules export-ignore
+
+# Binary files
+*.wasm binary
+*.so binary
+*.dylib binary
+*.dll binary

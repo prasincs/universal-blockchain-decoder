@@ -43,8 +43,8 @@
                 <option value="cosmos-send">Cosmos: Bank Send</option>
             </select>
 
-            <button id="decode-btn" class="primary">Decode Transaction</button>
-            <button id="auto-detect-btn">Auto-Detect Chain</button>
+            <button id="decode-btn" class="primary" disabled>Loading WASM...</button>
+            <button id="auto-detect-btn" disabled>Auto-Detect Chain</button>
         </div>
 
         <div class="container">
@@ -110,6 +110,13 @@
     </footer>
 
     <div id="error-toast" class="error-toast"></div>
+
+    <!-- Loading overlay with quotes -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div id="loading-content" class="loading-content">
+            <!-- Dynamic content injected by JavaScript -->
+        </div>
+    </div>
 
     <script type="module" src="main.js"></script>
 </body>

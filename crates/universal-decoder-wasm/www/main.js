@@ -6,19 +6,42 @@ import init, { decode_transaction, supported_chains, auto_detect_chain } from '.
 // Example transactions for quick testing
 import { EXAMPLES } from './examples.js';
 
+// Loading quotes and code snippets
+import { getRandomLoadingMessage } from './loading-quotes.js';
+
 // Global state
 let wasmModule = null;
 
 // Initialize WASM module on page load
 async function initWasm() {
     try {
+        // Disable buttons during initialization
+        decodeBtn.disabled = true;
+        autoDetectBtn.disabled = true;
+
+        // Show random loading message
+        const loadingMsg = getRandomLoadingMessage();
+        showLoadingMessage(loadingMsg);
+
         wasmModule = await init();
         console.log('✅ WASM module loaded successfully');
         const chains = supported_chains();
         console.log('Supported chains:', chains);
+
+        // Hide loading overlay
+        hideLoadingMessage();
+
+        // Enable buttons after successful initialization
+        decodeBtn.disabled = false;
+        autoDetectBtn.disabled = false;
+        decodeBtn.textContent = 'Decode Transaction';
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
+        hideLoadingMessage();
         showError('Failed to initialize decoder. Please refresh the page.');
+        decodeBtn.textContent = 'Failed to Load';
+        decodeBtn.disabled = true;
+        autoDetectBtn.disabled = true;
     }
 }
 
@@ -239,7 +262,41 @@ function showError(message) {
     }, 5000);
 }
 
-// Initialize on page load
-window.addEventListener('DOMContentLoaded', () => {
-    initWasm();
+// Show loading message overlay
+function showLoadingMessage(msg) {
+    const overlay = document.getElementById('loading-overlay');
+    const content = document.getElementById('loading-content');
+
+    if (msg.type === 'quote') {
+        content.innerHTML = `
+            <div class="loading-quote">
+                <p class="quote-text">"${msg.text}"</p>
+                <p class="quote-author">— ${msg.author}</p>
+            </div>
+            <div class="loading-spinner"></div>
+            <p class="loading-status">Initializing WASM decoder...</p>
+        `;
+    } else {
+        content.innerHTML = `
+            <div class="loading-code">
+                <pre><code>${msg.code}</code></pre>
+                <p class="code-caption">${msg.caption}</p>
+            </div>
+            <div class="loading-spinner"></div>
+            <p class="loading-status">Compiling blockchain magic...</p>
+        `;
+    }
+
+    overlay.style.display = 'flex';
+}
+
+// Hide loading message overlay
+function hideLoadingMessage() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'none';
+}
+
+// Initialize on page load - MUST await to prevent race condition
+window.addEventListener('DOMContentLoaded', async () => {
+    await initWasm();
 });

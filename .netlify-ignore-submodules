@@ -1,0 +1,10 @@
+#!/bin/bash
+# Netlify build hook to skip submodule initialization
+# Vendored dependencies have broken submodule references
+
+echo "🔧 Disabling git submodule initialization..."
+git config submodule.recurse false
+git config --global submodule.recurse false
+
+echo "✅ Submodules disabled for build"
+exit 0
