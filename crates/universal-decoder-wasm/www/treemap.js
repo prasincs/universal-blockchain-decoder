@@ -1,9 +1,10 @@
 // Chain Ecosystem Treemap Visualization
-// Shows 500+ mainnet chains hierarchically with filters and drill-down
-// (2200+ total including testnets)
+// Shows 2500+ mainnet chains hierarchically with filters and drill-down
+// (4900+ total including testnets)
 
 // Chain data structure
 // In production, this would be fetched from live APIs (DeFiLlama, chain-specific endpoints)
+// EVM count from embedded registry: 2397 chains (see crates/decoder-evm/data/chains.metadata.txt)
 const CHAIN_DATA = {
     name: "All Chains",
     children: [
@@ -26,50 +27,141 @@ const CHAIN_DATA = {
         {
             name: "Account Family",
             family: "account",
-            description: "Account-based model - like bank accounts",
+            description: "Account-based model - like bank accounts with balances",
             children: [
                 {
-                    name: "EVM Chains (2000+)",
+                    name: "EVM Ecosystem (2397 chains)",
                     family: "account",
                     isGroup: true,
                     evmChains: true,
                     description: "Ethereum Virtual Machine compatible chains",
                     children: [
-                        { name: "Ethereum Mainnet", family: "account", chainId: 1, network: "mainnet", tvl: 45000000000, txVolume: 100000000, evm: true, unique: true },
-                        { name: "Polygon", family: "account", chainId: 137, network: "mainnet", tvl: 8000000000, txVolume: 20000000, evm: true, unique: false },
-                        { name: "BNB Chain", family: "account", chainId: 56, network: "mainnet", tvl: 50000000000, txVolume: 30000000, evm: true, unique: false },
-                        { name: "Avalanche C-Chain", family: "account", chainId: 43114, network: "mainnet", tvl: 6000000000, txVolume: 5000000, evm: true, unique: false },
-                        { name: "Arbitrum One", family: "account", chainId: 42161, network: "mainnet", tvl: 12000000000, txVolume: 15000000, evm: true, unique: false },
-                        { name: "Optimism", family: "account", chainId: 10, network: "mainnet", tvl: 7000000000, txVolume: 8000000, evm: true, unique: false },
-                        { name: "Base", family: "account", chainId: 8453, network: "mainnet", tvl: 5000000000, txVolume: 10000000, evm: true, unique: false },
-                        { name: "zkSync Era", family: "account", chainId: 324, network: "mainnet", tvl: 3000000000, txVolume: 4000000, evm: true, unique: false },
-                        { name: "Linea", family: "account", chainId: 59144, network: "mainnet", tvl: 1000000000, txVolume: 2000000, evm: true, unique: false },
-                        { name: "Scroll", family: "account", chainId: 534352, network: "mainnet", tvl: 800000000, txVolume: 1500000, evm: true, unique: false },
-                        { name: "Mantle", family: "account", chainId: 5000, network: "mainnet", tvl: 1200000000, txVolume: 1800000, evm: true, unique: false },
-                        { name: "Fantom", family: "account", chainId: 250, network: "mainnet", tvl: 500000000, txVolume: 800000, evm: true, unique: false },
-                        { name: "Celo", family: "account", chainId: 42220, network: "mainnet", tvl: 300000000, txVolume: 500000, evm: true, unique: false },
-                        { name: "Gnosis", family: "account", chainId: 100, network: "mainnet", tvl: 400000000, txVolume: 600000, evm: true, unique: false },
-                        { name: "Aurora", family: "account", chainId: 1313161554, network: "mainnet", tvl: 200000000, txVolume: 300000, evm: true, unique: false },
-                        // Representing the remaining ~1985 EVM chains with aggregate
-                        { name: "Other EVM Chains (~1985)", family: "account", chainId: "evm-others", network: "mixed", tvl: 2000000000, txVolume: 5000000, evm: true, unique: false, isAggregate: true }
+                        {
+                            name: "OP Stack (~50 chains)",
+                            family: "account",
+                            isGroup: true,
+                            evmSubtype: "opstack",
+                            description: "Optimism's modular L2 framework - shared sequencer & fault proofs",
+                            children: [
+                                { name: "Optimism", family: "account", chainId: 10, network: "mainnet", tvl: 7000000000, txVolume: 8000000, evm: true, opstack: true, unique: false },
+                                { name: "Base", family: "account", chainId: 8453, network: "mainnet", tvl: 5000000000, txVolume: 10000000, evm: true, opstack: true, unique: false },
+                                { name: "Zora", family: "account", chainId: 7777777, network: "mainnet", tvl: 50000000, txVolume: 500000, evm: true, opstack: true, unique: false },
+                                { name: "Mode", family: "account", chainId: 34443, network: "mainnet", tvl: 100000000, txVolume: 800000, evm: true, opstack: true, unique: false },
+                                { name: "Fraxtal", family: "account", chainId: 252, network: "mainnet", tvl: 80000000, txVolume: 400000, evm: true, opstack: true, unique: false },
+                                { name: "Blast", family: "account", chainId: 81457, network: "mainnet", tvl: 600000000, txVolume: 2000000, evm: true, opstack: true, unique: false },
+                                { name: "Mantle", family: "account", chainId: 5000, network: "mainnet", tvl: 1200000000, txVolume: 1800000, evm: true, opstack: true, unique: false },
+                                { name: "Kroma", family: "account", chainId: 255, network: "mainnet", tvl: 30000000, txVolume: 200000, evm: true, opstack: true, unique: false },
+                                { name: "Public Goods Network", family: "account", chainId: 424, network: "mainnet", tvl: 20000000, txVolume: 150000, evm: true, opstack: true, unique: false },
+                                { name: "Other OP Stack (~41)", family: "account", chainId: "opstack-others", network: "mixed", tvl: 500000000, txVolume: 1500000, evm: true, opstack: true, unique: false, isAggregate: true, aggregateCount: 41 }
+                            ]
+                        },
+                        {
+                            name: "Arbitrum Ecosystem (~30 chains)",
+                            family: "account",
+                            isGroup: true,
+                            evmSubtype: "arbitrum",
+                            description: "Arbitrum's Orbit framework - custom L2/L3 deployments",
+                            children: [
+                                { name: "Arbitrum One", family: "account", chainId: 42161, network: "mainnet", tvl: 12000000000, txVolume: 15000000, evm: true, arbitrum: true, unique: false },
+                                { name: "Arbitrum Nova", family: "account", chainId: 42170, network: "mainnet", tvl: 500000000, txVolume: 2000000, evm: true, arbitrum: true, unique: false },
+                                { name: "Xai", family: "account", chainId: 660279, network: "mainnet", tvl: 50000000, txVolume: 800000, evm: true, arbitrum: true, unique: false },
+                                { name: "Other Arbitrum Orbit (~27)", family: "account", chainId: "arbitrum-others", network: "mixed", tvl: 200000000, txVolume: 1000000, evm: true, arbitrum: true, unique: false, isAggregate: true, aggregateCount: 27 }
+                            ]
+                        },
+                        {
+                            name: "Polygon Ecosystem (~20 chains)",
+                            family: "account",
+                            isGroup: true,
+                            evmSubtype: "polygon",
+                            description: "Polygon's CDK - customizable zkEVM L2 framework",
+                            children: [
+                                { name: "Polygon PoS", family: "account", chainId: 137, network: "mainnet", tvl: 8000000000, txVolume: 20000000, evm: true, polygon: true, unique: false },
+                                { name: "Polygon zkEVM", family: "account", chainId: 1101, network: "mainnet", tvl: 500000000, txVolume: 1500000, evm: true, polygon: true, zkevm: true, unique: false },
+                                { name: "Immutable zkEVM", family: "account", chainId: 13371, network: "mainnet", tvl: 100000000, txVolume: 800000, evm: true, polygon: true, zkevm: true, unique: false },
+                                { name: "Other Polygon CDK (~17)", family: "account", chainId: "polygon-others", network: "mixed", tvl: 300000000, txVolume: 1000000, evm: true, polygon: true, unique: false, isAggregate: true, aggregateCount: 17 }
+                            ]
+                        },
+                        {
+                            name: "zkEVM L2s (~12 chains)",
+                            family: "account",
+                            isGroup: true,
+                            evmSubtype: "zkevm",
+                            description: "Zero-knowledge proof rollups - validity proofs for scalability",
+                            children: [
+                                { name: "zkSync Era", family: "account", chainId: 324, network: "mainnet", tvl: 3000000000, txVolume: 4000000, evm: true, zkevm: true, unique: false },
+                                { name: "Scroll", family: "account", chainId: 534352, network: "mainnet", tvl: 800000000, txVolume: 1500000, evm: true, zkevm: true, unique: false },
+                                { name: "Linea", family: "account", chainId: 59144, network: "mainnet", tvl: 1000000000, txVolume: 2000000, evm: true, zkevm: true, unique: false },
+                                { name: "Taiko", family: "account", chainId: 167000, network: "mainnet", tvl: 200000000, txVolume: 600000, evm: true, zkevm: true, unique: false },
+                                { name: "Starknet", family: "account", chainId: "starknet", network: "mainnet", tvl: 1500000000, txVolume: 2500000, evm: false, zkevm: true, unique: true },
+                                { name: "Other zkEVMs (~7)", family: "account", chainId: "zkevm-others", network: "mixed", tvl: 400000000, txVolume: 1000000, evm: true, zkevm: true, unique: false, isAggregate: true, aggregateCount: 7 }
+                            ]
+                        },
+                        {
+                            name: "L1s & Other L2s (~2285 chains)",
+                            family: "account",
+                            isGroup: true,
+                            evmSubtype: "standard",
+                            description: "Layer 1 EVM chains and independent L2s",
+                            children: [
+                                { name: "Ethereum Mainnet", family: "account", chainId: 1, network: "mainnet", tvl: 45000000000, txVolume: 100000000, evm: true, unique: true },
+                                { name: "BNB Chain", family: "account", chainId: 56, network: "mainnet", tvl: 50000000000, txVolume: 30000000, evm: true, unique: false },
+                                { name: "Avalanche C-Chain", family: "account", chainId: 43114, network: "mainnet", tvl: 6000000000, txVolume: 5000000, evm: true, unique: false },
+                                { name: "Fantom", family: "account", chainId: 250, network: "mainnet", tvl: 500000000, txVolume: 800000, evm: true, unique: false },
+                                { name: "Celo", family: "account", chainId: 42220, network: "mainnet", tvl: 300000000, txVolume: 500000, evm: true, unique: false },
+                                { name: "Gnosis", family: "account", chainId: 100, network: "mainnet", tvl: 400000000, txVolume: 600000, evm: true, unique: false },
+                                { name: "Aurora", family: "account", chainId: 1313161554, network: "mainnet", tvl: 200000000, txVolume: 300000, evm: true, unique: false },
+                                { name: "Moonbeam", family: "account", chainId: 1284, network: "mainnet", tvl: 150000000, txVolume: 400000, evm: true, unique: false },
+                                { name: "Evmos", family: "account", chainId: 9001, network: "mainnet", tvl: 50000000, txVolume: 200000, evm: true, cosmos: true, unique: false },
+                                { name: "Other EVM chains (~2276)", family: "account", chainId: "evm-others", network: "mixed", tvl: 2000000000, txVolume: 8000000, evm: true, unique: false, isAggregate: true, aggregateCount: 2276 }
+                            ]
+                        }
                     ]
                 },
                 {
-                    name: "Non-EVM Chains",
+                    name: "Cosmos SDK (~100 chains)",
                     family: "account",
                     isGroup: true,
-                    description: "Account-based but not EVM compatible",
+                    cosmosChains: true,
+                    description: "Cosmos SDK chains - IBC interoperability, Tendermint consensus",
                     children: [
-                        { name: "Aptos", family: "account", chainId: 1001, network: "mainnet", tvl: 1000000000, txVolume: 2000000, evm: false, unique: true },
-                        { name: "Sui", family: "account", chainId: 1002, network: "mainnet", tvl: 800000000, txVolume: 1500000, evm: false, unique: true },
-                        { name: "NEAR", family: "account", chainId: 1003, network: "mainnet", tvl: 500000000, txVolume: 1000000, evm: false, unique: true },
-                        { name: "Stellar", family: "account", chainId: 1004, network: "mainnet", tvl: 2000000000, txVolume: 3000000, evm: false, unique: true },
-                        { name: "XRP Ledger", family: "account", chainId: 1005, network: "mainnet", tvl: 3000000000, txVolume: 5000000, evm: false, unique: true },
-                        { name: "Algorand", family: "account", chainId: 1006, network: "mainnet", tvl: 1500000000, txVolume: 2000000, evm: false, unique: true },
-                        { name: "Tron", family: "account", chainId: 1007, network: "mainnet", tvl: 5000000000, txVolume: 8000000, evm: false, unique: true },
-                        { name: "Cosmos Hub", family: "account", chainId: 118, network: "mainnet", tvl: 2000000000, txVolume: 3000000, evm: false, unique: true },
-                        { name: "Osmosis", family: "account", chainId: 1008, network: "mainnet", tvl: 800000000, txVolume: 1200000, evm: false, unique: true },
-                        { name: "Polkadot", family: "account", chainId: 1009, network: "mainnet", tvl: 4000000000, txVolume: 6000000, evm: false, unique: true }
+                        { name: "Cosmos Hub", family: "account", chainId: 118, network: "mainnet", tvl: 2000000000, txVolume: 3000000, cosmos: true, unique: true },
+                        { name: "Osmosis", family: "account", chainId: "osmosis-1", network: "mainnet", tvl: 800000000, txVolume: 1200000, cosmos: true, unique: true },
+                        { name: "Celestia", family: "account", chainId: "celestia", network: "mainnet", tvl: 500000000, txVolume: 800000, cosmos: true, unique: true },
+                        { name: "Sei", family: "account", chainId: "sei-1", network: "mainnet", tvl: 300000000, txVolume: 600000, cosmos: true, unique: true },
+                        { name: "Juno", family: "account", chainId: "juno-1", network: "mainnet", tvl: 100000000, txVolume: 400000, cosmos: true, unique: true },
+                        { name: "Akash", family: "account", chainId: "akashnet-2", network: "mainnet", tvl: 50000000, txVolume: 200000, cosmos: true, unique: true },
+                        { name: "dYdX Chain", family: "account", chainId: "dydx-mainnet-1", network: "mainnet", tvl: 400000000, txVolume: 1500000, cosmos: true, unique: true },
+                        { name: "Injective", family: "account", chainId: "injective-1", network: "mainnet", tvl: 200000000, txVolume: 700000, cosmos: true, unique: true },
+                        { name: "Kava", family: "account", chainId: "kava_2222-10", network: "mainnet", tvl: 150000000, txVolume: 500000, cosmos: true, evm: true, unique: true },
+                        { name: "Other Cosmos Chains (~91)", family: "account", chainId: "cosmos-others", network: "mixed", tvl: 500000000, txVolume: 2000000, cosmos: true, unique: false, isAggregate: true, aggregateCount: 91 }
+                    ]
+                },
+                {
+                    name: "SVM (1 chain)",
+                    family: "account",
+                    isGroup: true,
+                    svmChains: true,
+                    description: "Solana Virtual Machine - parallel transaction processing",
+                    children: [
+                        { name: "Solana", family: "account", chainId: 101, network: "mainnet-beta", tvl: 5000000000, txVolume: 50000000, svm: true, unique: true }
+                    ]
+                },
+                {
+                    name: "Other Account-Based (~10 chains)",
+                    family: "account",
+                    isGroup: true,
+                    description: "Other account model chains with unique architectures",
+                    children: [
+                        { name: "Aptos", family: "account", chainId: 1001, network: "mainnet", tvl: 1000000000, txVolume: 2000000, movevm: true, unique: true },
+                        { name: "Sui", family: "account", chainId: 1002, network: "mainnet", tvl: 800000000, txVolume: 1500000, movevm: true, unique: true },
+                        { name: "NEAR", family: "account", chainId: 1003, network: "mainnet", tvl: 500000000, txVolume: 1000000, unique: true },
+                        { name: "Stellar", family: "account", chainId: 1004, network: "mainnet", tvl: 2000000000, txVolume: 3000000, unique: true },
+                        { name: "XRP Ledger", family: "account", chainId: 1005, network: "mainnet", tvl: 3000000000, txVolume: 5000000, unique: true },
+                        { name: "Algorand", family: "account", chainId: 1006, network: "mainnet", tvl: 1500000000, txVolume: 2000000, unique: true },
+                        { name: "Tron", family: "account", chainId: 1007, network: "mainnet", tvl: 5000000000, txVolume: 8000000, unique: true },
+                        { name: "Polkadot", family: "account", chainId: 1009, network: "mainnet", tvl: 4000000000, txVolume: 6000000, unique: true },
+                        { name: "TON", family: "account", chainId: "ton", network: "mainnet", tvl: 300000000, txVolume: 1000000, unique: true },
+                        { name: "Hedera", family: "account", chainId: "hedera", network: "mainnet", tvl: 200000000, txVolume: 800000, unique: true }
                     ]
                 }
             ]
@@ -77,9 +169,9 @@ const CHAIN_DATA = {
         {
             name: "Instruction Family",
             family: "instruction",
-            description: "Program-based - bundles of operations",
+            description: "Program-based model - transactions as bundles of operations",
             children: [
-                { name: "Solana", family: "instruction", chainId: 101, network: "mainnet-beta", tvl: 5000000000, txVolume: 50000000, unique: true }
+                { name: "Note: See SVM under Account Family", family: "instruction", chainId: "note", network: "info", tvl: 0, txVolume: 0, unique: false, isNote: true }
             ]
         },
         {
@@ -133,6 +225,11 @@ function setupControls() {
 }
 
 function getMetricValue(node, metric) {
+    // Skip note entries (informational only)
+    if (node.isNote) {
+        return 0;
+    }
+
     if (node.children) {
         // Aggregate children
         return node.children.reduce((sum, child) => sum + getMetricValue(child, metric), 0);
@@ -140,13 +237,13 @@ function getMetricValue(node, metric) {
 
     switch (metric) {
         case 'chain_count':
-            return node.isAggregate ? 1985 : 1;
+            return node.isAggregate ? (node.aggregateCount || 1) : 1;
         case 'tvl':
             return node.tvl || 1000000000; // Default 1B
         case 'tx_volume':
             return node.txVolume || 1000000; // Default 1M
         case 'equal':
-            return 1;
+            return node.isAggregate ? (node.aggregateCount || 1) : 1;
         default:
             return 1;
     }
@@ -256,6 +353,25 @@ function createCell(rect) {
     cell.style.top = `${y}px`;
     cell.style.width = `${width}px`;
     cell.style.height = `${height}px`;
+
+    // Add ecosystem-specific data attribute for styling
+    if (node.evmSubtype) {
+        cell.setAttribute('data-ecosystem', node.evmSubtype);
+    } else if (node.evmChains) {
+        cell.setAttribute('data-ecosystem', 'evm');
+    } else if (node.cosmosChains) {
+        cell.setAttribute('data-ecosystem', 'cosmos');
+    } else if (node.svmChains) {
+        cell.setAttribute('data-ecosystem', 'svm');
+    } else if (node.opstack) {
+        cell.setAttribute('data-ecosystem', 'opstack');
+    } else if (node.arbitrum) {
+        cell.setAttribute('data-ecosystem', 'arbitrum');
+    } else if (node.polygon) {
+        cell.setAttribute('data-ecosystem', 'polygon');
+    } else if (node.zkevm && !node.polygon) {
+        cell.setAttribute('data-ecosystem', 'zkevm');
+    }
 
     // Add size classes for responsive text
     if (width < 80 || height < 60) {
@@ -419,8 +535,9 @@ function updateBreadcrumb() {
 function updateStats(data) {
     // Count chains
     function countChains(node) {
+        if (node.isNote) return 0; // Skip informational notes
         if (!node.children) {
-            return node.isAggregate ? 1985 : 1;
+            return node.isAggregate ? (node.aggregateCount || 1) : 1;
         }
         return node.children.reduce((sum, child) => sum + countChains(child), 0);
     }
