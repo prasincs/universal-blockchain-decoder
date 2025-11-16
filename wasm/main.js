@@ -1,18 +1,56 @@
 // Universal Blockchain Decoder - WASM Demo
 // Main JavaScript module for UI interactions and WASM integration
 
-import init, { decode_transaction, supported_chains, auto_detect_chain } from './pkg/universal_decoder_wasm.js';
-
 // Example transactions for quick testing
 import { EXAMPLES } from './examples.js';
 
 // Global state
 let wasmModule = null;
+let decode_transaction = null;
+let supported_chains = null;
+let auto_detect_chain = null;
 
 // Initialize WASM module on page load
 async function initWasm() {
     try {
-        wasmModule = await init();
+        // Store and temporarily remove window.ethereum to avoid conflicts with MetaMask
+        const originalEthereum = window.ethereum;
+        const ethereumDescriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
+
+        // Temporarily make ethereum configurable if it exists
+        if (ethereumDescriptor && !ethereumDescriptor.configurable) {
+            try {
+                delete window.ethereum;
+            } catch (e) {
+                console.warn('Could not delete window.ethereum, trying alternative approach');
+            }
+        }
+
+        // Dynamic import to avoid conflicts
+        const wasmModule = await import('./pkg/universal_decoder_wasm.js');
+
+        // Restore window.ethereum
+        if (originalEthereum) {
+            try {
+                Object.defineProperty(window, 'ethereum', {
+                    value: originalEthereum,
+                    writable: ethereumDescriptor?.writable ?? true,
+                    configurable: ethereumDescriptor?.configurable ?? true,
+                    enumerable: ethereumDescriptor?.enumerable ?? true
+                });
+            } catch (e) {
+                window.ethereum = originalEthereum;
+            }
+        }
+
+        // Initialize WASM
+        await wasmModule.default();
+
+        // Store functions globally
+        decode_transaction = wasmModule.decode_transaction;
+        supported_chains = wasmModule.supported_chains;
+        auto_detect_chain = wasmModule.auto_detect_chain;
+
         console.log('✅ WASM module loaded successfully');
         const chains = supported_chains();
         console.log('Supported chains:', chains);
