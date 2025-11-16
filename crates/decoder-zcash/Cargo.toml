@@ -20,10 +20,12 @@ sha2 = { workspace = true }
 blake2b_simd = "1.0"
 # hex - Use vendored version via: use universal_decoder_core::hex;
 
-# Cryptographic dependencies (to be vendored via git subtree in Phase 3.8)
-# Phase 3: Viewing key decryption support
+# Cryptographic dependencies
+# Note: redjubjub vendored in vendored/redjubjub/ (git subtree from ZcashFoundation/redjubjub@0.7.0)
+# For now using Cargo dependency for ease of use; full vendoring integration is future work
 jubjub = "0.10.0"           # Sapling elliptic curve (ECDH key agreement)
 chacha20poly1305 = "0.10"   # ChaCha20-Poly1305 AEAD (note decryption)
+redjubjub = "0.7.0"         # RedJubjub signature verification (vendored reference in vendored/redjubjub/)
 # Future: pasta_curves, bls12_381 for Orchard and proof verification
 
 [dev-dependencies]
