@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Comparison - Universal Blockchain Decoder</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="comparison.css">
+</head>
+<body>
+    <header>
+        <h1>🔗 Type System Visualization</h1>
+        <p class="tagline">Compare how different blockchains represent the same operation</p>
+        <div class="links">
+            <a href="index.html">← Back to Decoder</a>
+            <a href="https://github.com/prasincs/universal-blockchain-decoder/blob/main/docs/BLOG_TYPE_SYSTEM_VISUALIZATION.md" target="_blank">Read Blog Post</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Chain Family Overview -->
+        <section class="chain-families">
+            <h2>The Four Chain Families</h2>
+            <div class="family-grid">
+                <div class="family-card utxo">
+                    <h3>🔗 UTXO Family</h3>
+                    <p class="description">Unspent Transaction Outputs - Like physical cash</p>
+                    <div class="chains-list">
+                        <span class="chain-badge">Bitcoin</span>
+                        <span class="chain-badge">Litecoin</span>
+                        <span class="chain-badge">Cardano</span>
+                        <span class="chain-badge">Dogecoin</span>
+                        <span class="chain-badge">Dash</span>
+                    </div>
+                    <div class="characteristics">
+                        <div class="pro">✅ Parallel validation</div>
+                        <div class="pro">✅ Natural privacy</div>
+                        <div class="con">❌ Larger transactions</div>
+                    </div>
+                </div>
+
+                <div class="family-card account">
+                    <h3>💰 Account Family</h3>
+                    <p class="description">Account-based - Like bank accounts</p>
+                    <div class="chains-list">
+                        <span class="chain-badge">Ethereum (2000+)</span>
+                        <span class="chain-badge">Polygon</span>
+                        <span class="chain-badge">Avalanche</span>
+                        <span class="chain-badge">Cosmos</span>
+                        <span class="chain-badge">Aptos</span>
+                    </div>
+                    <div class="characteristics">
+                        <div class="pro">✅ Simple structure</div>
+                        <div class="pro">✅ Smart contracts</div>
+                        <div class="con">❌ Sequential validation</div>
+                    </div>
+                </div>
+
+                <div class="family-card instruction">
+                    <h3>⚡ Instruction Family</h3>
+                    <p class="description">Program-based - Bundles of operations</p>
+                    <div class="chains-list">
+                        <span class="chain-badge">Solana</span>
+                    </div>
+                    <div class="characteristics">
+                        <div class="pro">✅ Parallel execution</div>
+                        <div class="pro">✅ Multiple operations</div>
+                        <div class="con">❌ Complex structure</div>
+                    </div>
+                </div>
+
+                <div class="family-card privacy">
+                    <h3>🔐 Privacy Family</h3>
+                    <p class="description">Shielded transactions with zero-knowledge proofs</p>
+                    <div class="chains-list">
+                        <span class="chain-badge">Zcash</span>
+                        <span class="chain-badge">Monero</span>
+                    </div>
+                    <div class="characteristics">
+                        <div class="pro">✅ Hidden amounts</div>
+                        <div class="pro">✅ Private addresses</div>
+                        <div class="con">❌ Larger proof sizes</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Side-by-side comparison -->
+        <section class="comparison-section">
+            <h2>Side-by-Side Transaction Comparison</h2>
+            <p class="section-description">Compare how different chains encode the same operation: sending ~$100 worth of native currency</p>
+
+            <div class="comparison-controls">
+                <div class="chain-selector">
+                    <label>Chain A:</label>
+                    <select id="chain-a-select">
+                        <option value="bitcoin" selected>Bitcoin (0.002 BTC)</option>
+                        <option value="ethereum">Ethereum (0.04 ETH)</option>
+                        <option value="solana">Solana (1 SOL)</option>
+                        <option value="polygon">Polygon (100 MATIC)</option>
+                    </select>
+                </div>
+                <div class="vs">VS</div>
+                <div class="chain-selector">
+                    <label>Chain B:</label>
+                    <select id="chain-b-select">
+                        <option value="bitcoin">Bitcoin (0.002 BTC)</option>
+                        <option value="ethereum" selected>Ethereum (0.04 ETH)</option>
+                        <option value="solana">Solana (1 SOL)</option>
+                        <option value="polygon">Polygon (100 MATIC)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="comparison-grid" id="comparison-grid">
+                <!-- Chain A -->
+                <div class="comparison-pane">
+                    <div class="pane-header">
+                        <h3 id="chain-a-name">Bitcoin</h3>
+                        <span class="family-tag utxo" id="chain-a-family">UTXO Family</span>
+                    </div>
+
+                    <div class="comparison-details">
+                        <div class="detail-row">
+                            <span class="label">Transaction Size:</span>
+                            <span class="value" id="chain-a-size">226 bytes</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Signature Scheme:</span>
+                            <span class="value" id="chain-a-sig">ECDSA (secp256k1)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Hash Algorithm:</span>
+                            <span class="value" id="chain-a-hash">Double SHA-256</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Encoding:</span>
+                            <span class="value" id="chain-a-encoding">Custom binary</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Fee Model:</span>
+                            <span class="value" id="chain-a-fee">Implicit (inputs - outputs)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Replay Protection:</span>
+                            <span class="value" id="chain-a-replay">UTXO uniqueness</span>
+                        </div>
+                    </div>
+
+                    <div class="txir-preview">
+                        <h4>TxIR Mapping</h4>
+                        <pre id="chain-a-txir">operations: [Transfer]
+state_deltas:
+  inputs: [InputReference]
+  outputs: [OutputValue]
+  account_changes: []
+privacy: None</pre>
+                    </div>
+                </div>
+
+                <!-- Chain B -->
+                <div class="comparison-pane">
+                    <div class="pane-header">
+                        <h3 id="chain-b-name">Ethereum</h3>
+                        <span class="family-tag account" id="chain-b-family">Account Family</span>
+                    </div>
+
+                    <div class="comparison-details">
+                        <div class="detail-row">
+                            <span class="label">Transaction Size:</span>
+                            <span class="value" id="chain-b-size">109 bytes</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Signature Scheme:</span>
+                            <span class="value" id="chain-b-sig">ECDSA (secp256k1)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Hash Algorithm:</span>
+                            <span class="value" id="chain-b-hash">Keccak-256</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Encoding:</span>
+                            <span class="value" id="chain-b-encoding">RLP</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Fee Model:</span>
+                            <span class="value" id="chain-b-fee">Gas (gas_used × gas_price)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Replay Protection:</span>
+                            <span class="value" id="chain-b-replay">Nonce (sequential)</span>
+                        </div>
+                    </div>
+
+                    <div class="txir-preview">
+                        <h4>TxIR Mapping</h4>
+                        <pre id="chain-b-txir">operations: [Transfer]
+state_deltas:
+  inputs: []
+  outputs: []
+  account_changes: [AccountChange]
+privacy: None</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="similarities-differences">
+                <div class="similarities">
+                    <h3>✅ Universal Properties (Same in TxIR)</h3>
+                    <ul>
+                        <li>Both have <strong>authorization</strong> (signatures proving validity)</li>
+                        <li>Both perform <strong>value transfer</strong> (Operation::Transfer)</li>
+                        <li>Both modify <strong>state</strong> (UTXO set or account balances)</li>
+                        <li>Both have <strong>fees</strong> (different mechanisms)</li>
+                        <li>Both have <strong>replay protection</strong> (different mechanisms)</li>
+                        <li>Both have <strong>transaction IDs</strong> (different hash algorithms)</li>
+                    </ul>
+                </div>
+
+                <div class="differences">
+                    <h3>⚡ Key Differences (Preserved in Chain-Specific Data)</h3>
+                    <ul id="differences-list">
+                        <li><strong>State Model:</strong> UTXO (stateless) vs Account (stateful)</li>
+                        <li><strong>Structure:</strong> Inputs/Outputs vs From/To/Nonce</li>
+                        <li><strong>Fee Calculation:</strong> Implicit vs Explicit gas</li>
+                        <li><strong>Parallelization:</strong> Parallel vs Sequential</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TxIR Type Explorer -->
+        <section class="txir-explorer">
+            <h2>TxIR Type Explorer</h2>
+            <p class="section-description">Explore the universal transaction intermediate representation that unifies all blockchains</p>
+
+            <div class="type-tree">
+                <div class="type-node root">
+                    <div class="node-header" onclick="toggleNode(this)">
+                        <span class="toggle">▼</span>
+                        <code>TxIR&lt;'a, V: u8&gt;</code>
+                        <span class="description">Universal transaction representation</span>
+                    </div>
+                    <div class="node-children">
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>chain: ChainRef</code>
+                                <span class="description">Which blockchain</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>id: u64</code> <span class="comment">// Chain ID (Ethereum = 1, Bitcoin = 0)</span></div>
+                                <div class="field"><code>name: String</code> <span class="comment">// Human-readable name</span></div>
+                                <div class="field"><code>family: ChainFamily</code> <span class="comment">// UTXO/Account/Instruction/Privacy</span></div>
+                                <div class="field"><code>network: Option&lt;String&gt;</code> <span class="comment">// mainnet/testnet</span></div>
+                            </div>
+                        </div>
+
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>metadata: TxMetadata</code>
+                                <span class="description">Context information</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>tx_hash: Vec&lt;u8&gt;</code> <span class="comment">// Transaction ID</span></div>
+                                <div class="field"><code>block_height: Option&lt;u64&gt;</code> <span class="comment">// Block number</span></div>
+                                <div class="field"><code>timestamp: Option&lt;u64&gt;</code> <span class="comment">// Unix timestamp</span></div>
+                                <div class="field"><code>size: usize</code> <span class="comment">// Transaction size in bytes</span></div>
+                                <div class="field"><code>extra: String</code> <span class="comment">// Chain-specific JSON metadata</span></div>
+                            </div>
+                        </div>
+
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>authorization: AuthorizationPackage</code>
+                                <span class="description">Who signed this?</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>signatures: Vec&lt;Signature&gt;</code> <span class="comment">// Digital signatures</span></div>
+                                <div class="field"><code>public_keys: Vec&lt;PublicKey&gt;</code> <span class="comment">// Signing keys</span></div>
+                                <div class="field"><code>signature_scheme: SignatureScheme</code> <span class="comment">// ECDSA/EdDSA/Schnorr</span></div>
+                            </div>
+                        </div>
+
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>operations: Vec&lt;Operation&gt;</code>
+                                <span class="description">What does it do?</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>Transfer</code> <span class="comment">// Send value A → B</span></div>
+                                <div class="field"><code>ContractCall</code> <span class="comment">// Execute smart contract</span></div>
+                                <div class="field"><code>ContractDeploy</code> <span class="comment">// Deploy new contract</span></div>
+                                <div class="field"><code>Stake</code> <span class="comment">// Staking operations</span></div>
+                                <div class="field"><code>Generic</code> <span class="comment">// Chain-specific operations</span></div>
+                            </div>
+                        </div>
+
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>state_deltas: StateDeltas</code>
+                                <span class="description">How does state change?</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>inputs: Vec&lt;InputReference&gt;</code> <span class="comment">// UTXO inputs (Bitcoin)</span></div>
+                                <div class="field"><code>outputs: Vec&lt;OutputValue&gt;</code> <span class="comment">// UTXO outputs (Bitcoin)</span></div>
+                                <div class="field"><code>account_changes: Vec&lt;AccountChange&gt;</code> <span class="comment">// Account changes (Ethereum)</span></div>
+                            </div>
+                        </div>
+
+                        <div class="type-node">
+                            <div class="node-header" onclick="toggleNode(this)">
+                                <span class="toggle">▼</span>
+                                <code>privacy: Option&lt;PrivacyMetadata&gt;</code>
+                                <span class="description">Privacy features (optional)</span>
+                            </div>
+                            <div class="node-children">
+                                <div class="field"><code>features: Vec&lt;PrivacyFeature&gt;</code> <span class="comment">// HiddenSender, HiddenAmount, etc.</span></div>
+                                <div class="field"><code>observability: ObservabilityLevel</code> <span class="comment">// FullyPrivate, Partial, Observable</span></div>
+                                <div class="field"><code>viewing_key: Option&lt;ViewingKey&gt;</code> <span class="comment">// For selective disclosure</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section class="statistics">
+            <h2>Type System at Scale</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">2200+</div>
+                    <div class="stat-label">Supported Blockchains</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Chain Families</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">1</div>
+                    <div class="stat-label">Universal TxIR Type</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Operation Types</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">32</div>
+                    <div class="stat-label">Decoder Crates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Core Changes Needed for New Chains</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            Built with <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">universal-blockchain-decoder</a>.
+            <a href="https://github.com/prasincs/universal-blockchain-decoder/blob/main/docs/BLOG_TYPE_SYSTEM_VISUALIZATION.md" target="_blank">Read the blog post</a> to learn more.
+        </p>
+    </footer>
+
+    <script src="comparison.js"></script>
+</body>
+</html>
