@@ -1,128 +1,145 @@
-//! Avalanche transaction decoder
+//! Avalanche transaction decoder supporting all three chains
 //!
-//! This module provides a decoder for Avalanche transactions, transforming them
-//! from their native RLP format into the universal TxIR representation.
+//! This module provides decoders for all Avalanche chains:
+//! - **X-Chain**: Exchange chain (AVM) for asset transfers using UTXO model
+//! - **P-Chain**: Platform chain for staking and subnet management
+//! - **C-Chain**: Contract chain (EVM-compatible) for smart contracts
 //!
-//! ## Implementation Strategy
+//! ## Architecture
 //!
-//! Avalanche is EVM-compatible and uses the **exact same transaction format as Ethereum**.
-//! This decoder **reuses the Ethereum decoder** with Avalanche-specific chain ID validation.
+//! Avalanche consists of three primary blockchains:
 //!
-//! ## Transaction Format
+//! ### X-Chain (Exchange Chain)
+//! - Instance of the Avalanche Virtual Machine (AVM)
+//! - UTXO-based model for creating and trading assets
+//! - Transaction types: BaseTx, CreateAssetTx, OperationTx, ImportTx, ExportTx
+//! - Uses codec 0x0000 for serialization
 //!
-//! - RLP-encoded (identical to Ethereum)
-//! - EIP-2718 transaction types (legacy, EIP-2930, EIP-1559)
+//! ### P-Chain (Platform Chain)
+//! - Manages validators, subnets, and staking
+//! - Transaction types: AddValidatorTx, AddDelegatorTx, CreateSubnetTx, etc.
+//! - Also UTXO-based but specialized for platform operations
+//! - Only AVAX asset is valid on P-Chain
+//!
+//! ### C-Chain (Contract Chain)
+//! - EVM-compatible chain for smart contracts
+//! - Uses identical format to Ethereum (RLP-encoded)
 //! - Chain ID: 43114
+//! - Supports all Ethereum transaction types (Legacy, EIP-2930, EIP-1559)
 //!
-//! ## Example
+//! ## Examples
+//!
+//! ### Decoding X-Chain transaction
 //!
 //! ```rust,ignore
-//! use decoder_avalanche::*;
-//! use universal_decoder_core::prelude::*;
+//! use decoder_avalanche::xchain::*;
+//! use decoder_primitives::prelude::*;
 //!
-//! let tx_hex = "f86c...";
-//! let tx_bytes = hex::decode(tx_hex)?;
-//!
-//! let decoded = AvalancheDecoder::decode(&tx_bytes)?;
-//! let tx_ir = decoded.canonicalize()?;
+//! let tx_bytes = hex::decode("0000...")?; // X-Chain transaction
+//! let tx = XChainDecoder::decode(&tx_bytes)?;
 //! ```
+//!
+//! ### Decoding P-Chain transaction
+//!
+//! ```rust,ignore
+//! use decoder_avalanche::pchain::*;
+//! use decoder_primitives::prelude::*;
+//!
+//! let tx_bytes = hex::decode("0000...")?; // P-Chain transaction
+//! let tx = PChainDecoder::decode(&tx_bytes)?;
+//! ```
+//!
+//! ### Decoding C-Chain transaction
+//!
+//! ```rust,ignore
+//! use decoder_avalanche::cchain::*;
+//! use decoder_primitives::prelude::*;
+//!
+//! let tx_bytes = hex::decode("f86c...")?; // C-Chain transaction (RLP)
+//! let tx = CChainDecoder::decode(&tx_bytes)?;
+//! ```
+//!
+//! ## References
+//!
+//! - [X-Chain Transaction Format](https://docs.avax.network/reference/avalanchego/x-chain/txn-format)
+//! - [P-Chain Transaction Format](https://docs.avax.network/reference/avalanchego/p-chain/txn-format)
+//! - [C-Chain API](https://docs.avax.network/reference/avalanchego/c-chain/api)
 
-use decoder_ethereum::{types::EthereumTransaction, EthereumDecoder};
-use decoder_primitives::prelude::*;
+pub mod cchain;
+pub mod common;
+pub mod pchain;
+pub mod xchain;
 
-/// Avalanche chain identity
-#[derive(Debug, Clone, Copy)]
-pub struct AvalancheChain;
+// Re-export commonly used types
+pub use cchain::{CChain, CChainDecoder};
+pub use common::*;
+pub use pchain::{PChain, PChainDecoder, PChainTransaction};
+pub use xchain::{XChain, XChainDecoder, XChainTransaction};
 
-impl ChainIdentity for AvalancheChain {
-    fn chain_id(&self) -> u64 {
-        43114
-    }
-
-    fn chain_name(&self) -> &str {
-        "Avalanche"
-    }
-
-    fn chain_family(&self) -> ChainFamily {
-        ChainFamily::Account
-    }
-}
-
-/// Avalanche decoder implementing the ChainDecoder trait
-///
-/// **Reuses Ethereum decoder** with Avalanche-specific chain ID validation.
-pub struct AvalancheDecoder;
-
-impl ChainDecoder for AvalancheDecoder {
-    type TxSpecific = EthereumTransaction; // Reuse Ethereum transaction type
-    type Chain = AvalancheChain;
-
-    fn chain() -> Self::Chain {
-        AvalancheChain
-    }
-
-    fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
-        // Validate format first
-        Self::validate_format(raw_bytes)?;
-
-        // Decode using Ethereum decoder (same RLP format)
-        let tx = EthereumDecoder::decode(raw_bytes)?;
-
-        // Validate chain ID is for Avalanche
-        if let Some(chain_id) = tx.chain_id {
-            if chain_id != 43114 {
-                return Err(DecoderError::invalid_structure(format!(
-                    "Invalid Avalanche chain ID: {} (expected 43114)",
-                    chain_id
-                )));
-            }
-        }
-
-        Ok(tx)
-    }
-
-    fn validate_format(raw_bytes: &[u8]) -> Result<()> {
-        // Use Ethereum's validation (same format)
-        EthereumDecoder::validate_format(raw_bytes)
-    }
-}
+// Legacy exports for backward compatibility
+pub use cchain::{CChain as AvalancheChain, CChainDecoder as AvalancheDecoder};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use decoder_primitives::prelude::*;
 
     #[test]
-    fn test_chain_identity() {
-        let chain = AvalancheDecoder::chain();
-        assert_eq!(chain.chain_id(), 43114);
-        assert_eq!(chain.chain_name(), "Avalanche");
-        assert_eq!(chain.chain_family(), ChainFamily::Account);
+    fn test_all_chains_have_unique_names() {
+        let x_chain = xchain::XChainDecoder::chain();
+        let p_chain = pchain::PChainDecoder::chain();
+        let c_chain = cchain::CChainDecoder::chain();
+
+        assert_eq!(x_chain.chain_name(), "Avalanche-X");
+        assert_eq!(p_chain.chain_name(), "Avalanche-P");
+        assert_eq!(c_chain.chain_name(), "Avalanche-C");
+
+        // All names should be unique
+        assert_ne!(x_chain.chain_name(), p_chain.chain_name());
+        assert_ne!(x_chain.chain_name(), c_chain.chain_name());
+        assert_ne!(p_chain.chain_name(), c_chain.chain_name());
     }
 
     #[test]
-    fn test_validate_format() {
-        // Empty transaction should fail
-        assert!(AvalancheDecoder::validate_format(&[]).is_err());
+    fn test_chain_families() {
+        let x_chain = xchain::XChainDecoder::chain();
+        let p_chain = pchain::PChainDecoder::chain();
+        let c_chain = cchain::CChainDecoder::chain();
 
-        // Too small should fail (minimum is 5 bytes for Ethereum)
-        assert!(AvalancheDecoder::validate_format(&[0x01]).is_err());
-        assert!(AvalancheDecoder::validate_format(&[0x01, 0x02, 0x03, 0x04]).is_err());
+        // X-Chain uses UTXO model
+        assert_eq!(x_chain.chain_family(), ChainFamily::Utxo);
 
-        // Valid minimum length should pass basic validation
-        let dummy_tx = vec![0xf8, 0x6c, 0x00, 0x00, 0x00];
-        assert!(AvalancheDecoder::validate_format(&dummy_tx).is_ok());
+        // P-Chain uses Account model for platform operations
+        assert_eq!(p_chain.chain_family(), ChainFamily::Account);
+
+        // C-Chain is EVM-compatible (Account model)
+        assert_eq!(c_chain.chain_family(), ChainFamily::Account);
     }
 
     #[test]
-    fn test_decoder_reuses_ethereum() {
-        // Verify that AvalancheDecoder uses EthereumTransaction type
-        use std::any::TypeId;
+    fn test_codec_id_constant() {
+        // Validate that codec ID is correct
+        assert_eq!(CODEC_ID, 0x0000);
+    }
 
-        fn assert_same_type<T: 'static, U: 'static>() {
-            assert_eq!(TypeId::of::<T>(), TypeId::of::<U>());
-        }
+    #[test]
+    fn test_type_ids() {
+        // Validate transaction type IDs
+        assert_eq!(BASE_TX, 0x00000000);
+        assert_eq!(CREATE_ASSET_TX, 0x00000001);
+        assert_eq!(OPERATION_TX, 0x00000002);
+        assert_eq!(IMPORT_TX, 0x00000003);
+        assert_eq!(EXPORT_TX, 0x00000004);
+        assert_eq!(ADD_VALIDATOR_TX, 0x0000000c);
+        assert_eq!(CREATE_SUBNET_TX, 0x00000010);
+        assert_eq!(ADD_SUBNET_VALIDATOR_TX, 0x0000000d);
+    }
 
-        type AvalancheTxType = <AvalancheDecoder as ChainDecoder>::TxSpecific;
-        assert_same_type::<AvalancheTxType, EthereumTransaction>();
+    #[test]
+    fn test_secp256k1_type_ids() {
+        // Validate SECP256K1 type IDs
+        assert_eq!(SECP256K1_TRANSFER_INPUT, 0x00000005);
+        assert_eq!(SECP256K1_TRANSFER_OUTPUT, 0x00000007);
+        assert_eq!(SECP256K1_MINT_OUTPUT, 0x00000006);
     }
 }
