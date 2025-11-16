@@ -1,10 +1,11 @@
 // Chain Ecosystem Treemap Visualization
-// Shows 2500+ mainnet chains hierarchically with filters and drill-down
-// (4900+ total including testnets)
+// Shows 1575+ mainnet chains hierarchically with filters and drill-down
+// (2519 mainnets + 2380 testnets = 4899 total)
 
 // Chain data structure
 // In production, this would be fetched from live APIs (DeFiLlama, chain-specific endpoints)
-// EVM count from embedded registry: 2397 chains (see crates/decoder-evm/data/chains.metadata.txt)
+// EVM count from embedded registry: 1453 MAINNETS (2397 total including 944 testnets)
+// Source: crates/decoder-evm/data/chains.metadata.txt
 const CHAIN_DATA = {
     name: "All Chains",
     children: [
@@ -30,11 +31,11 @@ const CHAIN_DATA = {
             description: "Account-based model - like bank accounts with balances",
             children: [
                 {
-                    name: "EVM Ecosystem (2397 chains)",
+                    name: "EVM Ecosystem (1453 mainnets)",
                     family: "account",
                     isGroup: true,
                     evmChains: true,
-                    description: "Ethereum Virtual Machine compatible chains",
+                    description: "Ethereum Virtual Machine compatible chains (mainnets only)",
                     children: [
                         {
                             name: "OP Stack (~50 chains)",
@@ -97,11 +98,11 @@ const CHAIN_DATA = {
                             ]
                         },
                         {
-                            name: "L1s & Other L2s (~2285 chains)",
+                            name: "L1s & Other L2s (~1341 mainnets)",
                             family: "account",
                             isGroup: true,
                             evmSubtype: "standard",
-                            description: "Layer 1 EVM chains and independent L2s",
+                            description: "Layer 1 EVM chains and independent L2s (mainnets only)",
                             children: [
                                 { name: "Ethereum Mainnet", family: "account", chainId: 1, network: "mainnet", tvl: 45000000000, txVolume: 100000000, evm: true, unique: true },
                                 { name: "BNB Chain", family: "account", chainId: 56, network: "mainnet", tvl: 50000000000, txVolume: 30000000, evm: true, unique: false },
@@ -112,7 +113,7 @@ const CHAIN_DATA = {
                                 { name: "Aurora", family: "account", chainId: 1313161554, network: "mainnet", tvl: 200000000, txVolume: 300000, evm: true, unique: false },
                                 { name: "Moonbeam", family: "account", chainId: 1284, network: "mainnet", tvl: 150000000, txVolume: 400000, evm: true, unique: false },
                                 { name: "Evmos", family: "account", chainId: 9001, network: "mainnet", tvl: 50000000, txVolume: 200000, evm: true, cosmos: true, unique: false },
-                                { name: "Other EVM chains (~2276)", family: "account", chainId: "evm-others", network: "mixed", tvl: 2000000000, txVolume: 8000000, evm: true, unique: false, isAggregate: true, aggregateCount: 2276 }
+                                { name: "Other EVM mainnets (~1332)", family: "account", chainId: "evm-others", network: "mainnet", tvl: 2000000000, txVolume: 8000000, evm: true, unique: false, isAggregate: true, aggregateCount: 1332 }
                             ]
                         }
                     ]
@@ -280,15 +281,101 @@ function renderTreemap() {
         return;
     }
 
-    // Calculate layout
-    const layout = squarify(filteredData, width, height, currentMetric);
+    // Create D3 hierarchy
+    const root = d3.hierarchy(filteredData)
+        .sum(d => d.children ? 0 : getMetricValue(d, currentMetric))
+        .sort((a, b) => b.value - a.value);
 
-    // Render
+    // Create treemap layout using D3's squarified algorithm
+    const treemap = d3.treemap()
+        .size([width, height])
+        .padding(2)
+        .round(true)
+        .tile(d3.treemapSquarify.ratio(1.5)); // Golden ratio for better rectangles
+
+    treemap(root);
+
+    // Clear container and render with D3
     container.innerHTML = '';
-    layout.forEach(rect => {
-        const cell = createCell(rect);
-        container.appendChild(cell);
-    });
+    const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .style('font-family', 'inherit');
+
+    // Create cells for leaf nodes only
+    const cells = svg.selectAll('g')
+        .data(root.leaves())
+        .enter()
+        .append('g')
+        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+    // Add rectangles
+    cells.append('rect')
+        .attr('width', d => d.x1 - d.x0)
+        .attr('height', d => d.y1 - d.y0)
+        .attr('fill', d => getCellColor(d.data))
+        .attr('stroke', '#0f0f23')
+        .attr('stroke-width', 2)
+        .attr('class', d => {
+            const classes = ['treemap-cell-rect'];
+            const w = d.x1 - d.x0;
+            const h = d.y1 - d.y0;
+            if (w < 80 || h < 60) classes.push('tiny');
+            else if (w < 120 || h < 80) classes.push('small');
+            return classes.join(' ');
+        })
+        .style('cursor', d => d.data.children ? 'pointer' : 'default')
+        .on('click', (event, d) => {
+            event.stopPropagation();
+            if (d.data.children && d.data.children.length > 0) {
+                currentView = d.data;
+                renderTreemap();
+            } else {
+                showDetails(d.data);
+            }
+        })
+        .on('mouseover', function() {
+            d3.select(this).attr('opacity', 0.8);
+        })
+        .on('mouseout', function() {
+            d3.select(this).attr('opacity', 1);
+        })
+        .append('title')
+        .text(d => getTooltip(d.data));
+
+    // Add text labels
+    cells.append('text')
+        .attr('x', 4)
+        .attr('y', 16)
+        .attr('fill', '#fff')
+        .attr('font-size', d => {
+            const w = d.x1 - d.x0;
+            const h = d.y1 - d.y0;
+            if (w < 80 || h < 60) return '0px'; // Hide text in tiny cells
+            if (w < 120 || h < 80) return '10px';
+            return '14px';
+        })
+        .attr('font-weight', 'bold')
+        .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
+        .style('pointer-events', 'none')
+        .text(d => d.data.name);
+
+    // Add value labels
+    cells.append('text')
+        .attr('x', 4)
+        .attr('y', 32)
+        .attr('fill', 'rgba(255, 255, 255, 0.9)')
+        .attr('font-size', d => {
+            const w = d.x1 - d.x0;
+            const h = d.y1 - d.y0;
+            if (w < 80 || h < 60) return '0px';
+            if (w < 120 || h < 80) return '9px';
+            return '12px';
+        })
+        .style('text-shadow', '0 1px 2px rgba(0,0,0,0.5)')
+        .style('pointer-events', 'none')
+        .text(d => formatValue(d.value, currentMetric));
 
     // Update breadcrumb
     updateBreadcrumb();
@@ -297,122 +384,30 @@ function renderTreemap() {
     updateStats(filteredData);
 }
 
-function squarify(node, width, height, metric) {
-    const result = [];
-
-    function layoutChildren(children, x, y, w, h) {
-        if (children.length === 0) return;
-
-        const totalValue = children.reduce((sum, child) => sum + getMetricValue(child, metric), 0);
-        const isVertical = w > h;
-
-        let offset = 0;
-        children.forEach(child => {
-            const value = getMetricValue(child, metric);
-            const ratio = value / totalValue;
-
-            let cellX, cellY, cellW, cellH;
-            if (isVertical) {
-                cellW = w * ratio;
-                cellH = h;
-                cellX = x + offset;
-                cellY = y;
-                offset += cellW;
-            } else {
-                cellW = w;
-                cellH = h * ratio;
-                cellX = x;
-                cellY = y + offset;
-                offset += cellH;
-            }
-
-            result.push({
-                node: child,
-                x: cellX,
-                y: cellY,
-                width: cellW,
-                height: cellH,
-                value: value
-            });
-        });
+function getCellColor(node) {
+    // Determine color based on ecosystem/family
+    if (node.evmSubtype === 'opstack' || node.opstack) {
+        return 'rgba(231, 76, 60, 0.85)';
+    } else if (node.evmSubtype === 'arbitrum' || node.arbitrum) {
+        return 'rgba(52, 152, 219, 0.85)';
+    } else if (node.evmSubtype === 'polygon' || node.polygon) {
+        return 'rgba(142, 68, 173, 0.85)';
+    } else if (node.evmSubtype === 'zkevm' || (node.zkevm && !node.polygon)) {
+        return 'rgba(243, 156, 18, 0.85)';
+    } else if (node.cosmosChains || node.cosmos) {
+        return 'rgba(52, 73, 94, 0.85)';
+    } else if (node.svmChains || node.svm) {
+        return 'rgba(26, 188, 156, 0.85)';
+    } else if (node.family === 'account' || node.evm) {
+        return 'rgba(46, 204, 113, 0.85)';
+    } else if (node.family === 'utxo') {
+        return 'rgba(52, 152, 219, 0.85)';
+    } else if (node.family === 'instruction') {
+        return 'rgba(243, 156, 18, 0.85)';
+    } else if (node.family === 'privacy' || node.privacy) {
+        return 'rgba(155, 89, 182, 0.85)';
     }
-
-    if (node.children) {
-        layoutChildren(node.children, 0, 0, width, height);
-    }
-
-    return result;
-}
-
-function createCell(rect) {
-    const { node, x, y, width, height, value } = rect;
-
-    const cell = document.createElement('div');
-    cell.className = `treemap-cell ${node.family}`;
-    cell.style.left = `${x}px`;
-    cell.style.top = `${y}px`;
-    cell.style.width = `${width}px`;
-    cell.style.height = `${height}px`;
-
-    // Add ecosystem-specific data attribute for styling
-    if (node.evmSubtype) {
-        cell.setAttribute('data-ecosystem', node.evmSubtype);
-    } else if (node.evmChains) {
-        cell.setAttribute('data-ecosystem', 'evm');
-    } else if (node.cosmosChains) {
-        cell.setAttribute('data-ecosystem', 'cosmos');
-    } else if (node.svmChains) {
-        cell.setAttribute('data-ecosystem', 'svm');
-    } else if (node.opstack) {
-        cell.setAttribute('data-ecosystem', 'opstack');
-    } else if (node.arbitrum) {
-        cell.setAttribute('data-ecosystem', 'arbitrum');
-    } else if (node.polygon) {
-        cell.setAttribute('data-ecosystem', 'polygon');
-    } else if (node.zkevm && !node.polygon) {
-        cell.setAttribute('data-ecosystem', 'zkevm');
-    }
-
-    // Add size classes for responsive text
-    if (width < 80 || height < 60) {
-        cell.classList.add('tiny');
-    } else if (width < 120 || height < 80) {
-        cell.classList.add('small');
-    }
-
-    // Name
-    const name = document.createElement('div');
-    name.className = 'treemap-cell-name';
-    name.textContent = node.name;
-    cell.appendChild(name);
-
-    // Value
-    const valueDiv = document.createElement('div');
-    valueDiv.className = 'treemap-cell-value';
-    valueDiv.textContent = formatValue(value, currentMetric);
-    cell.appendChild(valueDiv);
-
-    // Click handler
-    if (node.children && node.children.length > 0) {
-        cell.style.cursor = 'pointer';
-        cell.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentView = node;
-            renderTreemap();
-        });
-    } else {
-        // Leaf node - show details
-        cell.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showDetails(node);
-        });
-    }
-
-    // Tooltip
-    const tooltip = getTooltip(node);
-    cell.title = tooltip;
-
-    return cell;
+    return 'rgba(46, 204, 113, 0.85)'; // Default to account color
 }
 
 function formatValue(value, metric) {

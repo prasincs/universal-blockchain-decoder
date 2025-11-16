@@ -292,7 +292,7 @@
 <body>
     <header>
         <h1>🗺️ Chain Ecosystem Treemap</h1>
-        <p class="tagline">Explore 2500+ mainnet blockchains visually by family, ecosystem, and characteristics</p>
+        <p class="tagline">Explore 1575+ mainnet blockchains visually by family, ecosystem, and characteristics</p>
         <div class="links">
             <a href="index.html">← Decoder</a>
             <a href="comparison.html">Type System</a>
@@ -350,7 +350,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color account"></div>
-                    <span class="legend-label">Account Family (2508 mainnets: 2397 EVM, 100 Cosmos, 10 other, 1 SVM)</span>
+                    <span class="legend-label">Account Family (1564 mainnets: 1453 EVM, 100 Cosmos, 10 other, 1 SVM)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color instruction"></div>
@@ -364,7 +364,7 @@
 
             <div class="stats">
                 <div class="stat-card">
-                    <div class="stat-value" id="stat-total">2519</div>
+                    <div class="stat-value" id="stat-total">1575</div>
                     <div class="stat-label">Mainnet Chains</div>
                 </div>
                 <div class="stat-card">
@@ -390,17 +390,20 @@
         <section style="margin-top: 3rem; padding: 2rem; background: #1a1a2e; border-radius: 8px;">
             <h2>About This Visualization</h2>
             <p style="color: #ecf0f1; line-height: 1.8;">
-                This treemap shows the Universal Blockchain Decoder's coverage across 2519 mainnet blockchains (4900+ including testnets).
+                This treemap shows the Universal Blockchain Decoder's coverage across **1575 mainnet blockchains** (4900+ including testnets).
                 Each rectangle represents a chain family, ecosystem, or individual blockchain, sized by your selected metric.
             </p>
-            <h3 style="color: #3498db; margin-top: 1.5rem;">Hierarchical Structure</h3>
+            <p style="color: #95a5a6; font-size: 0.9rem;">
+                <em>Note: Counts reflect mainnet chains only. The embedded registry contains 2397 EVM chains total (1453 mainnets + 944 testnets).</em>
+            </p>
+            <h3 style="color: #3498db; margin-top: 1.5rem;">Hierarchical Structure (Mainnets Only)</h3>
             <ul style="color: #ecf0f1; line-height: 1.8;">
-                <li><strong>EVM Ecosystem (2397 chains):</strong> OP Stack (~50), Arbitrum Orbit (~30), Polygon CDK (~20), zkEVM (~12), Standard EVM (~2285)</li>
-                <li><strong>Cosmos SDK (~100 chains):</strong> IBC-connected chains with Tendermint consensus</li>
-                <li><strong>SVM (1 chain):</strong> Solana Virtual Machine - parallel transaction processing</li>
-                <li><strong>Other Account-Based (~10 chains):</strong> Aptos, Sui, NEAR, Algorand, Stellar, XRP, Tron, Polkadot, etc.</li>
-                <li><strong>UTXO (9 chains):</strong> Bitcoin, Litecoin, Dogecoin, Cardano, etc.</li>
-                <li><strong>Privacy (2 chains):</strong> Zcash, Monero</li>
+                <li><strong>EVM Ecosystem (1453 mainnets):</strong> OP Stack (~50), Arbitrum Orbit (~30), Polygon CDK (~20), zkEVM (~12), Standard EVM (~1341)</li>
+                <li><strong>Cosmos SDK (~100 mainnets):</strong> IBC-connected chains with Tendermint consensus</li>
+                <li><strong>SVM (1 mainnet):</strong> Solana Virtual Machine - parallel transaction processing</li>
+                <li><strong>Other Account-Based (~10 mainnets):</strong> Aptos, Sui, NEAR, Algorand, Stellar, XRP, Tron, Polkadot, etc.</li>
+                <li><strong>UTXO (9 mainnets):</strong> Bitcoin, Litecoin, Dogecoin, Cardano, etc.</li>
+                <li><strong>Privacy (2 mainnets):</strong> Zcash, Monero</li>
             </ul>
             <p style="color: #ecf0f1; line-height: 1.8; margin-top: 1rem;">
                 <strong>Current metrics are mock data for demonstration.</strong> In production, this could be connected to live sources:
@@ -419,10 +422,12 @@
     <footer>
         <p>
             Built with <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">universal-blockchain-decoder</a>.
-            Treemap visualization demonstrates ecosystem coverage across 2519 mainnet blockchains (4900+ including testnets).
+            Treemap visualization demonstrates ecosystem coverage across **1575 mainnet blockchains** (4900+ including testnets).
         </p>
     </footer>
 
+    <!-- D3.js for proper treemap layout -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="treemap.js"></script>
 </body>
 </html>
