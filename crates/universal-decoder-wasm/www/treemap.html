@@ -409,6 +409,25 @@
                 </div>
             </div>
 
+            <div class="data-snapshot-info" style="margin-top: 1rem; padding: 1rem; background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="color: #95a5a6; font-size: 0.85rem; margin-bottom: 0.3rem;">📊 Data Snapshot</div>
+                        <div style="color: #ecf0f1; font-size: 0.95rem; font-weight: 600;" id="snapshot-date">
+                            <span id="snapshot-timestamp">Mock Data</span>
+                            <span style="color: #95a5a6; margin-left: 0.5rem; font-weight: normal; font-size: 0.85rem;" id="snapshot-source">(Demo)</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="snapshot-select" style="color: #95a5a6; font-size: 0.85rem;">Historical:</label>
+                        <select id="snapshot-select" style="padding: 0.4rem 0.8rem; background: #16213e; color: #ecf0f1; border: 1px solid #3498db; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                            <option value="latest">Latest (Mock)</option>
+                            <!-- Future snapshots will be added here dynamically -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="info-panel" id="info-panel">
                 <h3 id="info-title">Select a chain to see details</h3>
                 <div class="details" id="info-details"></div>

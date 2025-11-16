@@ -196,11 +196,12 @@ let activeFilters = {
     instruction: true,
     privacy: true
 };
+let currentSnapshot = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupControls();
-    renderTreemap();
+    loadSnapshot(); // Load snapshot first, then render
 });
 
 function setupControls() {
@@ -236,12 +237,80 @@ function setupControls() {
         });
     });
 
+    // Snapshot selector
+    document.getElementById('snapshot-select').addEventListener('change', (e) => {
+        const snapshotId = e.target.value;
+        loadSnapshot(snapshotId);
+    });
+
     // Breadcrumb root
     document.getElementById('breadcrumb-root').addEventListener('click', () => {
         currentView = CHAIN_DATA;
         document.getElementById('ecosystem-select').value = '';
         renderTreemap();
     });
+}
+
+// Snapshot loading
+async function loadSnapshot(snapshotId = 'latest') {
+    try {
+        const response = await fetch(`../../tools/fetch-chain-metrics/data/snapshot_${snapshotId}.json`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        currentSnapshot = await response.json();
+
+        // Update UI with snapshot metadata
+        const timestamp = new Date(currentSnapshot.timestamp).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        document.getElementById('snapshot-timestamp').textContent = timestamp;
+        document.getElementById('snapshot-source').textContent = `(${currentSnapshot.source})`;
+
+        // Apply metrics to chain data
+        applyMetricsToChains(currentSnapshot.chains);
+
+        // Render treemap with updated data
+        renderTreemap();
+
+        console.log(`Loaded snapshot: ${currentSnapshot.snapshot_date}, ${currentSnapshot.chain_count} chains`);
+    } catch (error) {
+        console.warn('Snapshot not available, using mock data:', error.message);
+        document.getElementById('snapshot-timestamp').textContent = 'Mock Data';
+        document.getElementById('snapshot-source').textContent = '(Demo)';
+
+        // Render with existing mock data
+        renderTreemap();
+    }
+}
+
+function applyMetricsToChains(metricsData) {
+    // Recursively update CHAIN_DATA with real metrics from snapshot
+    function updateNode(node) {
+        // Check if this node has a chainId that matches snapshot data
+        if (node.chainId !== undefined && node.chainId !== null) {
+            const chainIdStr = String(node.chainId);
+            const metric = metricsData[chainIdStr];
+
+            if (metric) {
+                // Update with real data from snapshot
+                node.tvl = metric.market_cap || node.tvl;
+                node.txVolume = metric.volume_24h || node.txVolume;
+                node.price = metric.price || node.price;
+                console.log(`Updated ${node.name}: TVL=$${(node.tvl/1e9).toFixed(2)}B, Vol=$${(node.txVolume/1e6).toFixed(1)}M`);
+            }
+        }
+
+        // Recursively update children
+        if (node.children) {
+            node.children.forEach(updateNode);
+        }
+    }
+
+    updateNode(CHAIN_DATA);
 }
 
 // Helper function to find a node by its identifier
