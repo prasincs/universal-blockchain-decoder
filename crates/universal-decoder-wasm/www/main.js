@@ -184,7 +184,7 @@ chainSelect.addEventListener('change', (e) => {
     }
 });
 
-// Load example transaction
+// Load example transaction - only populates input, user must select chain
 exampleSelect.addEventListener('change', (e) => {
     const exampleKey = e.target.value;
     if (!exampleKey) return;
@@ -195,10 +195,10 @@ exampleSelect.addEventListener('change', (e) => {
         return;
     }
 
+    // Only populate the input text box, don't auto-select chain
     inputEditor.value = example.hex;
-    chainSelect.value = example.chain;
 
-    console.log(`Loaded example: ${example.description}`);
+    console.log(`Loaded example: ${example.description} (for ${example.chain})`);
 });
 
 // Decode transaction
@@ -215,6 +215,12 @@ decodeBtn.addEventListener('click', async () => {
     }
 
     const chain = chainSelect.value;
+    if (!chain) {
+        showError('Please select a blockchain');
+        return;
+    }
+
+    console.log(`Decoding ${hex.length} chars of hex for chain: ${chain}`);
 
     // Show loading state
     decodeBtn.classList.add('loading');
