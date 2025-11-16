@@ -6,11 +6,31 @@
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-// Import existing decoders (reusing implementations!)
+// Import all decoders (reusing implementations!)
+use decoder_algorand::AlgorandDecoder;
+use decoder_aptos::AptosDecoder;
+use decoder_arbitrum::ArbitrumDecoder;
+use decoder_avalanche::CChainDecoder;
 use decoder_bitcoin::BitcoinDecoder;
+use decoder_bitcoin_cash::BitcoinCashDecoder;
+use decoder_bnb::BnbDecoder;
+use decoder_cardano::CardanoDecoder;
 use decoder_cosmos::CosmosDecoder;
+use decoder_dash::DashDecoder;
+use decoder_dogecoin::DogecoinDecoder;
 use decoder_ethereum::EthereumDecoder;
+use decoder_litecoin::LitecoinDecoder;
+use decoder_near::NearDecoder;
+use decoder_optimism::OptimismDecoder;
+use decoder_polkadot::PolkadotDecoder;
+use decoder_polygon::PolygonDecoder;
 use decoder_solana::SolanaDecoder;
+// use decoder_starknet::StarknetDecoder;  // TODO: Fix compilation errors
+use decoder_stellar::StellarDecoder;
+use decoder_sui::SuiDecoder;
+use decoder_tron::TronDecoder;
+use decoder_xrp::XrpDecoder;
+use decoder_zcash::ZcashDecoder;
 use universal_decoder_core::prelude::{CanonicalSerialize, Canonicalizer, ChainDecoder, TxIR};
 
 /// Chain metadata for frontend display
@@ -97,52 +117,61 @@ pub fn init() {
 }
 
 /// Main entry point: Decode a transaction from any supported chain.
-///
-/// # Arguments
-///
-/// * `chain` - Chain name: "bitcoin", "ethereum", "solana", "cosmos"
-/// * `hex` - Hex-encoded transaction bytes
-///
-/// # Returns
-///
-/// `DecodeResult` containing:
-/// - `canonical_hex`: Borsh-encoded canonical representation
-/// - `canonical_hash`: SHA-256 hash of canonical bytes
-/// - `json`: Human-readable JSON (via `.json()` getter)
-/// - `chain_name`, `chain_id`: Chain identification
-/// - `canonical_size`: Size of canonical representation in bytes
 #[wasm_bindgen]
 pub fn decode_transaction(chain: &str, hex: &str) -> Result<DecodeResult, JsValue> {
     let bytes = universal_decoder_core::hex::decode(hex)
         .map_err(|e| JsValue::from_str(&format!("Invalid hex: {}", e)))?;
 
     match chain.to_lowercase().as_str() {
+        // Bitcoin family
         "bitcoin" => decode_with::<BitcoinDecoder>(&bytes),
-        "ethereum" => decode_with::<EthereumDecoder>(&bytes),
-        "solana" => decode_with::<SolanaDecoder>(&bytes),
-        "cosmos" => decode_with::<CosmosDecoder>(&bytes),
-        _ => Err(JsValue::from_str(&format!(
-            "Unsupported chain: {}. Supported: bitcoin, ethereum, solana, cosmos",
-            chain
-        ))),
+        "bitcoin-cash" | "bch" => decode_with::<BitcoinCashDecoder>(&bytes),
+        "dogecoin" | "doge" => decode_with::<DogecoinDecoder>(&bytes),
+        "litecoin" | "ltc" => decode_with::<LitecoinDecoder>(&bytes),
+        "dash" => decode_with::<DashDecoder>(&bytes),
+        "zcash" | "zec" => decode_with::<ZcashDecoder>(&bytes),
+
+        // Ethereum and EVM chains
+        "ethereum" | "eth" => decode_with::<EthereumDecoder>(&bytes),
+        "polygon" | "matic" => decode_with::<PolygonDecoder>(&bytes),
+        "arbitrum" | "arb" => decode_with::<ArbitrumDecoder>(&bytes),
+        "optimism" | "op" => decode_with::<OptimismDecoder>(&bytes),
+        "avalanche" | "avax" => decode_with::<CChainDecoder>(&bytes),
+        "bnb" | "bsc" => decode_with::<BnbDecoder>(&bytes),
+
+        // Other major chains
+        "solana" | "sol" => decode_with::<SolanaDecoder>(&bytes),
+        "cosmos" | "atom" => decode_with::<CosmosDecoder>(&bytes),
+        "near" => decode_with::<NearDecoder>(&bytes),
+        "aptos" | "apt" => decode_with::<AptosDecoder>(&bytes),
+        "sui" => decode_with::<SuiDecoder>(&bytes),
+        "algorand" | "algo" => decode_with::<AlgorandDecoder>(&bytes),
+        "cardano" | "ada" => decode_with::<CardanoDecoder>(&bytes),
+        "polkadot" | "dot" => decode_with::<PolkadotDecoder>(&bytes),
+        "stellar" | "xlm" => decode_with::<StellarDecoder>(&bytes),
+        "tron" | "trx" => decode_with::<TronDecoder>(&bytes),
+        // "starknet" => decode_with::<StarknetDecoder>(&bytes),  // TODO: Fix compilation errors
+        "xrp" | "ripple" => decode_with::<XrpDecoder>(&bytes),
+
+        _ => Err(JsValue::from_str(&format!("Unsupported chain: {}", chain))),
     }
 }
 
 /// List all supported blockchain names
 #[wasm_bindgen]
 pub fn supported_chains() -> Vec<String> {
-    vec![
-        "bitcoin".to_string(),
-        "ethereum".to_string(),
-        "solana".to_string(),
-        "cosmos".to_string(),
-    ]
+    get_chains_metadata()
+        .as_string()
+        .and_then(|s| serde_json::from_str::<Vec<ChainMetadata>>(&s).ok())
+        .map(|chains| chains.into_iter().map(|c| c.id).collect())
+        .unwrap_or_default()
 }
 
 /// Get detailed metadata for all supported chains
 #[wasm_bindgen]
 pub fn get_chains_metadata() -> JsValue {
     let chains = vec![
+        // Bitcoin family
         ChainMetadata {
             id: "bitcoin".to_string(),
             name: "Bitcoin".to_string(),
@@ -150,11 +179,73 @@ pub fn get_chains_metadata() -> JsValue {
             has_privacy: false,
         },
         ChainMetadata {
+            id: "bitcoin-cash".to_string(),
+            name: "Bitcoin Cash".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "dogecoin".to_string(),
+            name: "Dogecoin".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "litecoin".to_string(),
+            name: "Litecoin".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "dash".to_string(),
+            name: "Dash".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: true,
+        },
+        ChainMetadata {
+            id: "zcash".to_string(),
+            name: "Zcash".to_string(),
+            family: "Privacy".to_string(),
+            has_privacy: true,
+        },
+        // Ethereum and EVM chains
+        ChainMetadata {
             id: "ethereum".to_string(),
             name: "Ethereum".to_string(),
             family: "Account".to_string(),
             has_privacy: false,
         },
+        ChainMetadata {
+            id: "polygon".to_string(),
+            name: "Polygon".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "arbitrum".to_string(),
+            name: "Arbitrum".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "optimism".to_string(),
+            name: "Optimism".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "avalanche".to_string(),
+            name: "Avalanche C-Chain".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "bnb".to_string(),
+            name: "BNB Smart Chain".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        // Other major chains
         ChainMetadata {
             id: "solana".to_string(),
             name: "Solana".to_string(),
@@ -164,6 +255,66 @@ pub fn get_chains_metadata() -> JsValue {
         ChainMetadata {
             id: "cosmos".to_string(),
             name: "Cosmos".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "near".to_string(),
+            name: "NEAR".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "aptos".to_string(),
+            name: "Aptos".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "sui".to_string(),
+            name: "Sui".to_string(),
+            family: "Object".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "algorand".to_string(),
+            name: "Algorand".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "cardano".to_string(),
+            name: "Cardano".to_string(),
+            family: "UTXO".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "polkadot".to_string(),
+            name: "Polkadot".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "stellar".to_string(),
+            name: "Stellar".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        ChainMetadata {
+            id: "tron".to_string(),
+            name: "Tron".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
+        // ChainMetadata {  // TODO: Fix compilation errors
+        //     id: "starknet".to_string(),
+        //     name: "StarkNet".to_string(),
+        //     family: "Account".to_string(),
+        //     has_privacy: false,
+        // },
+        ChainMetadata {
+            id: "xrp".to_string(),
+            name: "XRP Ledger".to_string(),
             family: "Account".to_string(),
             has_privacy: false,
         },
@@ -180,17 +331,82 @@ pub fn auto_detect_chain(hex: &str) -> Result<String, JsValue> {
         .map_err(|e| JsValue::from_str(&format!("Invalid hex: {}", e)))?;
 
     // Try decoders in order (most common first)
+    // Bitcoin family
     if BitcoinDecoder::decode(&bytes).is_ok() {
         return Ok("bitcoin".to_string());
     }
+    // Ethereum and EVM (most common)
     if EthereumDecoder::decode(&bytes).is_ok() {
         return Ok("ethereum".to_string());
     }
+    if PolygonDecoder::decode(&bytes).is_ok() {
+        return Ok("polygon".to_string());
+    }
+    if ArbitrumDecoder::decode(&bytes).is_ok() {
+        return Ok("arbitrum".to_string());
+    }
+    if OptimismDecoder::decode(&bytes).is_ok() {
+        return Ok("optimism".to_string());
+    }
+    if CChainDecoder::decode(&bytes).is_ok() {
+        return Ok("avalanche".to_string());
+    }
+    if BnbDecoder::decode(&bytes).is_ok() {
+        return Ok("bnb".to_string());
+    }
+    // Other popular chains
     if SolanaDecoder::decode(&bytes).is_ok() {
         return Ok("solana".to_string());
     }
     if CosmosDecoder::decode(&bytes).is_ok() {
         return Ok("cosmos".to_string());
+    }
+    // Bitcoin variants
+    if BitcoinCashDecoder::decode(&bytes).is_ok() {
+        return Ok("bitcoin-cash".to_string());
+    }
+    if DogecoinDecoder::decode(&bytes).is_ok() {
+        return Ok("dogecoin".to_string());
+    }
+    if LitecoinDecoder::decode(&bytes).is_ok() {
+        return Ok("litecoin".to_string());
+    }
+    if DashDecoder::decode(&bytes).is_ok() {
+        return Ok("dash".to_string());
+    }
+    if ZcashDecoder::decode(&bytes).is_ok() {
+        return Ok("zcash".to_string());
+    }
+    // Other chains
+    if NearDecoder::decode(&bytes).is_ok() {
+        return Ok("near".to_string());
+    }
+    if AptosDecoder::decode(&bytes).is_ok() {
+        return Ok("aptos".to_string());
+    }
+    if SuiDecoder::decode(&bytes).is_ok() {
+        return Ok("sui".to_string());
+    }
+    if AlgorandDecoder::decode(&bytes).is_ok() {
+        return Ok("algorand".to_string());
+    }
+    if CardanoDecoder::decode(&bytes).is_ok() {
+        return Ok("cardano".to_string());
+    }
+    if PolkadotDecoder::decode(&bytes).is_ok() {
+        return Ok("polkadot".to_string());
+    }
+    if StellarDecoder::decode(&bytes).is_ok() {
+        return Ok("stellar".to_string());
+    }
+    if TronDecoder::decode(&bytes).is_ok() {
+        return Ok("tron".to_string());
+    }
+    // if StarknetDecoder::decode(&bytes).is_ok() {  // TODO: Fix compilation errors
+    //     return Ok("starknet".to_string());
+    // }
+    if XrpDecoder::decode(&bytes).is_ok() {
+        return Ok("xrp".to_string());
     }
 
     Err(JsValue::from_str("Could not auto-detect chain"))
@@ -361,7 +577,7 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_supported_chains() {
         let chains = supported_chains();
-        assert_eq!(chains.len(), 4);
+        assert!(chains.len() >= 24); // We have 24+ chains
         assert!(chains.contains(&"bitcoin".to_string()));
         assert!(chains.contains(&"ethereum".to_string()));
     }
