@@ -48,11 +48,31 @@
     Content-Type = "application/wasm"
     Access-Control-Allow-Origin = "*"
 
-# Redirect rules (if needed)
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200
+[[headers]]
+  # Headers for pkg directory WASM files
+  for = "/pkg/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  # Apply headers to all files
+  for = "/*"
+  [headers.values]
+    # Enable CORS
+    Access-Control-Allow-Origin = "*"
+    # Security headers
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+
+# Redirect rules for SPA behavior
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  # Don't redirect if it's an actual file
+  conditions = {path = "!*.js,!*.css,!*.wasm,!*.html,!*.json"}
 
 # Plugin configuration (optional)
 # [[plugins]]
