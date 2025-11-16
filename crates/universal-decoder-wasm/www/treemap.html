@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Ecosystem Treemap - Universal Blockchain Decoder</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .treemap-container {
+            margin: 2rem auto;
+            max-width: 1400px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-group label {
+            color: #ecf0f1;
+            font-weight: 600;
+        }
+
+        .filter-group select {
+            padding: 0.5rem 1rem;
+            background: #16213e;
+            color: #ecf0f1;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            color: #ecf0f1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #treemap {
+            width: 100%;
+            height: 700px;
+            position: relative;
+            background: #0f0f23;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .treemap-cell {
+            position: absolute;
+            border: 2px solid #0f0f23;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .treemap-cell:hover {
+            opacity: 0.8;
+            transform: scale(0.98);
+            z-index: 10;
+        }
+
+        .treemap-cell.utxo {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.8) 100%);
+        }
+
+        .treemap-cell.account {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.8) 0%, rgba(39, 174, 96, 0.8) 100%);
+        }
+
+        .treemap-cell.instruction {
+            background: linear-gradient(135deg, rgba(243, 156, 18, 0.8) 0%, rgba(211, 84, 0, 0.8) 100%);
+        }
+
+        .treemap-cell.privacy {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.8) 0%, rgba(142, 68, 173, 0.8) 100%);
+        }
+
+        .treemap-cell-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            margin-bottom: 0.3rem;
+        }
+
+        .treemap-cell-value {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .treemap-cell.small .treemap-cell-name {
+            font-size: 0.7rem;
+        }
+
+        .treemap-cell.small .treemap-cell-value {
+            font-size: 0.6rem;
+        }
+
+        .treemap-cell.tiny .treemap-cell-name,
+        .treemap-cell.tiny .treemap-cell-value {
+            display: none;
+        }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .legend-color.utxo {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .legend-color.account {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        .legend-color.instruction {
+            background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+        }
+
+        .legend-color.privacy {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        }
+
+        .legend-label {
+            color: #ecf0f1;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #95a5a6;
+        }
+
+        .info-panel {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .info-panel.active {
+            display: block;
+        }
+
+        .info-panel h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+
+        .info-panel .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-panel .detail-item {
+            color: #ecf0f1;
+        }
+
+        .info-panel .detail-label {
+            color: #95a5a6;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-panel .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .breadcrumb {
+            color: #95a5a6;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🗺️ Chain Ecosystem Treemap</h1>
+        <p class="tagline">Explore 500+ mainnet blockchains visually by family, size, and characteristics</p>
+        <div class="links">
+            <a href="index.html">← Decoder</a>
+            <a href="comparison.html">Type System</a>
+            <a href="graph.html">🕸️ Relationship Graph</a>
+            <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">GitHub</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="treemap-container">
+            <div class="controls">
+                <div class="filter-group">
+                    <label for="metric-select">Size by:</label>
+                    <select id="metric-select">
+                        <option value="chain_count">Chain Count</option>
+                        <option value="tvl">TVL (Mock)</option>
+                        <option value="tx_volume">Transaction Volume (Mock)</option>
+                        <option value="equal">Equal Size</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Filter by family:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-utxo" checked>
+                            <label for="filter-utxo">UTXO</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-account" checked>
+                            <label for="filter-account">Account</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-instruction" checked>
+                            <label for="filter-instruction">Instruction</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-privacy" checked>
+                            <label for="filter-privacy">Privacy</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="breadcrumb" id="breadcrumb">
+                <a id="breadcrumb-root">All Chains</a>
+            </div>
+
+            <div id="treemap"></div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color utxo"></div>
+                    <span class="legend-label">UTXO Family (9 mainnets)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color account"></div>
+                    <span class="legend-label">Account Family (~480 mainnets)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color instruction"></div>
+                    <span class="legend-label">Instruction Family (1 mainnet)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color privacy"></div>
+                    <span class="legend-label">Privacy Family (2 mainnets)</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">500+</div>
+                    <div class="stat-label">Mainnet Chains</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-families">4</div>
+                    <div class="stat-label">Chain Families</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-decoders">32</div>
+                    <div class="stat-label">Unique Decoders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-tvl">$1.2T</div>
+                    <div class="stat-label">Total Value Locked (Mock)</div>
+                </div>
+            </div>
+
+            <div class="info-panel" id="info-panel">
+                <h3 id="info-title">Select a chain to see details</h3>
+                <div class="details" id="info-details"></div>
+            </div>
+        </div>
+
+        <section style="margin-top: 3rem; padding: 2rem; background: #1a1a2e; border-radius: 8px;">
+            <h2>About This Visualization</h2>
+            <p style="color: #ecf0f1; line-height: 1.8;">
+                This treemap shows the Universal Blockchain Decoder's coverage across the blockchain ecosystem.
+                Each rectangle represents either a chain family or individual blockchain, sized by your selected metric.
+            </p>
+            <p style="color: #ecf0f1; line-height: 1.8;">
+                <strong>Current metrics are mock data for demonstration.</strong> In production, this could be connected to live sources:
+            </p>
+            <ul style="color: #ecf0f1; line-height: 1.8;">
+                <li><strong>TVL:</strong> DeFiLlama API for real total value locked</li>
+                <li><strong>Transaction Volume:</strong> Chain-specific APIs or indexers</li>
+                <li><strong>Active Addresses:</strong> On-chain metrics</li>
+                <li><strong>Gas Prices:</strong> Real-time fee data</li>
+            </ul>
+            <p style="color: #95a5a6; font-size: 0.9rem; margin-top: 1rem;">
+                Click on a family to drill down into individual chains. Use filters to focus on specific chain types.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            Built with <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">universal-blockchain-decoder</a>.
+            Treemap visualization demonstrates ecosystem coverage across 500+ mainnet blockchains (2200+ including testnets).
+        </p>
+    </footer>
+
+    <script src="treemap.js"></script>
+</body>
+</html>
