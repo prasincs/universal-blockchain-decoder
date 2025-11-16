@@ -10,7 +10,7 @@
   base = "crates/universal-decoder-wasm"
 
   # Build command
-  command = "./build.sh"
+  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
 
   # Output directory (what gets deployed)
   publish = "www"
@@ -25,17 +25,17 @@
 
 # Production deploy settings (main branch)
 [context.production]
-  command = "./build.sh"
+  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
   publish = "www"
 
 # Deploy previews (all other branches)
 [context.deploy-preview]
-  command = "./build.sh"
+  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
   publish = "www"
 
 # Branch-specific settings (if needed)
 [context.branch-deploy]
-  command = "./build.sh"
+  command = "bash ../../.netlify-ignore-submodules && ./build.sh"
   publish = "www"
 
 # Headers for proper WASM serving
