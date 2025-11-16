@@ -1,11 +1,7 @@
-name: Deploy WASM Preview (Netlify) - DISABLED
-
-# DISABLED: Netlify requires billing information even for free tier
-# Use deploy-wasm-preview-cloudflare.yml instead (no payment info needed)
+name: Deploy WASM Preview (Netlify)
 
 on:
-  workflow_dispatch:  # Manual trigger only
-  # pull_request:
+  pull_request:
     paths:
       - 'crates/universal-decoder-wasm/**'
       - 'crates/universal-decoder-core/**'

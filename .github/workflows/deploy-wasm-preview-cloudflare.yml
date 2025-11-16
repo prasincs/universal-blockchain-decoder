@@ -1,7 +1,11 @@
-name: Deploy WASM Preview (Cloudflare Pages)
+name: Deploy WASM Preview (Cloudflare Pages) - BACKUP
+
+# BACKUP: User has existing Netlify setup at trustless-txir.netlify.app
+# Using Netlify workflow instead. Keep this as fallback option.
 
 on:
-  pull_request:
+  workflow_dispatch:  # Manual trigger only
+  # pull_request:
     paths:
       - 'crates/universal-decoder-wasm/**'
       - 'crates/universal-decoder-core/**'
