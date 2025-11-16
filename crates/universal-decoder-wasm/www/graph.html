@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Relationship Graph - Universal Blockchain Decoder</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .graph-container {
+            margin: 2rem auto;
+            max-width: 1400px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .control-group label {
+            color: #ecf0f1;
+            font-weight: 600;
+        }
+
+        .control-group select,
+        .control-group button {
+            padding: 0.5rem 1rem;
+            background: #16213e;
+            color: #ecf0f1;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .control-group button:hover {
+            background: #3498db;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            color: #ecf0f1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #graph-canvas {
+            width: 100%;
+            height: 700px;
+            background: #0f0f23;
+            border-radius: 4px;
+            cursor: move;
+            display: block;
+        }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .legend-circle.utxo {
+            background: #3498db;
+        }
+
+        .legend-circle.account {
+            background: #2ecc71;
+        }
+
+        .legend-circle.instruction {
+            background: #f39c12;
+        }
+
+        .legend-circle.privacy {
+            background: #9b59b6;
+        }
+
+        .legend-label {
+            color: #ecf0f1;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #95a5a6;
+        }
+
+        .info-panel {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .info-panel.active {
+            display: block;
+        }
+
+        .info-panel h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+
+        .info-panel .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-panel .detail-item {
+            color: #ecf0f1;
+        }
+
+        .info-panel .detail-label {
+            color: #95a5a6;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-panel .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(26, 26, 46, 0.95);
+            color: #ecf0f1;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            border: 1px solid #3498db;
+            font-size: 0.85rem;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            max-width: 250px;
+        }
+
+        .tooltip.active {
+            display: block;
+        }
+
+        .tooltip .chain-name {
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            color: #3498db;
+        }
+
+        .tooltip .chain-info {
+            font-size: 0.75rem;
+            color: #95a5a6;
+        }
+
+        .edge-legend {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #16213e;
+            border-radius: 4px;
+        }
+
+        .edge-legend h4 {
+            color: #ecf0f1;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .edge-legend-items {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .edge-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .edge-line {
+            width: 30px;
+            height: 2px;
+            background: #95a5a6;
+        }
+
+        .edge-line.fork {
+            background: #e74c3c;
+            height: 3px;
+        }
+
+        .edge-line.decoder {
+            background: #3498db;
+            height: 2px;
+        }
+
+        .edge-line.tech-sharing {
+            background: #9b59b6;
+            height: 2px;
+            border-top: 1px dashed #9b59b6;
+            background: none;
+            border-width: 2px;
+        }
+
+        .edge-legend-label {
+            color: #ecf0f1;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🕸️ Chain Relationship Graph</h1>
+        <p class="tagline">Explore blockchain relationships like Echonest visualized music</p>
+        <div class="links">
+            <a href="index.html">← Decoder</a>
+            <a href="comparison.html">Type System</a>
+            <a href="treemap.html">Treemap</a>
+            <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">GitHub</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="graph-container">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="layout-select">Layout:</label>
+                    <select id="layout-select">
+                        <option value="force">Force-Directed</option>
+                        <option value="circular">Circular</option>
+                        <option value="hierarchical">Hierarchical</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <button id="reset-btn">Reset View</button>
+                    <button id="pause-btn">Pause</button>
+                </div>
+
+                <div class="control-group">
+                    <label>Show Edges:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="edge-forks" checked>
+                            <label for="edge-forks">Forks</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="edge-decoder" checked>
+                            <label for="edge-decoder">Shared Decoder</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="edge-tech" checked>
+                            <label for="edge-tech">Tech Sharing</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Filter Families:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-utxo" checked>
+                            <label for="filter-utxo">UTXO</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-account" checked>
+                            <label for="filter-account">Account</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-instruction" checked>
+                            <label for="filter-instruction">Instruction</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="filter-privacy" checked>
+                            <label for="filter-privacy">Privacy</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="graph-canvas"></canvas>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-circle utxo"></div>
+                    <span class="legend-label">UTXO Family</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle account"></div>
+                    <span class="legend-label">Account Family</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle instruction"></div>
+                    <span class="legend-label">Instruction Family</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle privacy"></div>
+                    <span class="legend-label">Privacy Family</span>
+                </div>
+            </div>
+
+            <div class="edge-legend">
+                <h4>Relationship Types</h4>
+                <div class="edge-legend-items">
+                    <div class="edge-legend-item">
+                        <div class="edge-line fork"></div>
+                        <span class="edge-legend-label">Fork / Clone</span>
+                    </div>
+                    <div class="edge-legend-item">
+                        <div class="edge-line decoder"></div>
+                        <span class="edge-legend-label">Shared Decoder</span>
+                    </div>
+                    <div class="edge-legend-item">
+                        <div class="edge-line tech-sharing"></div>
+                        <span class="edge-legend-label">Technology Sharing</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-nodes">52</div>
+                    <div class="stat-label">Chains Displayed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-edges">87</div>
+                    <div class="stat-label">Relationships</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-clusters">8</div>
+                    <div class="stat-label">Major Clusters</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-isolated">3</div>
+                    <div class="stat-label">Isolated Chains</div>
+                </div>
+            </div>
+
+            <div class="info-panel" id="info-panel">
+                <h3 id="info-title">Select a chain to see details</h3>
+                <div class="details" id="info-details"></div>
+            </div>
+        </div>
+
+        <section style="margin-top: 3rem; padding: 2rem; background: #1a1a2e; border-radius: 8px;">
+            <h2>About This Visualization</h2>
+            <p style="color: #ecf0f1; line-height: 1.8;">
+                Inspired by <strong>Echonest's music relationship graphs</strong>, this visualization shows blockchain chains
+                as nodes in a network, connected by their relationships:
+            </p>
+            <ul style="color: #ecf0f1; line-height: 1.8;">
+                <li><strong>Fork Relationships</strong> (red): Direct forks like Bitcoin → Bitcoin Cash → Bitcoin SV</li>
+                <li><strong>Shared Decoders</strong> (blue): Chains using the same generic decoder (e.g., 2000+ EVM chains)</li>
+                <li><strong>Technology Sharing</strong> (purple dashed): Shared frameworks like OP Stack or Cosmos SDK</li>
+            </ul>
+            <p style="color: #ecf0f1; line-height: 1.8;">
+                The force-directed layout naturally clusters related chains together. <strong>Larger nodes</strong> represent
+                more significant chains (mainnets, high TVL). <strong>Node colors</strong> indicate chain family (UTXO, Account, Instruction, Privacy).
+            </p>
+            <p style="color: #95a5a6; font-size: 0.9rem; margin-top: 1rem;">
+                <strong>Interactions:</strong> Hover over nodes for details. Click to highlight connections. Drag to pan. Scroll to zoom.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            Built with <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">universal-blockchain-decoder</a>.
+            Graph visualization shows chain relationships across the blockchain ecosystem.
+        </p>
+    </footer>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script src="graph.js"></script>
+</body>
+</html>
