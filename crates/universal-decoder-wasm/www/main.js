@@ -58,15 +58,16 @@ async function initWasm() {
         // Dynamically populate chain dropdown
         populateChainDropdown();
 
-        // Dynamically populate example dropdown
-        populateExampleDropdown();
+        // Dynamically populate example dropdown (scoped to first chain)
+        const firstChain = chainSelect.value;
+        populateExampleDropdown(firstChain);
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
         showError('Failed to initialize decoder. Please refresh the page.');
     }
 }
 
-// Populate chain dropdown dynamically from WASM
+// Populate chain dropdown dynamically from WASM with family grouping
 function populateChainDropdown() {
     try {
         const chainsMetadata = get_chains_metadata();
@@ -75,12 +76,31 @@ function populateChainDropdown() {
         // Clear existing options
         chainSelect.innerHTML = '';
 
-        // Add chains from WASM
+        // Group chains by family
+        const chainsByFamily = {};
         chainsMetadata.forEach(chain => {
-            const option = document.createElement('option');
-            option.value = chain.id;
-            option.textContent = `${chain.name} (${chain.family})`;
-            chainSelect.appendChild(option);
+            if (!chainsByFamily[chain.family]) {
+                chainsByFamily[chain.family] = [];
+            }
+            chainsByFamily[chain.family].push(chain);
+        });
+
+        // Add chains grouped by family
+        const familyOrder = ['UTXO', 'Account', 'Instruction', 'Object', 'Privacy'];
+        familyOrder.forEach(family => {
+            if (chainsByFamily[family]) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `${family} Chains`;
+
+                chainsByFamily[family].forEach(chain => {
+                    const option = document.createElement('option');
+                    option.value = chain.id;
+                    option.textContent = chain.name;
+                    optgroup.appendChild(option);
+                });
+
+                chainSelect.appendChild(optgroup);
+            }
         });
 
         console.log(`Populated ${chainsMetadata.length} chains in dropdown`);
@@ -89,15 +109,20 @@ function populateChainDropdown() {
     }
 }
 
-// Populate example dropdown dynamically from examples.js
-function populateExampleDropdown() {
+// Populate example dropdown dynamically from examples.js, scoped to selected chain
+function populateExampleDropdown(selectedChain = null) {
     const exampleSelect = document.getElementById('example-select');
 
     // Clear existing options (except placeholder)
     exampleSelect.innerHTML = '<option value="">-- Select Example --</option>';
 
+    // Filter examples by selected chain
+    const filteredExamples = Object.entries(EXAMPLES).filter(([key, example]) => {
+        return !selectedChain || example.chain === selectedChain;
+    });
+
     // Add examples
-    Object.entries(EXAMPLES).forEach(([key, example]) => {
+    filteredExamples.forEach(([key, example]) => {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = example.description;
@@ -107,7 +132,7 @@ function populateExampleDropdown() {
         exampleSelect.appendChild(option);
     });
 
-    console.log(`Populated ${Object.keys(EXAMPLES).length} examples in dropdown`);
+    console.log(`Populated ${filteredExamples.length} examples for chain: ${selectedChain || 'all'}`);
 }
 
 // UI Elements
@@ -138,6 +163,25 @@ tabBtns.forEach(btn => {
         tabContents.forEach(content => content.classList.remove('active'));
         document.getElementById(`${targetTab}-tab`).classList.add('active');
     });
+});
+
+// Chain selection change - update examples and clear input
+chainSelect.addEventListener('change', (e) => {
+    const selectedChain = e.target.value;
+
+    // Update examples dropdown to show only examples for this chain
+    populateExampleDropdown(selectedChain);
+
+    // Clear the input editor when changing chains
+    if (inputEditor.value.trim()) {
+        console.log(`Chain changed to ${selectedChain}, clearing old input`);
+        inputEditor.value = '';
+
+        // Clear output too
+        outputJson.value = '';
+        outputCanonical.value = '';
+        outputMetadata.style.display = 'none';
+    }
 });
 
 // Load example transaction
@@ -237,6 +281,7 @@ function displayResult(result) {
 
     // Canonical Borsh output - INVERTED: Show fields first, then raw payload
     try {
+        console.log('Borsh fields:', result.borsh_fields);
         let borshOutput = '// Borsh Fields (Structured Representation)\n';
         borshOutput += JSON.stringify(result.borsh_fields, null, 2);
         borshOutput += '\n\n';
