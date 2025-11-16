@@ -1,0 +1,191 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide as much detail as possible.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      description: Please ensure you've completed all of the following
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested before
+          required: true
+        - label: I have read the [PRODUCT_VISION.md](https://github.com/prasincs/universal-blockchain-decoder/blob/main/PRODUCT_VISION.md) and [ROADMAP.md](https://github.com/prasincs/universal-blockchain-decoder/blob/main/ROADMAP.md)
+          required: true
+        - label: This feature aligns with the project scope (decoding only, no encoding/signing/broadcasting)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - New Blockchain Support
+        - Core Library Enhancement
+        - API Improvement
+        - Performance Optimization
+        - Testing Infrastructure
+        - Documentation
+        - Developer Tooling
+        - WASM/Web Support
+        - CLI Enhancement
+        - Security Enhancement
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking my use case)
+        - High (very important)
+        - Medium (nice to have)
+        - Low (minor improvement)
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Why do you need it?
+      placeholder: |
+        I'm trying to... but I can't because...
+        This would help me...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to work?
+      placeholder: |
+        I would like to be able to...
+        The API could look like...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: |
+        I tried... but it didn't work because...
+        Another approach could be...
+
+  - type: textarea
+    id: api_design
+    attributes:
+      label: API Design (if applicable)
+      description: If this is an API change, show what the new API might look like
+      placeholder: |
+        ```rust
+        // Example usage
+        let decoder = NewFeatureDecoder::new();
+        let result = decoder.decode_with_new_feature(bytes)?;
+        ```
+      render: rust
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Use Cases
+      description: Describe specific use cases or examples where this feature would be useful
+      placeholder: |
+        1. When decoding Cardano transactions, users need to...
+        2. For forensic analysis, it would help to...
+        3. In production systems, this would enable...
+
+  - type: checkboxes
+    id: blockchain_specific
+    attributes:
+      label: Blockchain Support (if applicable)
+      description: If requesting support for a new blockchain, please check all that apply
+      options:
+        - label: I have reviewed the blockchain's specification/documentation
+        - label: I can provide test fixtures (real transaction data)
+        - label: I can help implement the decoder
+        - label: I can help test the implementation
+
+  - type: textarea
+    id: blockchain_details
+    attributes:
+      label: Blockchain Details (if applicable)
+      description: If requesting a new blockchain, provide technical details
+      placeholder: |
+        - Blockchain name: Cardano
+        - Consensus model: UTXO (extended)
+        - Transaction format: CBOR
+        - Hashing algorithm: Blake2b-256
+        - Reference implementation: https://github.com/...
+        - Specification: https://...
+        - Estimated complexity: Medium
+        - Chain ID or identifier: ...
+      render: text
+
+  - type: dropdown
+    id: scope_alignment
+    attributes:
+      label: Scope Alignment
+      description: Does this feature align with project scope?
+      options:
+        - "Yes: This is about transaction DECODING"
+        - "No: This involves transaction ENCODING (out of scope)"
+        - "No: This involves transaction SIGNING (out of scope)"
+        - "No: This involves transaction BROADCASTING (out of scope)"
+        - "Unsure: Please clarify if this is in scope"
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking_changes
+    attributes:
+      label: Breaking Changes
+      description: Would this feature require breaking changes to existing APIs?
+      placeholder: |
+        - No breaking changes expected
+        - OR: This would require changing... because...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, diagrams, or links
+      placeholder: |
+        Related issues: #123, #456
+        Similar features in other projects: ...
+        Rough implementation ideas: ...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I am willing to submit a pull request to implement this feature
+        - label: I can help with design and specification
+        - label: I can provide test data or fixtures
+        - label: I can help with testing and review
+        - label: I can help with documentation
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Timeline Expectations
+      description: When do you need this feature? Is there a specific deadline?
+      placeholder: |
+        - Needed by: (date)
+        - Blocking project: (yes/no)
+        - Urgency: (high/medium/low)

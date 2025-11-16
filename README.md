@@ -4,10 +4,10 @@
 
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
 [![Rust Version](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
-[![codecov](https://codecov.io/gh/prasincs/universal-blockchain-decoder/branch/main/graph/badge.svg)](https://codecov.io/gh/prasincs/universal-blockchain-decoder)
+[![CI](https://github.com/prasincs/universal-blockchain-decoder/workflows/test/badge.svg)](https://github.com/prasincs/universal-blockchain-decoder/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/prasincs/universal-blockchain-decoder/branch/main/graph/badge.svg)](https://codecov.io/gh/prasincs/universal-blockchain-decoder)
 [![Tests](https://img.shields.io/badge/tests-322%20unit%20%2B%20100%2B%20property-brightgreen.svg)](https://github.com/prasincs/universal-blockchain-decoder/actions)
 [![Code Quality](https://img.shields.io/badge/code%20quality-9%2F10-brightgreen.svg)](#-quality--testing)
-[![CI](https://img.shields.io/badge/CI-8%20workflows-blue.svg)](https://github.com/prasincs/universal-blockchain-decoder/actions)
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-trustless--txir-blueviolet.svg)](https://trustless-txir.netlify.app)
 
 ## 🎯 Overview

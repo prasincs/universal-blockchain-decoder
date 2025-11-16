@@ -1,0 +1,106 @@
+name: Question
+description: Ask a question about usage, architecture, or design
+title: "[Question]: "
+labels: ["question", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help! Please check existing documentation first:
+        - [README.md](https://github.com/prasincs/universal-blockchain-decoder/blob/main/README.md)
+        - [CLAUDE.md](https://github.com/prasincs/universal-blockchain-decoder/blob/main/CLAUDE.md)
+        - [Documentation](https://github.com/prasincs/universal-blockchain-decoder/tree/main/docs)
+
+        💡 **Tip**: For general discussions, consider using [GitHub Discussions](https://github.com/prasincs/universal-blockchain-decoder/discussions) instead!
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      description: Please ensure you've completed all of the following
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have read the relevant documentation
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Usage / How-To
+        - Architecture / Design
+        - Performance
+        - Security
+        - Testing
+        - Contributing
+        - Blockchain-Specific
+        - Integration
+        - Troubleshooting
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: Ask your question as clearly as possible
+      placeholder: |
+        How do I...?
+        Why does the decoder...?
+        What is the best way to...?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context (what you're trying to do, what you've tried, etc.)
+      placeholder: |
+        I'm trying to build a multi-chain block explorer and I need to...
+        I've looked at the examples but I'm not sure how to...
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code Sample (if applicable)
+      description: Show what you've tried or what you're working with
+      placeholder: |
+        ```rust
+        // What I'm trying to do
+        let tx = BitcoinDecoder::decode(bytes)?;
+        // How do I get the sender address?
+        ```
+      render: rust
+
+  - type: textarea
+    id: research
+    attributes:
+      label: What Have You Tried?
+      description: What documentation have you read? What have you searched for?
+      placeholder: |
+        - Checked README.md section on...
+        - Looked at examples/simple-decoder
+        - Searched for "sender address" but couldn't find...
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this question?
+      options:
+        - Low (just curious)
+        - Medium (would like to know)
+        - High (blocking my work)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other details that might help us answer your question

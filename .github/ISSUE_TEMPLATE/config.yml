@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/prasincs/universal-blockchain-decoder/discussions
+    about: For general questions, ideas, and community discussions
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/prasincs/universal-blockchain-decoder/security/policy
+    about: For reporting security vulnerabilities (DO NOT open a public issue)
+  - name: 📚 Documentation
+    url: https://github.com/prasincs/universal-blockchain-decoder/tree/main/docs
+    about: Browse comprehensive documentation
+  - name: 💡 Contributing Guide
+    url: https://github.com/prasincs/universal-blockchain-decoder/blob/main/CONTRIBUTING.md
+    about: Learn how to contribute to the project

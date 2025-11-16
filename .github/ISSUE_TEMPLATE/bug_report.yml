@@ -1,0 +1,186 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      description: Please ensure you've completed all of the following
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported before
+          required: true
+        - label: I am using the latest version of the decoder
+          required: true
+        - label: I have read the [CONTRIBUTING.md](https://github.com/prasincs/universal-blockchain-decoder/blob/main/CONTRIBUTING.md) guidelines
+          required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      options:
+        - Core Library (universal-decoder-core)
+        - Bitcoin Decoder
+        - Ethereum Decoder
+        - Solana Decoder
+        - Cosmos SDK Decoder
+        - EVM Multi-Chain Decoder
+        - OP Stack Decoder
+        - Zcash Decoder
+        - Other Chain Decoder (specify below)
+        - CLI Tool
+        - WASM Bindings
+        - Testing Infrastructure
+        - Documentation
+        - CI/CD
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: When I try to decode a Bitcoin transaction with..., I get...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Create a transaction with...
+        2. Call decoder with...
+        3. Observe error...
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: I expected the transaction to be decoded successfully with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Instead, I got an error / panic / incorrect output...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code Sample
+      description: Please provide a minimal code sample that reproduces the issue
+      placeholder: |
+        ```rust
+        use universal_decoder_core::prelude::*;
+        use decoder_bitcoin::BitcoinDecoder;
+
+        let raw_tx = &[/* bytes */];
+        let result = BitcoinDecoder::decode(raw_tx);
+        // Error occurs here
+        ```
+      render: rust
+
+  - type: textarea
+    id: transaction_data
+    attributes:
+      label: Transaction Data
+      description: If possible, provide the raw transaction bytes or transaction hash
+      placeholder: |
+        Raw bytes (hex): 0100000001...
+        Or transaction hash: abc123...
+        Or block explorer link: https://...
+      render: text
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide information about your environment
+      placeholder: |
+        - OS: Ubuntu 22.04
+        - Rust version: 1.70.0
+        - Decoder version: 0.1.0-alpha
+        - How you're using it: As a library / CLI / WASM
+      value: |
+        - OS:
+        - Rust version:
+        - Decoder version:
+        - How you're using it:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Please paste any relevant error messages, stack traces, or logs
+      placeholder: |
+        thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: ...
+      render: text
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical (crash, data loss, security issue)
+        - High (incorrect decoding, major functionality broken)
+        - Medium (partial functionality broken, workaround available)
+        - Low (minor issue, cosmetic, documentation)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      description: What is affected by this bug?
+      options:
+        - label: Data correctness (incorrect decoding/parsing)
+        - label: Security (potential vulnerability)
+        - label: Performance (slow execution)
+        - label: Memory usage (leaks, excessive allocation)
+        - label: Compatibility (doesn't work on certain platforms)
+        - label: Usability (confusing API, poor error messages)
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: This might be related to issue #123. I noticed that...
+
+  - type: checkboxes
+    id: willing_to_help
+    attributes:
+      label: Contribution
+      description: Are you willing to help fix this bug?
+      options:
+        - label: I am willing to submit a pull request to fix this bug
+        - label: I can help test the fix
+        - label: I can provide more information if needed
