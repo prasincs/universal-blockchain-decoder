@@ -58,6 +58,8 @@ use std::io::Cursor;
 
 pub mod parsing;
 pub mod sapling;
+pub mod sighash;
+pub mod signatures;
 pub mod transparent;
 pub mod types;
 pub mod viewing_key;

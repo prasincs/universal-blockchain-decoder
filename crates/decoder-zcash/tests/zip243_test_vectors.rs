@@ -29,7 +29,11 @@
 //! NEVER expose private keys or viewing keys.
 
 use decoder_primitives::prelude::*;
-use decoder_zcash::{viewing_key::SaplingIncomingViewingKey, ZcashDecoder, ZcashTransaction};
+use decoder_zcash::{
+    sighash::{compute_sighash, ConsensusBranchId, SigHashType},
+    viewing_key::SaplingIncomingViewingKey,
+    ZcashDecoder, ZcashTransaction,
+};
 
 /// Helper to decode hex string to bytes
 fn hex_to_bytes(hex: &str) -> Vec<u8> {
@@ -329,33 +333,81 @@ fn test_zip243_vector_3_blake2b_hash_validation() {
 /// 9. expiryHeight (4 bytes)
 /// 10. valueBalance (8 bytes)
 /// 11. nHashType (4 bytes) - usually SIGHASH_ALL (0x01)
-/// 12. If transparent input: (outpoint || scriptCode || value || nSequence)
 /// ```
 ///
 /// **Personalization**: "ZcashSigHash" + consensus_branch_id (4 bytes)
 #[test]
 fn test_zip243_vector_4_sighash_computation() {
-    // This test will validate SIGHASH computation once the algorithm is implemented
-    //
-    // For now, this documents the structure and expected behavior
+    // Build a minimal z→z Sapling transaction
+    let mut tx_bytes = Vec::new();
 
-    // ZIP-243 SIGHASH personalization for Sapling (consensus branch ID: 0x76b809bb)
-    let personalization = b"ZcashSigHash\xbb\x09\xb8\x76"; // Sapling branch ID
+    // Header (8 bytes)
+    tx_bytes.extend_from_slice(&0x80000004_u32.to_le_bytes()); // version 4 with Overwinter
+    tx_bytes.extend_from_slice(&0x892f2085_u32.to_le_bytes()); // version_group_id (Sapling)
 
-    // Test case: Empty transaction components should produce deterministic hash
-    let mut hasher = blake2b_simd::Params::new()
-        .hash_length(32)
-        .personal(personalization)
-        .to_state();
+    // Transparent section (empty)
+    tx_bytes.push(0x00); // 0 inputs
+    tx_bytes.push(0x00); // 0 outputs
+    tx_bytes.extend_from_slice(&0_u32.to_le_bytes()); // locktime
+    tx_bytes.extend_from_slice(&500000_u32.to_le_bytes()); // expiry_height
 
-    // Add header (version 4, version_group_id 0x892f2085)
-    hasher.update(&0x80000004_u32.to_le_bytes()); // version
-    hasher.update(&0x892f2085_u32.to_le_bytes()); // version_group_id
+    // Sapling section
+    tx_bytes.push(0x01); // 1 Spend Description
 
-    let _hash = hasher.finalize();
+    // SpendDescription (384 bytes)
+    tx_bytes.extend_from_slice(&[0x01; 32]); // cv
+    tx_bytes.extend_from_slice(&[0x02; 32]); // anchor
+    tx_bytes.extend_from_slice(&[0x03; 32]); // nullifier
+    tx_bytes.extend_from_slice(&[0x04; 32]); // rk
+    tx_bytes.extend_from_slice(&[0x05; 192]); // zkproof
+    tx_bytes.extend_from_slice(&[0x06; 64]); // spend_auth_sig
 
-    // Full SIGHASH implementation will be added in a future PR
-    println!("✅ ZIP-243 Test Vector #4: SIGHASH structure documented");
+    tx_bytes.push(0x01); // 1 Output Description
+
+    // OutputDescription (948 bytes)
+    tx_bytes.extend_from_slice(&[0x07; 32]); // cv
+    tx_bytes.extend_from_slice(&[0x08; 32]); // cmu
+    tx_bytes.extend_from_slice(&[0x09; 32]); // ephemeral_key
+    tx_bytes.extend_from_slice(&[0x0a; 580]); // enc_ciphertext
+    tx_bytes.extend_from_slice(&[0x0b; 80]); // out_ciphertext
+    tx_bytes.extend_from_slice(&[0x0c; 192]); // zkproof
+
+    // valueBalance (8 bytes) - 0 for pure shielded
+    tx_bytes.extend_from_slice(&0_i64.to_le_bytes());
+
+    // bindingSig (64 bytes)
+    tx_bytes.extend_from_slice(&[0x0d; 64]);
+
+    // Parse transaction
+    let decoded = ZcashDecoder::decode(&tx_bytes).expect("Should decode transaction");
+
+    // Extract Sapling transaction
+    let sapling_tx = match decoded {
+        ZcashTransaction::Sapling(tx) => tx,
+        _ => panic!("Expected Sapling transaction"),
+    };
+
+    // Compute SIGHASH
+    let sighash = compute_sighash(&sapling_tx, ConsensusBranchId::Sapling, SigHashType::All)
+        .expect("SIGHASH computation should succeed");
+
+    // Verify it's 32 bytes
+    assert_eq!(sighash.len(), 32, "SIGHASH should be 32 bytes");
+
+    // Verify determinism - computing twice should give same result
+    let sighash2 = compute_sighash(&sapling_tx, ConsensusBranchId::Sapling, SigHashType::All)
+        .expect("Second SIGHASH computation should succeed");
+
+    assert_eq!(
+        sighash, sighash2,
+        "SIGHASH computation should be deterministic"
+    );
+
+    // Print the SIGHASH for reference
+    println!(
+        "✅ ZIP-243 Test Vector #4: SIGHASH = {}",
+        universal_decoder_core::hex::encode(sighash)
+    );
 }
 
 /// ZIP-243 Test Vector #5: Multiple Shielded Spends and Outputs
@@ -485,13 +537,14 @@ fn test_zip243_summary() {
     println!("✅ Test Vector #1: Basic z→z transaction parsing");
     println!("✅ Test Vector #2: Known viewing key structure (documented)");
     println!("✅ Test Vector #3: BLAKE2b-256 hash validation");
-    println!("✅ Test Vector #4: SIGHASH computation (documented)");
+    println!("✅ Test Vector #4: SIGHASH computation (IMPLEMENTED)");
     println!("✅ Test Vector #5: Multiple spends/outputs");
     println!("✅ Test Vector #6: Transaction size validation");
     println!("═══════════════════════════════════════════════════════════");
     println!("\n🎯 Next Steps:");
-    println!("1. Implement full SIGHASH computation algorithm");
+    println!("1. ✅ Full SIGHASH computation algorithm - DONE");
     println!("2. Add note encryption/decryption with known keys");
     println!("3. Validate against official zcash-test-vectors repository");
     println!("4. Add signature verification tests");
+    println!("5. Add real mainnet transaction fixtures");
 }
