@@ -7,6 +7,9 @@ use universal_decoder_core::prelude::*;
 
 pub mod types;
 
+#[cfg(feature = "formal-verification")]
+pub mod verus_annotations;
+
 use types::EthereumTransaction;
 
 /// Ethereum chain identity

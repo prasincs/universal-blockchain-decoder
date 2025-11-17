@@ -8,6 +8,8 @@ repository.workspace = true
 description = "Ethereum transaction decoder for universal-decoder"
 
 [features]
+# Enable formal verification support (Verus annotations)
+formal-verification = []
 # Alloy validation feature (currently disabled, requires alloy-rs dependencies)
 alloy-validation = []
 
