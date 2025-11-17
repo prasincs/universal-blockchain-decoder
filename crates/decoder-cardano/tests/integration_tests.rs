@@ -264,20 +264,70 @@ fn create_minimal_cardano_tx() -> Vec<u8> {
     tx_bytes
 }
 
+// ========== Real Transaction Tests ==========
+
+/// NOTE: We need actual real Cardano transaction examples from mainnet
+///
+/// The transaction examples found in various documentation and online sources
+/// appear to be invalid or use non-standard formats. Even the pallas library
+/// (the official Rust library for Cardano) cannot decode them.
+///
+/// Investigation findings:
+/// - Example 1: 6-element CBOR array (spec says 3-4 elements)
+/// - Example 2: 3-element array with indefinite arrays (spec requires definite-length)
+/// - Neither can be decoded by pallas (Alonzo or Babbage era)
+///
+/// To properly test real transactions, we need:
+/// 1. Access to a Cardano node to export real transaction CBORs
+/// 2. Valid transactions from Cardanoscan API with proper CBOR export
+/// 3. Transaction fixtures from the cardano-ledger test suite
+///
+/// For now, we verify that our decoder works correctly with synthetic test data
+/// that follows the CDDL specifications.
+///
+/// Test that demonstrates the need for real transaction fixtures
+#[test]
+#[ignore] // Requires real Cardano transaction data
+fn test_decode_real_mainnet_transaction() {
+    // TODO: Add real Cardano mainnet transaction CBOR hex
+    //
+    // To get real transaction data:
+    // 1. Run: cardano-cli transaction view --tx-file tx.signed --output-json
+    // 2. Or use Cardanoscan API with CBOR export
+    // 3. Or extract from cardano-ledger test fixtures
+    //
+    // The transaction should be:
+    // - From mainnet (not testnet)
+    // - Post-Alonzo era (Babbage or Conway)
+    // - Valid CBOR with 4-element array: [body, witness_set, is_valid, auxiliary_data]
+
+    let _tx_hex = ""; // Placeholder for real transaction
+                      // let tx_bytes = universal_decoder_core::hex::decode(tx_hex).expect("Failed to decode hex");
+                      // let result = CardanoDecoder::decode(&tx_bytes);
+                      // assert!(result.is_ok(), "Should decode real Cardano transaction");
+}
+
 #[cfg(test)]
 mod pallas_validation_tests {
-    /// Test that our decoder produces similar results to pallas
+    /// Pallas validation tests - compare our decoder with pallas library
     ///
-    /// This test uses pallas to decode a transaction and compares
-    /// the results with our decoder.
-    #[test]
-    #[ignore] // Ignore by default, run with --ignored to test with pallas
-    fn test_compare_with_pallas() {
-        // This test would use real Cardano transactions from mainnet
-        // and compare our parsing with pallas
-        // For now, we skip it as we need real transaction fixtures
+    /// These tests will validate that our decoder produces similar results
+    /// to the official pallas library when decoding real Cardano transactions.
+    ///
+    /// Currently disabled until we have access to real transaction fixtures.
+    ///
+    /// See parent module documentation for details on obtaining real transaction data.
 
-        let _tx_hex = ""; // Real Cardano transaction hex
-                          // TODO: Add real transaction fixtures and compare with pallas
+    #[test]
+    #[ignore] // Requires real Cardano transaction data + pallas comparison logic
+    fn test_compare_with_pallas() {
+        // TODO: Implement pallas comparison when we have real transaction fixtures
+        //
+        // Implementation steps:
+        // 1. Get real Cardano transaction CBOR
+        // 2. Decode with our decoder: CardanoDecoder::decode(&tx_bytes)
+        // 3. Decode with pallas: pallas_codec::minicbor::decode::<MintedTx>(&tx_bytes)
+        // 4. Compare key fields: inputs, outputs, fee, certificates, etc.
+        // 5. Verify our decoder matches pallas behavior
     }
 }
