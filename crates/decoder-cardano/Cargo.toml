@@ -10,9 +10,18 @@ description = "Cardano transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-chains-common = { path = "../decoder-chains-common" }
+decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
+# Cardano libraries for test validation ONLY
+# Production code uses pure Rust CBOR parsing
+pallas-codec = "0.30"
+pallas-primitives = "0.30"
+pallas-traverse = "0.30"
 serde_json = { workspace = true }
 proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }
