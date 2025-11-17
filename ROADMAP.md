@@ -1498,12 +1498,12 @@ This is a **strategic inflection point** that transforms the project from sequen
 **Chains Supported**: Aptos, Sui, Movement, etc.
 
 Tasks:
-- [ ] Create `decoder-move` crate
-- [ ] Implement BCS (Binary Canonical Serialization) parsing
-- [ ] Support Aptos transaction format
-- [ ] Support Sui transaction format (object model)
-- [ ] Handle Move module calls
-- [ ] Hardcode chain list
+- [x] Create `decoder-move` crate
+- [x] Implement BCS (Binary Canonical Serialization) parsing
+- [x] Support Aptos transaction format
+- [x] Support Sui transaction format (object model)
+- [x] Handle Move module calls
+- [x] Hardcode chain list
 
 **Special Features**:
 - Aptos: Account-based with parallel execution
