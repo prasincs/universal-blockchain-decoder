@@ -163,6 +163,16 @@ pub enum CosmosMessage {
     /// Migrate contract (cosmwasm.wasm.v1.MsgMigrateContract)
     MigrateContract(MsgMigrateContract),
 
+    // === Distribution Messages ===
+    /// Withdraw delegator rewards (cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward)
+    WithdrawDelegatorReward(MsgWithdrawDelegatorReward),
+
+    // === Additional Governance Messages ===
+    /// Submit governance proposal (cosmos.gov.v1beta1.MsgSubmitProposal)
+    SubmitProposal(MsgSubmitProposal),
+    /// Deposit tokens to governance proposal (cosmos.gov.v1beta1.MsgDeposit)
+    Deposit(MsgDeposit),
+
     /// Unknown/unsupported message type
     Unknown { type_url: String, value: Vec<u8> },
 }
@@ -352,6 +362,34 @@ pub struct MsgMigrateContract {
     pub msg: Vec<u8>,
 }
 
+// === Distribution Message Types ===
+
+/// MsgWithdrawDelegatorReward - Withdraw staking rewards from a validator
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgWithdrawDelegatorReward {
+    pub delegator_address: String,
+    pub validator_address: String,
+}
+
+// === Additional Governance Message Types ===
+
+/// MsgSubmitProposal - Submit a governance proposal
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgSubmitProposal {
+    pub content_type_url: String,
+    pub content_value: Vec<u8>,
+    pub initial_deposit: Vec<Coin>,
+    pub proposer: String,
+}
+
+/// MsgDeposit - Deposit tokens to a governance proposal
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgDeposit {
+    pub proposal_id: u64,
+    pub depositor: String,
+    pub amount: Vec<Coin>,
+}
+
 impl fmt::Display for CosmosMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -451,7 +489,23 @@ impl fmt::Display for CosmosMessage {
                     msg.contract, msg.code_id
                 )
             }
-
+            CosmosMessage::WithdrawDelegatorReward(msg) => {
+                write!(
+                    f,
+                    "MsgWithdrawDelegatorReward: {} from {}",
+                    msg.delegator_address, msg.validator_address
+                )
+            }
+            CosmosMessage::SubmitProposal(msg) => {
+                write!(f, "MsgSubmitProposal: {}", msg.proposer)
+            }
+            CosmosMessage::Deposit(msg) => {
+                write!(
+                    f,
+                    "MsgDeposit: {} on proposal {}",
+                    msg.depositor, msg.proposal_id
+                )
+            }
             CosmosMessage::Unknown { type_url, .. } => {
                 write!(f, "Unknown: {}", type_url)
             }
@@ -486,6 +540,14 @@ pub mod type_urls {
     pub const MSG_INSTANTIATE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgInstantiateContract";
     pub const MSG_EXECUTE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgExecuteContract";
     pub const MSG_MIGRATE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgMigrateContract";
+
+    // Distribution messages
+    pub const MSG_WITHDRAW_DELEGATOR_REWARD: &str =
+        "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
+
+    // Additional governance messages
+    pub const MSG_SUBMIT_PROPOSAL: &str = "/cosmos.gov.v1beta1.MsgSubmitProposal";
+    pub const MSG_DEPOSIT: &str = "/cosmos.gov.v1beta1.MsgDeposit";
 }
 
 #[cfg(test)]
