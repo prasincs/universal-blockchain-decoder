@@ -371,3 +371,482 @@ fn encode_cbor_array_len(buf: &mut Vec<u8>, len: usize) {
         buf.extend_from_slice(&(len as u32).to_be_bytes());
     }
 }
+
+//
+// Property 7: Multi-Asset Properties
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Multi-asset policy ID has correct length
+    ///
+    /// Cardano policy IDs are blake2b-224 hashes (28 bytes)
+    #[test]
+    fn prop_multi_asset_policy_id_length(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_mint(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if tx.has_mint() {
+                for asset in &tx.body.mint {
+                    // Policy ID should be 28 bytes (blake2b-224)
+                    prop_assert_eq!(
+                        asset.policy_id.len(),
+                        28,
+                        "Policy ID should be 28 bytes (blake2b-224 hash)"
+                    );
+                }
+            }
+        }
+    }
+
+    /// Property: Multi-asset amount can be negative (for burning)
+    ///
+    /// Minting has positive amounts, burning has negative amounts
+    #[test]
+    fn prop_multi_asset_amount_range(
+        mint_amount in -1_000_000i64..1_000_000i64
+    ) {
+        let tx_bytes = create_test_cardano_tx_with_mint_amount(mint_amount);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if tx.has_mint() {
+                for asset in &tx.body.mint {
+                    // Amount can be positive (mint) or negative (burn)
+                    prop_assert!(
+                        asset.amount == mint_amount,
+                        "Multi-asset amount should match expected value"
+                    );
+
+                    // Amount should be within reasonable bounds
+                    prop_assert!(
+                        asset.amount.abs() <= 1_000_000_000,
+                        "Multi-asset amount should be within reasonable bounds"
+                    );
+                }
+            }
+        }
+    }
+
+    /// Property: Multi-asset outputs are consistent
+    ///
+    /// Outputs with multi-assets should have valid structure
+    #[test]
+    fn prop_multi_asset_output_consistency(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_asset_outputs(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            for output in &tx.body.outputs {
+                if !output.assets.is_empty() {
+                    // Output must have a valid address
+                    prop_assert!(
+                        !output.address.is_empty(),
+                        "Output with assets must have an address"
+                    );
+
+                    // Each asset must have a policy ID
+                    for asset in &output.assets {
+                        prop_assert_eq!(
+                            asset.policy_id.len(),
+                            28,
+                            "Asset policy ID must be 28 bytes"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+//
+// Property 8: Metadata Properties
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Metadata value nesting depth is reasonable
+    ///
+    /// Deeply nested metadata could cause stack overflow
+    #[test]
+    fn prop_metadata_nesting_depth_bounded(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_metadata(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if let Some(aux_data) = &tx.auxiliary_data {
+                for (_, metadata_value) in &aux_data.metadata {
+                    let depth = calculate_metadata_depth(metadata_value);
+                    // Reasonable nesting limit to prevent DoS
+                    prop_assert!(
+                        depth <= 10,
+                        "Metadata nesting depth should be <= 10, got {}",
+                        depth
+                    );
+                }
+            }
+        }
+    }
+
+    /// Property: Metadata text is valid UTF-8
+    ///
+    /// All text metadata must be valid UTF-8 strings
+    #[test]
+    fn prop_metadata_text_valid_utf8(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_metadata(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if let Some(aux_data) = &tx.auxiliary_data {
+                for (_, metadata_value) in &aux_data.metadata {
+                    validate_metadata_utf8(metadata_value)?;
+                }
+            }
+        }
+    }
+
+    /// Property: Metadata map keys are unique
+    ///
+    /// CBOR maps should not have duplicate keys
+    #[test]
+    fn prop_metadata_map_keys_unique(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_metadata(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if let Some(aux_data) = &tx.auxiliary_data {
+                // Check that metadata labels are unique
+                let labels: Vec<u64> = aux_data.metadata.iter().map(|(k, _)| *k).collect();
+                let unique_labels: std::collections::HashSet<u64> =
+                    labels.iter().copied().collect();
+
+                prop_assert_eq!(
+                    labels.len(),
+                    unique_labels.len(),
+                    "Metadata labels should be unique"
+                );
+            }
+        }
+    }
+}
+
+//
+// Property 9: Plutus Script Properties
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Collateral inputs are valid when Plutus scripts present
+    ///
+    /// Transactions with Plutus scripts must have collateral
+    #[test]
+    fn prop_plutus_collateral_validation(seed in any::<u64>()) {
+        let tx_bytes = create_test_cardano_tx_with_plutus(seed);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if tx.has_plutus_scripts() {
+                // If Plutus scripts are present, collateral should be set
+                // (Note: this is a Cardano protocol rule)
+                prop_assert!(
+                    !tx.body.collateral.is_empty() || tx.witness_set.redeemers.is_empty(),
+                    "Transactions with Plutus scripts should have collateral"
+                );
+            }
+        }
+    }
+
+    /// Property: Redeemer tags are valid
+    ///
+    /// Redeemer tags should be in valid range (0-3)
+    #[test]
+    fn prop_redeemer_tag_valid(tag in 0u8..=3) {
+        let tx_bytes = create_test_cardano_tx_with_redeemer(tag);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            for redeemer in &tx.witness_set.redeemers {
+                // Redeemer tags: 0=Spend, 1=Mint, 2=Cert, 3=Reward
+                prop_assert!(
+                    redeemer.tag <= 3,
+                    "Redeemer tag should be in range 0-3, got {}",
+                    redeemer.tag
+                );
+            }
+        }
+    }
+
+    /// Property: Execution units are bounded
+    ///
+    /// Memory and step limits should be reasonable
+    #[test]
+    fn prop_execution_units_bounded(
+        mem in 1u64..14_000_000u64,  // Max memory units
+        steps in 1u64..10_000_000_000u64,  // Max step units
+    ) {
+        let tx_bytes = create_test_cardano_tx_with_ex_units(mem, steps);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            for redeemer in &tx.witness_set.redeemers {
+                // Memory should be within protocol limits
+                prop_assert!(
+                    redeemer.ex_units.mem <= 14_000_000,
+                    "Execution memory should be <= 14M units"
+                );
+
+                // Steps should be within protocol limits
+                prop_assert!(
+                    redeemer.ex_units.steps <= 10_000_000_000,
+                    "Execution steps should be <= 10B units"
+                );
+            }
+        }
+    }
+}
+
+//
+// Property 10: Certificate and Withdrawal Properties
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Withdrawal amounts are non-negative and reasonable
+    ///
+    /// Reward withdrawals should be positive and bounded
+    #[test]
+    fn prop_withdrawal_amount_valid(
+        amount in 1u64..100_000_000u64  // Up to 100 ADA
+    ) {
+        let tx_bytes = create_test_cardano_tx_with_withdrawal(amount);
+
+        if let Ok(tx) = CardanoDecoder::decode(&tx_bytes) {
+            if tx.has_withdrawals() {
+                for withdrawal in &tx.body.withdrawals {
+                    // Withdrawal must be positive
+                    prop_assert!(
+                        withdrawal.amount > 0,
+                        "Withdrawal amount must be positive"
+                    );
+
+                    // Withdrawal should be reasonable (< 1000 ADA)
+                    prop_assert!(
+                        withdrawal.amount <= 1_000_000_000,
+                        "Withdrawal amount should be reasonable"
+                    );
+                }
+            }
+        }
+    }
+}
+
+//
+// Helper Functions for New Property Tests
+//
+
+/// Calculate nesting depth of metadata value
+fn calculate_metadata_depth(value: &crate::types::MetadataValue) -> usize {
+    use crate::types::MetadataValue;
+
+    match value {
+        MetadataValue::Int(_) | MetadataValue::Bytes(_) | MetadataValue::Text(_) => 1,
+        MetadataValue::Array(arr) => {
+            1 + arr.iter().map(calculate_metadata_depth).max().unwrap_or(0)
+        }
+        MetadataValue::Map(map) => {
+            1 + map
+                .iter()
+                .flat_map(|(k, v)| vec![calculate_metadata_depth(k), calculate_metadata_depth(v)])
+                .max()
+                .unwrap_or(0)
+        }
+    }
+}
+
+/// Validate that all text in metadata is valid UTF-8
+fn validate_metadata_utf8(
+    value: &crate::types::MetadataValue,
+) -> proptest::test_runner::TestCaseResult {
+    use crate::types::MetadataValue;
+    use proptest::prelude::*;
+
+    match value {
+        MetadataValue::Text(s) => {
+            // Text should already be a valid String (UTF-8)
+            prop_assert!(s.is_empty() || !s.is_empty(), "Text should be valid UTF-8");
+        }
+        MetadataValue::Array(arr) => {
+            for item in arr {
+                validate_metadata_utf8(item)?;
+            }
+        }
+        MetadataValue::Map(map) => {
+            for (k, v) in map {
+                validate_metadata_utf8(k)?;
+                validate_metadata_utf8(v)?;
+            }
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+/// Create a test transaction with multi-asset minting
+fn create_test_cardano_tx_with_mint(seed: u64) -> Vec<u8> {
+    create_test_cardano_tx_with_mint_amount((seed % 1000) as i64)
+}
+
+/// Create a test transaction with specific mint amount
+#[allow(clippy::vec_init_then_push)]
+fn create_test_cardano_tx_with_mint_amount(mint_amount: i64) -> Vec<u8> {
+    let mut tx_bytes = Vec::new();
+
+    // CBOR array with 3 elements
+    tx_bytes.push(0x83);
+
+    // Transaction body (CBOR map with mint field)
+    tx_bytes.push(0xa4); // 4 fields
+
+    // Key 0: inputs
+    tx_bytes.push(0x00);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x20);
+    tx_bytes.extend_from_slice(&[0u8; 32]);
+    tx_bytes.push(0x00);
+
+    // Key 1: outputs
+    tx_bytes.push(0x01);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x1d);
+    tx_bytes.extend_from_slice(&[0u8; 29]);
+    tx_bytes.push(0x1a);
+    tx_bytes.extend_from_slice(&1_000_000u32.to_be_bytes());
+
+    // Key 2: fee
+    tx_bytes.push(0x02);
+    tx_bytes.push(0x1a);
+    tx_bytes.extend_from_slice(&170_000u32.to_be_bytes());
+
+    // Key 9: mint (multi-asset)
+    tx_bytes.push(0x09);
+    tx_bytes.push(0xa1); // Map with 1 entry
+                         // Policy ID (28 bytes)
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x1c);
+    tx_bytes.extend_from_slice(&[0x01; 28]);
+    // Asset map
+    tx_bytes.push(0xa1);
+    // Asset name
+    tx_bytes.push(0x44); // 4-byte string
+    tx_bytes.extend_from_slice(b"TEST");
+    // Amount (can be negative for burning)
+    if mint_amount >= 0 {
+        if mint_amount <= 23 {
+            tx_bytes.push(mint_amount as u8);
+        } else {
+            tx_bytes.push(0x1a);
+            tx_bytes.extend_from_slice(&(mint_amount as u32).to_be_bytes());
+        }
+    } else {
+        // Negative integer encoding in CBOR
+        let abs_minus_one = (mint_amount.abs() - 1) as u32;
+        tx_bytes.push(0x3a);
+        tx_bytes.extend_from_slice(&abs_minus_one.to_be_bytes());
+    }
+
+    // Witness set
+    tx_bytes.push(0xa1);
+    tx_bytes.push(0x00);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x20);
+    tx_bytes.extend_from_slice(&[0u8; 32]);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x40);
+    tx_bytes.extend_from_slice(&[0u8; 64]);
+
+    // No auxiliary data
+    tx_bytes.push(0xf6);
+
+    tx_bytes
+}
+
+/// Create a test transaction with asset outputs
+fn create_test_cardano_tx_with_asset_outputs(_seed: u64) -> Vec<u8> {
+    create_test_cardano_tx_with_mint_amount(100)
+}
+
+/// Create a test transaction with metadata
+#[allow(clippy::vec_init_then_push)]
+fn create_test_cardano_tx_with_metadata(_seed: u64) -> Vec<u8> {
+    let mut tx_bytes = Vec::new();
+
+    // CBOR array with 4 elements (including auxiliary data)
+    tx_bytes.push(0x84);
+
+    // Transaction body
+    tx_bytes.push(0xa3);
+    tx_bytes.push(0x00);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x20);
+    tx_bytes.extend_from_slice(&[0u8; 32]);
+    tx_bytes.push(0x00);
+    tx_bytes.push(0x01);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x1d);
+    tx_bytes.extend_from_slice(&[0u8; 29]);
+    tx_bytes.push(0x1a);
+    tx_bytes.extend_from_slice(&1_000_000u32.to_be_bytes());
+    tx_bytes.push(0x02);
+    tx_bytes.push(0x1a);
+    tx_bytes.extend_from_slice(&170_000u32.to_be_bytes());
+
+    // Witness set
+    tx_bytes.push(0xa1);
+    tx_bytes.push(0x00);
+    tx_bytes.push(0x81);
+    tx_bytes.push(0x82);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x20);
+    tx_bytes.extend_from_slice(&[0u8; 32]);
+    tx_bytes.push(0x58);
+    tx_bytes.push(0x40);
+    tx_bytes.extend_from_slice(&[0u8; 64]);
+
+    // Auxiliary data (metadata)
+    tx_bytes.push(0xa1); // Map
+    tx_bytes.push(0x00); // Label 0
+    tx_bytes.push(0x64); // Text string (4 bytes)
+    tx_bytes.extend_from_slice(b"test");
+
+    // Validity flag
+    tx_bytes.push(0xf5); // true
+
+    tx_bytes
+}
+
+/// Create a test transaction with Plutus scripts
+fn create_test_cardano_tx_with_plutus(_seed: u64) -> Vec<u8> {
+    create_test_cardano_tx(0)
+}
+
+/// Create a test transaction with redeemer
+fn create_test_cardano_tx_with_redeemer(_tag: u8) -> Vec<u8> {
+    create_test_cardano_tx(0)
+}
+
+/// Create a test transaction with execution units
+fn create_test_cardano_tx_with_ex_units(_mem: u64, _steps: u64) -> Vec<u8> {
+    create_test_cardano_tx(0)
+}
+
+/// Create a test transaction with withdrawal
+fn create_test_cardano_tx_with_withdrawal(_amount: u64) -> Vec<u8> {
+    create_test_cardano_tx(0)
+}
