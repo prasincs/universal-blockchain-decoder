@@ -300,7 +300,7 @@ mod tests {
     #[test]
     fn test_read_field_element_array() {
         // Length (8 bytes) + 2 field elements (32 bytes each)
-        let mut data = vec![0u8; 8 + 64];
+        let mut data = [0u8; 8 + 64];
         // Set length to 2
         data[7] = 2;
 

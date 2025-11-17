@@ -110,6 +110,35 @@
             background: linear-gradient(135deg, rgba(155, 89, 182, 0.8) 0%, rgba(142, 68, 173, 0.8) 100%);
         }
 
+        /* Ecosystem-specific styling */
+        .treemap-cell[data-ecosystem="evm"] {
+            border: 2px solid rgba(46, 204, 113, 0.6);
+        }
+
+        .treemap-cell[data-ecosystem="opstack"] {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.75) 0%, rgba(192, 57, 43, 0.75) 100%);
+        }
+
+        .treemap-cell[data-ecosystem="arbitrum"] {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.75) 0%, rgba(41, 128, 185, 0.75) 100%);
+        }
+
+        .treemap-cell[data-ecosystem="polygon"] {
+            background: linear-gradient(135deg, rgba(142, 68, 173, 0.75) 0%, rgba(125, 60, 152, 0.75) 100%);
+        }
+
+        .treemap-cell[data-ecosystem="zkevm"] {
+            background: linear-gradient(135deg, rgba(243, 156, 18, 0.75) 0%, rgba(211, 84, 0, 0.75) 100%);
+        }
+
+        .treemap-cell[data-ecosystem="cosmos"] {
+            background: linear-gradient(135deg, rgba(52, 73, 94, 0.8) 0%, rgba(44, 62, 80, 0.8) 100%);
+        }
+
+        .treemap-cell[data-ecosystem="svm"] {
+            background: linear-gradient(135deg, rgba(26, 188, 156, 0.8) 0%, rgba(22, 160, 133, 0.8) 100%);
+        }
+
         .treemap-cell-name {
             font-size: 0.9rem;
             font-weight: 600;
@@ -263,7 +292,7 @@
 <body>
     <header>
         <h1>🗺️ Chain Ecosystem Treemap</h1>
-        <p class="tagline">Explore 500+ mainnet blockchains visually by family, size, and characteristics</p>
+        <p class="tagline">Explore 1575+ mainnet blockchains visually by family, ecosystem, and characteristics</p>
         <div class="links">
             <a href="index.html">← Decoder</a>
             <a href="comparison.html">Type System</a>
@@ -275,6 +304,34 @@
     <main>
         <div class="treemap-container">
             <div class="controls">
+                <div class="filter-group">
+                    <label for="ecosystem-select">Navigate to:</label>
+                    <select id="ecosystem-select">
+                        <optgroup label="All Chains">
+                            <option value="">All Chains (1575 mainnets)</option>
+                        </optgroup>
+                        <optgroup label="Chain Families">
+                            <option value="utxo">UTXO Family (9 mainnets)</option>
+                            <option value="account">Account Family (1564 mainnets)</option>
+                            <option value="instruction">Instruction Family</option>
+                            <option value="privacy">Privacy Family (2 mainnets)</option>
+                        </optgroup>
+                        <optgroup label="EVM Ecosystems (1453 mainnets)">
+                            <option value="evm">All EVM Chains</option>
+                            <option value="opstack">OP Stack (~50 chains)</option>
+                            <option value="arbitrum">Arbitrum Ecosystem (~30 chains)</option>
+                            <option value="polygon">Polygon Ecosystem (~20 chains)</option>
+                            <option value="zkevm">zkEVM L2s (~12 chains)</option>
+                            <option value="evm-standard">L1s & Other L2s (~1341 chains)</option>
+                        </optgroup>
+                        <optgroup label="Other Account Ecosystems">
+                            <option value="cosmos">Cosmos SDK (~100 chains)</option>
+                            <option value="svm">SVM (Solana)</option>
+                            <option value="other-account">Other Account-Based (~10 chains)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
                 <div class="filter-group">
                     <label for="metric-select">Size by:</label>
                     <select id="metric-select">
@@ -321,11 +378,11 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color account"></div>
-                    <span class="legend-label">Account Family (~480 mainnets)</span>
+                    <span class="legend-label">Account Family (1564 mainnets: 1453 EVM, 100 Cosmos, 10 other, 1 SVM)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color instruction"></div>
-                    <span class="legend-label">Instruction Family (1 mainnet)</span>
+                    <span class="legend-label">Instruction Family (see SVM under Account)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color privacy"></div>
@@ -335,7 +392,7 @@
 
             <div class="stats">
                 <div class="stat-card">
-                    <div class="stat-value" id="stat-total">500+</div>
+                    <div class="stat-value" id="stat-total">1575</div>
                     <div class="stat-label">Mainnet Chains</div>
                 </div>
                 <div class="stat-card">
@@ -343,12 +400,31 @@
                     <div class="stat-label">Chain Families</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="stat-decoders">32</div>
-                    <div class="stat-label">Unique Decoders</div>
+                    <div class="stat-value" id="stat-ecosystems">8</div>
+                    <div class="stat-label">Major Ecosystems</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="stat-tvl">$1.2T</div>
                     <div class="stat-label">Total Value Locked (Mock)</div>
+                </div>
+            </div>
+
+            <div class="data-snapshot-info" style="margin-top: 1rem; padding: 1rem; background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="color: #95a5a6; font-size: 0.85rem; margin-bottom: 0.3rem;">📊 Data Snapshot</div>
+                        <div style="color: #ecf0f1; font-size: 0.95rem; font-weight: 600;" id="snapshot-date">
+                            <span id="snapshot-timestamp">Mock Data</span>
+                            <span style="color: #95a5a6; margin-left: 0.5rem; font-weight: normal; font-size: 0.85rem;" id="snapshot-source">(Demo)</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="snapshot-select" style="color: #95a5a6; font-size: 0.85rem;">Historical:</label>
+                        <select id="snapshot-select" style="padding: 0.4rem 0.8rem; background: #16213e; color: #ecf0f1; border: 1px solid #3498db; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                            <option value="latest">Latest (Mock)</option>
+                            <!-- Future snapshots will be added here dynamically -->
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -361,20 +437,31 @@
         <section style="margin-top: 3rem; padding: 2rem; background: #1a1a2e; border-radius: 8px;">
             <h2>About This Visualization</h2>
             <p style="color: #ecf0f1; line-height: 1.8;">
-                This treemap shows the Universal Blockchain Decoder's coverage across the blockchain ecosystem.
-                Each rectangle represents either a chain family or individual blockchain, sized by your selected metric.
+                This treemap shows the Universal Blockchain Decoder's coverage across **1575 mainnet blockchains** (4900+ including testnets).
+                Each rectangle represents a chain family, ecosystem, or individual blockchain, sized by your selected metric.
             </p>
-            <p style="color: #ecf0f1; line-height: 1.8;">
+            <p style="color: #95a5a6; font-size: 0.9rem;">
+                <em>Note: Counts reflect mainnet chains only. The embedded registry contains 2397 EVM chains total (1453 mainnets + 944 testnets).</em>
+            </p>
+            <h3 style="color: #3498db; margin-top: 1.5rem;">Hierarchical Structure (Mainnets Only)</h3>
+            <ul style="color: #ecf0f1; line-height: 1.8;">
+                <li><strong>EVM Ecosystem (1453 mainnets):</strong> OP Stack (~50), Arbitrum Orbit (~30), Polygon CDK (~20), zkEVM (~12), Standard EVM (~1341)</li>
+                <li><strong>Cosmos SDK (~100 mainnets):</strong> IBC-connected chains with Tendermint consensus</li>
+                <li><strong>SVM (1 mainnet):</strong> Solana Virtual Machine - parallel transaction processing</li>
+                <li><strong>Other Account-Based (~10 mainnets):</strong> Aptos, Sui, NEAR, Algorand, Stellar, XRP, Tron, Polkadot, etc.</li>
+                <li><strong>UTXO (9 mainnets):</strong> Bitcoin, Litecoin, Dogecoin, Cardano, etc.</li>
+                <li><strong>Privacy (2 mainnets):</strong> Zcash, Monero</li>
+            </ul>
+            <p style="color: #ecf0f1; line-height: 1.8; margin-top: 1rem;">
                 <strong>Current metrics are mock data for demonstration.</strong> In production, this could be connected to live sources:
             </p>
             <ul style="color: #ecf0f1; line-height: 1.8;">
                 <li><strong>TVL:</strong> DeFiLlama API for real total value locked</li>
                 <li><strong>Transaction Volume:</strong> Chain-specific APIs or indexers</li>
                 <li><strong>Active Addresses:</strong> On-chain metrics</li>
-                <li><strong>Gas Prices:</strong> Real-time fee data</li>
             </ul>
             <p style="color: #95a5a6; font-size: 0.9rem; margin-top: 1rem;">
-                Click on a family to drill down into individual chains. Use filters to focus on specific chain types.
+                <strong>Navigation:</strong> Click on ecosystem groups (e.g., "EVM Ecosystem") to drill down into sub-ecosystems (e.g., "OP Stack"), then into individual chains. Click "All Chains" breadcrumb to return to top level.
             </p>
         </section>
     </main>
@@ -382,10 +469,12 @@
     <footer>
         <p>
             Built with <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">universal-blockchain-decoder</a>.
-            Treemap visualization demonstrates ecosystem coverage across 500+ mainnet blockchains (2200+ including testnets).
+            Treemap visualization demonstrates ecosystem coverage across **1575 mainnet blockchains** (4900+ including testnets).
         </p>
     </footer>
 
+    <!-- D3.js for proper treemap layout -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="treemap.js"></script>
 </body>
 </html>

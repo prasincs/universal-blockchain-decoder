@@ -34,17 +34,18 @@ pub fn hash_invoke_v1(tx: &InvokeTxV1) -> Result<Vec<u8>> {
 /// Hash INVOKE transaction (v3) using Poseidon hash
 pub fn hash_invoke_v3(tx: &InvokeTxV3) -> Result<Vec<u8>> {
     // Build elements to hash
-    let mut elements = Vec::new();
-    elements.push(prefix_to_field(INVOKE_PREFIX)?);
-    elements.push(tx.sender_address);
-    elements.push(hash_calldata_poseidon(&tx.calldata)?);
-    elements.push(hash_resource_bounds(&tx.resource_bounds)?);
-    elements.push(FieldElement::from(tx.tip));
-    elements.push(tx.nonce);
-    elements.push(hash_da_modes(
-        tx.nonce_data_availability_mode,
-        tx.fee_data_availability_mode,
-    )?);
+    let elements = vec![
+        prefix_to_field(INVOKE_PREFIX)?,
+        tx.sender_address,
+        hash_calldata_poseidon(&tx.calldata)?,
+        hash_resource_bounds(&tx.resource_bounds)?,
+        FieldElement::from(tx.tip),
+        tx.nonce,
+        hash_da_modes(
+            tx.nonce_data_availability_mode,
+            tx.fee_data_availability_mode,
+        )?,
+    ];
 
     let hash = PoseidonHash::hash_many(&elements);
 
@@ -67,18 +68,19 @@ pub fn hash_declare_v0(tx: &DeclareTxV0) -> Result<Vec<u8>> {
 
 /// Hash DECLARE transaction (v3) using Poseidon hash
 pub fn hash_declare_v3(tx: &DeclareTxV3) -> Result<Vec<u8>> {
-    let mut elements = Vec::new();
-    elements.push(prefix_to_field(DECLARE_PREFIX)?);
-    elements.push(tx.class_hash);
-    elements.push(tx.compiled_class_hash);
-    elements.push(tx.sender_address);
-    elements.push(hash_resource_bounds(&tx.resource_bounds)?);
-    elements.push(FieldElement::from(tx.tip));
-    elements.push(tx.nonce);
-    elements.push(hash_da_modes(
-        tx.nonce_data_availability_mode,
-        tx.fee_data_availability_mode,
-    )?);
+    let elements = vec![
+        prefix_to_field(DECLARE_PREFIX)?,
+        tx.class_hash,
+        tx.compiled_class_hash,
+        tx.sender_address,
+        hash_resource_bounds(&tx.resource_bounds)?,
+        FieldElement::from(tx.tip),
+        tx.nonce,
+        hash_da_modes(
+            tx.nonce_data_availability_mode,
+            tx.fee_data_availability_mode,
+        )?,
+    ];
 
     let hash = PoseidonHash::hash_many(&elements);
 
@@ -103,18 +105,19 @@ pub fn hash_deploy_account_v1(tx: &DeployAccountTxV1) -> Result<Vec<u8>> {
 
 /// Hash DEPLOY_ACCOUNT transaction (v3) using Poseidon hash
 pub fn hash_deploy_account_v3(tx: &DeployAccountTxV3) -> Result<Vec<u8>> {
-    let mut elements = Vec::new();
-    elements.push(prefix_to_field(DEPLOY_ACCOUNT_PREFIX)?);
-    elements.push(tx.class_hash);
-    elements.push(hash_calldata_poseidon(&tx.constructor_calldata)?);
-    elements.push(tx.contract_address_salt);
-    elements.push(hash_resource_bounds(&tx.resource_bounds)?);
-    elements.push(FieldElement::from(tx.tip));
-    elements.push(tx.nonce);
-    elements.push(hash_da_modes(
-        tx.nonce_data_availability_mode,
-        tx.fee_data_availability_mode,
-    )?);
+    let elements = vec![
+        prefix_to_field(DEPLOY_ACCOUNT_PREFIX)?,
+        tx.class_hash,
+        hash_calldata_poseidon(&tx.constructor_calldata)?,
+        tx.contract_address_salt,
+        hash_resource_bounds(&tx.resource_bounds)?,
+        FieldElement::from(tx.tip),
+        tx.nonce,
+        hash_da_modes(
+            tx.nonce_data_availability_mode,
+            tx.fee_data_availability_mode,
+        )?,
+    ];
 
     let hash = PoseidonHash::hash_many(&elements);
 
