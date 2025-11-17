@@ -6,7 +6,8 @@
 //! ## Supported Primitives
 //!
 //! - **STARK Field Arithmetic**: 252-bit field operations for Starknet
-//! - **Poseidon Hash**: Starknet variant (unlocks 265+ chains)
+//! - **Pallas Field Arithmetic**: 255-bit field operations for Mina Protocol
+//! - **Poseidon Hash**: Starknet and Pallas variants
 //! - **Pedersen Hash**: Starknet variant (unlocks 235+ chains)
 //! - **STARK Curve**: Elliptic curve operations
 //! - **ECDSA on STARK Curve**: Signature verification
@@ -77,5 +78,5 @@ pub mod signature;
 // Re-exports
 pub use curve::{AffinePoint, ALPHA, BETA, EC_ORDER, GENERATOR};
 pub use error::{CryptoError, Result};
-pub use field::{FieldElement, FieldExt};
+pub use field::{FieldElement, FieldExt, PallasFieldElement};
 pub use signature::{verify, Signature, VerifyError};
