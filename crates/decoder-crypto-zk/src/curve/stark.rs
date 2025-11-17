@@ -23,7 +23,7 @@
 //!
 //! // Generator point is on the curve
 //! let g = GENERATOR;
-//! assert_ne!(g.x, FieldElement::ZERO);
+//! assert_ne!(g.x(), FieldElement::ZERO);
 //! ```
 
 use crate::field::FieldElement;

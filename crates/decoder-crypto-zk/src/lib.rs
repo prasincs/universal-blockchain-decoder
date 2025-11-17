@@ -56,10 +56,10 @@
 //! use decoder_crypto_zk::hash::poseidon::PoseidonHash;
 //! use decoder_crypto_zk::field::FieldElement;
 //!
-//! // Example: Hash two field elements
-//! let a = FieldElement::from_hex("0x123...")?;
-//! let b = FieldElement::from_hex("0x456...")?;
-//! let hash = PoseidonHash::hash(&[a, b])?;
+//! // Example: Hash a pair of field elements
+//! let a = FieldElement::from(123u64);
+//! let b = FieldElement::from(456u64);
+//! let hash = PoseidonHash::hash_pair(a, b);
 //! ```
 //!
 //! ## See Also
