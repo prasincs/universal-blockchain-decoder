@@ -1,18 +1,19 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅, Phase 3.6a Complete ✅, Phase 3.9 Foundation Complete ✅)
+## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅, Phase 3.6a Complete ✅, Phase 3.6b Complete ✅, Phase 3.9 Foundation Complete ✅)
 
-**Latest**: Mina o1js Test Vectors Added (22 tests) - Phase 3.9 foundation complete! ✨
-**Current Phase**: Phase 3.9 - Mina Protocol Decoder (Foundation Complete, Transaction Parsing Pending)
-**Previous**: Starknet & ZK Crypto Infrastructure Research (Phase 3.6a Complete)
-**Current Branch**: `claude/add-o1js-test-vectors-015eU4G9pSoc3DZHNBQghWz7`
+**Latest**: Starknet Family Decoder Complete (45 tests, 1404 LOC) - Phase 3.6b complete! ✨
+**Current Phase**: Phase 3 - Chain Family Decoders
+**Previous**: Phase 3.6b - Starknet Decoder (All 6 transaction variants + comprehensive tests)
+**Current Branch**: `claude/implement-roadmap-3-6b-01MEb84qWuH9cfj9YyrHCNkQ`
 **Documentation Branch**: `claude/add-claude-md-guide-01FBVGJMS42S4ViGqv5quDdM`
 **Completed**:
   - ✅ Pure Rust Bitcoin decoder (47 tests passing)
   - ✅ Pure Rust Ethereum decoder (RLP + EIP-2718 types, 6 tests passing)
   - ✅ Pure Rust Solana decoder (compact-u16 + instruction model, 13 tests passing)
   - ✅ Cosmos SDK decoder (Protobuf + 8 message types, 31 tests passing)
-  - ✅ **Mina Protocol decoder foundation** (Pallas/Poseidon + o1js test vectors, 22 tests passing) - **NEW** ✨
+  - ✅ **Starknet decoder** (All 6 transaction variants, 45 tests passing) - **NEW** ✨
+  - ✅ Mina Protocol decoder foundation (Pallas/Poseidon + o1js test vectors, 22 tests passing)
   - ✅ decoder-encodings crate (510 LOC shared encoding logic)
     - ✅ VarInt encoding (Bitcoin)
     - ✅ Compact-u16 encoding (Solana)
@@ -445,7 +446,7 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 - ✅ **Poseidon for Pallas** (Mina Protocol)
 
 **Unlocked Ecosystems**:
-- Starknet (230+ chains) - Phase 3.6b now takes 1 week instead of 2-3 weeks
+- Starknet (230+ chains) - Phase 3.6b complete! ✅
 - Mina (1 chain) - Foundation complete (Phase 3.9)
 - Zcash (1 chain) - Add Jubjub Pedersen (3 days)
 - Polygon zkEVM (10+ chains) - Add Goldilocks Poseidon (3 days)
@@ -454,6 +455,36 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 **Why Vendor**: Minimal TCB, airgapped operation, verifiable supply chain, zero runtime dependencies
 
 **Documentation**: `docs/STARKNET_RESEARCH.md`, `docs/CRYPTO_VENDORING_LEVERAGE.md`
+
+---
+
+### 3.6b: Starknet Family Decoder ✅ COMPLETE
+
+**Summary**: Pure Rust decoder for 230+ Starknet ecosystem chains
+
+**Status**: Phase 3.6b complete - 45 tests passing ✨
+**Timeline**: 1 week (enabled by Phase 3.6a ZK crypto infrastructure)
+**Chains Supported**: Starknet Mainnet, Sepolia Testnet, 230+ appchains (Kakarot zkEVM, Madara-based chains, etc.)
+
+**Delivered**:
+- ✅ **All 6 transaction variants** (INVOKE v1/v3, DECLARE v0/v3, DEPLOY_ACCOUNT v1/v3)
+- ✅ **Pedersen hash** for legacy transactions (v0, v1)
+- ✅ **Poseidon hash** for modern transactions (v3)
+- ✅ **Resource bounds** (EIP-1559 style gas limits)
+- ✅ **Data availability modes** (L1/L2)
+- ✅ **Chain registry** (Mainnet + Sepolia + custom appchains)
+- ✅ **45 comprehensive tests**:
+  - 19 unit tests (parsing, hashing, registry)
+  - 15 integration tests (full decode pipeline)
+  - 11 property-based tests (proptest)
+
+**Implementation**:
+- `crates/decoder-starknet/` - 1404 LOC core + 500 LOC tests
+- Zero external crypto dependencies (uses decoder-crypto-zk)
+- Airgapped-ready (no network calls)
+- Formally verifiable (Verus-ready)
+
+**Documentation**: `crates/decoder-starknet/README.md`, `docs/STARKNET_RESEARCH.md`
 
 ---
 
@@ -805,6 +836,7 @@ See `CONTRIBUTING.md` for:
   - ✅ Phase 3.3: Arbitrum Orbit family (6 transaction types)
   - ✅ Phase 3.5: Cosmos SDK family (228 chains)
   - ✅ Phase 3.6a: ZK Crypto Infrastructure (unlocks 300+ chains)
+  - ✅ Phase 3.6b: Starknet family (230+ chains, 45 tests)
   - ✅ Phase 3.9: Mina Protocol foundation (22 tests)
   - 🚧 Phase 1.5.2: Testing Infrastructure (75% complete, need 34 more property tests)
   - 🚧 Phase 3.2: OP Stack (90% complete, ~4 hours remaining)
@@ -816,7 +848,7 @@ See `CONTRIBUTING.md` for:
   - Phase 1.5.2: Add 34 more property tests (ongoing)
   - Phase 3.1: Complete EVM family decoder (after fixtures)
   - Phase 3.4: SVM family decoder (1 week)
-  - Phase 3.6b: Starknet family decoder (1 week, unlocked by 3.6a)
   - Phase 3.7: Bitcoin forks family decoder (3 days)
   - Phase 3.8: Privacy chains family decoder (2 weeks)
+  - Phase 3.9: Mina transaction parsing (3 days, foundation complete)
   - v0.2.0: All chain families complete (620+ chains supported)
