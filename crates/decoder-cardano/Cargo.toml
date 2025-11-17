@@ -15,6 +15,8 @@ decoder-encodings = { path = "../decoder-encodings" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
+# CBOR parsing - battle-tested, minimal, no_std compatible
+minicbor = { version = "0.20", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 # Cardano libraries for test validation ONLY

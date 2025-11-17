@@ -1,6 +1,6 @@
 //! Integration tests for Cardano decoder using real transaction fixtures
 
-use decoder_cardano::{CardanoDecoder, CardanoTransaction};
+use decoder_cardano::CardanoDecoder;
 use universal_decoder_core::prelude::*;
 
 /// Test basic decoder functionality
@@ -33,8 +33,8 @@ fn test_validate_format_rejects_invalid() {
         "Should reject transaction that's too small"
     );
 
-    // Valid CBOR array marker should pass basic validation
-    let dummy_tx = vec![0x83, 0xa0, 0xa0, 0xf6]; // [map, map, null]
+    // Valid CBOR array marker should pass basic validation (at least 10 bytes)
+    let dummy_tx = vec![0x83, 0xa0, 0xa0, 0xf6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // [map, map, null] + padding
     assert!(
         CardanoDecoder::validate_format(&dummy_tx).is_ok(),
         "Should pass basic validation for reasonable size with valid CBOR marker"
@@ -204,6 +204,7 @@ fn test_transaction_methods() {
 ///
 /// This creates a CBOR-encoded transaction with minimal structure:
 /// [transaction_body, witness_set, null (no metadata)]
+#[allow(clippy::vec_init_then_push)]
 fn create_minimal_cardano_tx() -> Vec<u8> {
     let mut tx_bytes = Vec::new();
 
@@ -265,8 +266,6 @@ fn create_minimal_cardano_tx() -> Vec<u8> {
 
 #[cfg(test)]
 mod pallas_validation_tests {
-    use super::*;
-
     /// Test that our decoder produces similar results to pallas
     ///
     /// This test uses pallas to decode a transaction and compares

@@ -196,7 +196,7 @@ impl CardanoTransaction {
 
     /// Get the transaction ID as a hex string
     pub fn txid_hex(&self) -> String {
-        hex::encode(&self.txid())
+        hex::encode(self.txid())
     }
 
     /// Get the number of inputs
@@ -327,10 +327,7 @@ impl<'a> Canonicalizer<'a> for CardanoTransaction {
         };
 
         // Create operations
-        let mut operations = vec![];
-
-        // Add fee operation
-        operations.push(Operation::Transfer(Transfer {
+        let operations = vec![Operation::Transfer(Transfer {
             from: Address {
                 bytes: vec![],
                 human_readable: None,
@@ -341,7 +338,7 @@ impl<'a> Canonicalizer<'a> for CardanoTransaction {
             },
             amount: Amount::new(self.body.fee as u128, 6),
             asset: AssetId::Native,
-        }));
+        })];
 
         Ok(TxIR::new(
             &super::CardanoChain,

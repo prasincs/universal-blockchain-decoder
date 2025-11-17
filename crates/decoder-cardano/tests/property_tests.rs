@@ -47,66 +47,9 @@ proptest! {
 //
 // Property 2: CBOR Parsing Robustness
 //
-
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(500))]
-
-    /// Property: CBOR array header parsing is consistent
-    ///
-    /// Valid CBOR array markers should parse consistently
-    #[test]
-    fn prop_cbor_array_parsing_consistent(
-        array_len in 0u8..24u8
-    ) {
-        use std::io::Cursor;
-        use decoder_cardano::parsing::read_cbor_array_header;
-
-        // CBOR array with 0-23 elements uses single byte encoding
-        let mut bytes = vec![];
-        bytes.push(0x80 | array_len); // Major type 4 (array) | length
-
-        let mut cursor = Cursor::new(bytes.as_slice());
-        let result = read_cbor_array_header(&mut cursor);
-
-        prop_assert!(result.is_ok(), "Should parse valid CBOR array header");
-        if let Ok(len) = result {
-            prop_assert_eq!(len, array_len as usize, "Array length should match");
-        }
-    }
-
-    /// Property: CBOR unsigned int parsing is consistent
-    #[test]
-    fn prop_cbor_uint_parsing_consistent(value in 0u64..10000) {
-        use std::io::Cursor;
-        use decoder_cardano::parsing::read_cbor_uint;
-
-        // Encode the value as CBOR
-        let mut bytes = Vec::new();
-        if value < 24 {
-            bytes.push(value as u8);
-        } else if value <= 0xFF {
-            bytes.push(0x18); // uint8 follows
-            bytes.push(value as u8);
-        } else if value <= 0xFFFF {
-            bytes.push(0x19); // uint16 follows
-            bytes.extend_from_slice(&(value as u16).to_be_bytes());
-        } else if value <= 0xFFFFFFFF {
-            bytes.push(0x1a); // uint32 follows
-            bytes.extend_from_slice(&(value as u32).to_be_bytes());
-        } else {
-            bytes.push(0x1b); // uint64 follows
-            bytes.extend_from_slice(&value.to_be_bytes());
-        }
-
-        let mut cursor = Cursor::new(bytes.as_slice());
-        let result = read_cbor_uint(&mut cursor);
-
-        prop_assert!(result.is_ok(), "Should parse valid CBOR uint");
-        if let Ok(parsed_value) = result {
-            prop_assert_eq!(parsed_value, value, "Parsed value should match");
-        }
-    }
-}
+// Note: CBOR parsing is now handled by the battle-tested minicbor library,
+// so we don't need to test internal CBOR parsing functions. We test
+// end-to-end decoder behavior instead.
 
 //
 // Property 3: Transaction ID Determinism
@@ -295,10 +238,11 @@ proptest! {
 
 /// Create a test Cardano transaction with deterministic content based on seed
 fn create_test_cardano_tx(seed: u64) -> Vec<u8> {
-    create_test_cardano_tx_with_fee(170_000 + (seed % 100_000) as u64)
+    create_test_cardano_tx_with_fee(170_000 + (seed % 100_000))
 }
 
 /// Create a test Cardano transaction with specific fee
+#[allow(clippy::vec_init_then_push)]
 fn create_test_cardano_tx_with_fee(fee: u64) -> Vec<u8> {
     let mut tx_bytes = Vec::new();
 
@@ -356,6 +300,7 @@ fn create_test_cardano_tx_with_fee(fee: u64) -> Vec<u8> {
 }
 
 /// Create a test Cardano transaction with specific input/output counts
+#[allow(clippy::vec_init_then_push)]
 fn create_test_cardano_tx_with_io(input_count: usize, output_count: usize) -> Vec<u8> {
     let mut tx_bytes = Vec::new();
 

@@ -31,7 +31,7 @@
 
 use decoder_chains_common::prelude::*;
 use decoder_primitives::prelude::*;
-use std::io::Cursor;
+use minicbor::Decoder;
 
 pub mod parsing;
 pub mod types;
@@ -78,14 +78,21 @@ impl ChainDecoder for CardanoDecoder {
         // Validate format first
         Self::validate_format(raw_bytes)?;
 
-        let mut cursor = Cursor::new(raw_bytes);
+        let mut decoder = Decoder::new(raw_bytes);
 
         // Parse the CBOR array tag
-        let array_len = read_cbor_array_header(&mut cursor)?;
+        let array_len = decoder
+            .array()
+            .map_err(|e| {
+                DecoderError::invalid_structure(format!("Failed to parse transaction array: {}", e))
+            })?
+            .ok_or_else(|| {
+                DecoderError::invalid_structure("Expected definite-length array for transaction")
+            })?;
 
         // Cardano transactions are CBOR arrays with 3 or 4 elements:
         // [transaction_body, transaction_witness_set, auxiliary_data?, is_valid?]
-        if array_len < 3 || array_len > 4 {
+        if !(3..=4).contains(&array_len) {
             return Err(DecoderError::invalid_structure(format!(
                 "Expected CBOR array with 3-4 elements, got {}",
                 array_len
@@ -93,21 +100,23 @@ impl ChainDecoder for CardanoDecoder {
         }
 
         // Parse transaction body
-        let tx_body = parse_transaction_body(&mut cursor)?;
+        let tx_body = parse_transaction_body(&mut decoder)?;
 
         // Parse witness set
-        let witness_set = parse_witness_set(&mut cursor)?;
+        let witness_set = parse_witness_set(&mut decoder)?;
 
         // Parse auxiliary data (metadata) if present
         let auxiliary_data = if array_len >= 4 {
-            parse_auxiliary_data(&mut cursor)?
+            parse_auxiliary_data(&mut decoder)?
         } else {
             None
         };
 
         // Parse validity flag if present (for Alonzo era and later)
         let is_valid = if array_len == 4 {
-            Some(read_cbor_bool(&mut cursor)?)
+            Some(decoder.bool().map_err(|e| {
+                DecoderError::invalid_structure(format!("Failed to parse validity flag: {}", e))
+            })?)
         } else {
             None
         };
@@ -174,7 +183,6 @@ pub fn decode_with_hooks(raw_bytes: &[u8], registry: &HookRegistry) -> Result<Ca
 #[cfg(test)]
 mod tests {
     use super::*;
-    use universal_decoder_core::hex;
 
     #[test]
     fn test_validate_format() {
