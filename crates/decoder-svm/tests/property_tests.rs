@@ -119,8 +119,10 @@ proptest! {
         prop_assert!(by_id.is_some(),
             "get_chain_by_id() should return Some for ID {}", chain_id.to_u64());
 
-        // Verify consistency
-        prop_assert_eq!(by_enum.unwrap().chain_id, by_id.unwrap().chain_id,
+        // Verify consistency - safe to unwrap after asserting is_some()
+        let by_enum_chain_id = by_enum.expect("by_enum was verified to be Some").chain_id;
+        let by_id_chain_id = by_id.expect("by_id was verified to be Some").chain_id;
+        prop_assert_eq!(by_enum_chain_id, by_id_chain_id,
             "Both lookup methods should return the same chain");
     }
 }
@@ -306,7 +308,8 @@ proptest! {
             prop_assert!(rpc.is_some(),
                 "Solana chain {:?} should have RPC endpoint", chain_id);
 
-            let url = rpc.unwrap();
+            // Safe to unwrap after asserting is_some()
+            let url = rpc.expect("rpc was verified to be Some");
             prop_assert!(url.contains("solana.com"),
                 "Solana RPC should contain solana.com: {}", url);
         }

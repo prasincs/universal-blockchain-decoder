@@ -67,9 +67,10 @@ proptest! {
         let mut buf = Vec::new();
         encode_varint(&mut buf, value);
 
-        // Decode
+        // Decode - should succeed since we just encoded it
         let mut cursor = Cursor::new(&buf);
-        let decoded = read_varint(&mut cursor).expect("decode should succeed");
+        let decoded = read_varint(&mut cursor)
+            .map_err(|e| TestCaseError::fail(format!("VarInt decode failed: {}", e)))?;
 
         prop_assert_eq!(decoded, value, "VarInt roundtrip failed");
     }
@@ -120,7 +121,8 @@ proptest! {
         use std::io::Cursor;
 
         let mut cursor = Cursor::new(&buf);
-        let decoded = read_varint(&mut cursor).expect("decode should succeed");
+        let decoded = read_varint(&mut cursor)
+            .map_err(|e| TestCaseError::fail(format!("VarInt decode failed: {}", e)))?;
 
         prop_assert_eq!(decoded, boundary, "VarInt boundary roundtrip failed");
     }
