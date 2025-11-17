@@ -18,7 +18,7 @@ thiserror = { workspace = true }
 [dev-dependencies]
 # Blockchain libraries for test validation ONLY
 # Production code uses pure Rust parsing
-solana-transaction-status = "2.0"
+solana-transaction-status = "3.1"
 serde_json = { workspace = true }
 proptest = { workspace = true }
 base64 = "0.22"
