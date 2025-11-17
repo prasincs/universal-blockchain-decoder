@@ -1236,9 +1236,10 @@ proptest! {
     #[test]
     fn prop_serialization_size_grows_with_metadata(
         extra1 in "\\{.*\\}",
-        extra2 in prop::string::string_regex("\\{.*\\}").unwrap(),
+        extra_suffix in "[a-zA-Z0-9_]{1,20}",
     ) {
-        prop_assume!(extra2.len() > extra1.len());
+        // Generate extra2 by extending extra1, ensuring extra2.len() > extra1.len()
+        let extra2 = format!("{}{}", extra1, extra_suffix);
 
         let tx1 = CanonicalTxIR {
             version: 1,

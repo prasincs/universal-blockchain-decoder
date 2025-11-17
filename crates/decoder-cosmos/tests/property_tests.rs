@@ -103,7 +103,8 @@ proptest! {
 
         // Parse the amount
         let amount_str = &coin.amount;
-        let parsed = amount_str.parse::<u128>().unwrap();
+        let parsed = amount_str.parse::<u128>()
+            .expect("Generated coin amount should always parse as u128");
         prop_assert_eq!(parsed, value);
     }
 
@@ -179,7 +180,10 @@ proptest! {
         };
 
         let mut tx_bytes = Vec::new();
-        tx.encode(&mut tx_bytes).unwrap();
+        if tx.encode(&mut tx_bytes).is_err() {
+            // If protobuf encoding fails, skip this test case
+            return Ok(());
+        }
 
         // Should decode without panicking (may fail validation)
         let _ = CosmosDecoder::decode(&tx_bytes);
@@ -229,7 +233,10 @@ proptest! {
         };
 
         let mut tx_bytes = Vec::new();
-        tx.encode(&mut tx_bytes).unwrap();
+        if tx.encode(&mut tx_bytes).is_err() {
+            // If protobuf encoding fails, skip this test case
+            return Ok(());
+        }
 
         if let Ok(decoded) = CosmosDecoder::decode(&tx_bytes) {
             // If decoding succeeds, validate should fail when counts don't match

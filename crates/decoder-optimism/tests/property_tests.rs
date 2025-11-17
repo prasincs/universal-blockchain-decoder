@@ -116,8 +116,10 @@ proptest! {
     /// Property: Borsh serialization roundtrip for deposit transactions
     #[test]
     fn prop_deposit_borsh_roundtrip(deposit in arb_deposit_tx()) {
-        let serialized = borsh::to_vec(&deposit).unwrap();
-        let deserialized: DepositTransaction = borsh::from_slice(&serialized).unwrap();
+        let serialized = borsh::to_vec(&deposit)
+            .map_err(|e| TestCaseError::fail(format!("Borsh serialization failed: {}", e)))?;
+        let deserialized: DepositTransaction = borsh::from_slice(&serialized)
+            .map_err(|e| TestCaseError::fail(format!("Borsh deserialization failed: {}", e)))?;
         prop_assert_eq!(deposit, deserialized);
     }
 
@@ -170,7 +172,8 @@ proptest! {
         let has_data = !deposit.data.is_empty();
 
         let tx = OptimismTransaction::Deposit(deposit);
-        let tx_ir = tx.canonicalize().unwrap();
+        let tx_ir = tx.canonicalize()
+            .map_err(|e| TestCaseError::fail(format!("Canonicalization failed: {}", e)))?;
 
         // TxIR should have metadata
         prop_assert!(!tx_ir.metadata.tx_hash.is_empty());
