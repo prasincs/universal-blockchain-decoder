@@ -1,87 +1,89 @@
 # WASM Deployment Setup Guide
 
-## Quick Feedback Deployment with Cloudflare Pages
+## Quick Feedback Deployment with Netlify
 
-This guide shows how to set up **preview deployments** for the Universal Blockchain Decoder WASM demo using Cloudflare Pages and environment variables. This enables:
+This guide shows how to set up **preview deployments** for the Universal Blockchain Decoder WASM demo using Netlify and GitHub Pages. This enables:
 
 - ✅ **No build artifacts in git** (WASM blobs stay out of version control)
 - ✅ **Preview URLs for every PR/branch** (test before merging)
 - ✅ **Fast feedback loop** (deploy in < 2 minutes)
 - ✅ **Auto PR comments** with preview links
-- ✅ **No payment info required** (truly free tier)
-- ✅ **Global CDN** (Cloudflare's edge network)
+- ✅ **Global CDN** (edge network deployment)
 
-> **Why Cloudflare Pages?** Netlify requires billing information even for the free tier. Cloudflare Pages has a genuinely free tier with no payment info required, unlimited sites, and unlimited requests.
+> **Note**: This project previously used CloudFlare Pages but has migrated to Netlify for preview deployments.
 
 ---
 
 ## Table of Contents
 
-1. [Cloudflare Pages Setup (Preview Deployments)](#cloudflare-pages-setup-preview-deployments)
+1. [Netlify Setup (Preview Deployments)](#netlify-setup-preview-deployments)
 2. [GitHub Pages Setup (Production Only)](#github-pages-setup-production-only)
 3. [Local Development](#local-development)
 4. [Manual Deployment Script](#manual-deployment-script)
 5. [Troubleshooting](#troubleshooting)
-6. [Alternative Platforms (Netlify, Vercel, etc.)](#alternative-platforms)
+6. [Alternative Platforms](#alternative-platforms)
 
 ---
 
-## Cloudflare Pages Setup (Preview Deployments)
+## Netlify Setup (Preview Deployments)
 
-Cloudflare Pages provides **completely free** preview deployments with automatic PR comments and **no payment information required**.
+Netlify provides preview deployments with automatic PR comments and global CDN.
 
-### Step 1: Create Cloudflare Account
+### Step 1: Create Netlify Account
 
-1. **Sign up** at [cloudflare.com](https://dash.cloudflare.com/sign-up/pages) (free account, no credit card)
+1. **Sign up** at [netlify.com](https://app.netlify.com/signup) (free account)
 2. **Verify your email**
-3. **Login** to the Cloudflare dashboard
+3. **Login** to the Netlify dashboard
 
-### Step 2: Get Cloudflare API Token
+### Step 2: Create a New Site
 
-1. Go to [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
-2. Click **"Create Token"**
-3. Click **"Use template"** next to **"Edit Cloudflare Workers"**
-   - Or create custom token with these permissions:
-     - Account Settings: Read
-     - Cloudflare Pages: Edit
-4. Click **"Continue to summary"**
-5. Click **"Create Token"**
-6. **Copy the token** (you won't see it again!)
+1. Go to [app.netlify.com/start](https://app.netlify.com/start)
+2. Click **"Add new site"** → **"Import an existing project"**
+3. Choose **GitHub** and authorize Netlify
+4. Select your repository
+5. Leave build settings empty (we handle builds in GitHub Actions)
+6. Click **"Deploy site"**
 
-### Step 3: Get Cloudflare Account ID
+### Step 3: Get Netlify Credentials
 
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Select any website (or click "Workers & Pages" in sidebar)
-3. Scroll down on the right side → **Account ID**
-4. Click to copy (format: `32-character hex string`)
+1. **Get Site ID**:
+   - Go to: Site Settings → General → Site details
+   - Copy **Site ID** (format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+
+2. **Get Auth Token**:
+   - Go to: User Settings → Applications → Personal access tokens
+   - Click **"New access token"**
+   - Name it (e.g., "GitHub Actions Deployment")
+   - Copy the token (you won't see it again!)
 
 ### Step 4: Add GitHub Secrets
 
 1. Go to your repository: **Settings → Secrets and variables → Actions**
 
-2. Click **"New repository secret"** and add **two secrets**:
+2. Click **"New repository secret"** and add:
 
-   **CLOUDFLARE_API_TOKEN**
+   **NETLIFY_AUTH_TOKEN**
    ```
-   <paste your Cloudflare API token here>
-   ```
-
-   **CLOUDFLARE_ACCOUNT_ID**
-   ```
-   <paste your Cloudflare account ID here>
+   <paste your Netlify auth token here>
    ```
 
-### Step 5: Enable Workflow
+   **NETLIFY_SITE_ID**
+   ```
+   <paste your Netlify site ID here>
+   ```
 
-The workflow is already created at `.github/workflows/deploy-wasm-preview-cloudflare.yml`.
+### Step 5: Workflows Are Ready
 
-**It will automatically**:
+The workflows are already configured:
+- `.github/workflows/deploy-wasm-preview-netlify.yml` (preview deployments)
+- `.github/workflows/deploy-wasm-netlify-native.yml` (alternative)
+
+**They will automatically**:
 - ✅ Build WASM on every PR or branch push
-- ✅ Deploy to Cloudflare Pages
+- ✅ Deploy to Netlify
 - ✅ Create unique preview URL per branch
 - ✅ Comment on PRs with the preview link
 - ✅ Show bundle size in workflow logs
-- ✅ Use Cloudflare's global CDN (fast worldwide)
 
 ### Step 6: Test It!
 
@@ -101,12 +103,12 @@ The workflow is already created at `.github/workflows/deploy-wasm-preview-cloudf
 
 4. **Get your preview URL** from:
    - Workflow output (look for "🔗 Preview URL")
-   - PR comment (auto-posted by Cloudflare Pages action)
+   - PR comment (auto-posted by Netlify action)
 
 **Preview URL Format**:
 ```
-https://universal-blockchain-decoder.pages.dev
-https://branch-name.universal-blockchain-decoder.pages.dev
+https://your-site-name.netlify.app
+https://deploy-preview-123--your-site-name.netlify.app
 ```
 
 ---
@@ -215,12 +217,12 @@ export VERCEL_PRODUCTION="false"  # or "true" for production
 
 ## Environment Variables Reference
 
-### Cloudflare Pages
+### Netlify
 
 | Variable | Required | Description | Where to Find |
 |----------|----------|-------------|---------------|
-| `CLOUDFLARE_API_TOKEN` | Yes | API token with Pages edit permissions | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) |
-| `CLOUDFLARE_ACCOUNT_ID` | Yes | Your Cloudflare account ID (32-char hex) | Dashboard → Account ID (right sidebar) |
+| `NETLIFY_AUTH_TOKEN` | Yes | Personal access token for deployments | User Settings → Applications → Personal access tokens |
+| `NETLIFY_SITE_ID` | Yes | Your site ID (UUID format) | Site Settings → General → Site details |
 
 ### GitHub Pages
 
@@ -233,26 +235,28 @@ export VERCEL_PRODUCTION="false"  # or "true" for production
 
 ## Troubleshooting
 
-### "Cloudflare API authentication failed"
+### "Netlify authentication failed"
 
-**Cause**: Invalid API token or missing permissions
-
-**Fix**:
-1. Verify secret exists: **Settings → Secrets and variables → Actions**
-2. Check secret names match exactly: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` (case-sensitive)
-3. Regenerate API token with correct permissions:
-   - Account Settings: Read
-   - Cloudflare Pages: Edit
-4. Re-save the secret and re-run workflow
-
-### "Cloudflare account ID not found"
-
-**Cause**: Wrong account ID or account doesn't exist
+**Cause**: Invalid auth token or missing site ID
 
 **Fix**:
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Copy Account ID from right sidebar (32-character hex string)
-3. Update `CLOUDFLARE_ACCOUNT_ID` secret in GitHub
+1. Verify secrets exist: **Settings → Secrets and variables → Actions**
+2. Check secret names match exactly: `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` (case-sensitive)
+3. Regenerate auth token:
+   - Go to User Settings → Applications → Personal access tokens
+   - Create new token
+   - Update `NETLIFY_AUTH_TOKEN` secret in GitHub
+4. Verify Site ID is correct (UUID format)
+
+### "Netlify site not found"
+
+**Cause**: Wrong site ID or site doesn't exist
+
+**Fix**:
+1. Go to [app.netlify.com](https://app.netlify.com)
+2. Select your site → Site Settings → General
+3. Copy Site ID (UUID format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+4. Update `NETLIFY_SITE_ID` secret in GitHub
 
 ### "GitHub Pages deployment failed: 404"
 
@@ -356,11 +360,7 @@ python3 -m http.server 8080
 
 ### Enable Auto-Cleanup of Preview Deployments
 
-**Netlify**: Automatic (keeps last 10 previews per PR)
-
-**Vercel**: Configure in project settings:
-- Go to: Project Settings → Git → Preview Deployments
-- Enable: "Auto-delete preview deployments after 30 days"
+**Netlify**: Automatic (keeps last 10 previews per PR, configurable in site settings)
 
 ### Add Custom Domain
 
@@ -399,20 +399,15 @@ Add analytics to track:
 
 ## Alternative Platforms
 
-### Netlify (Requires Billing Info)
+### CloudFlare Pages (Removed)
 
-**Status**: Disabled (workflow commented out)
+**Status**: No longer supported
 
-**Why not used**:
-- ❌ Requires billing/payment information even for free tier
-- ❌ Blocks deployments if payment info not on file
-- ✅ Cloudflare Pages provides same features without billing requirement
+**Reason**: Migrated to Netlify for preview deployments. The CloudFlare Pages workflow has been removed from CI.
 
-**Workflow**: `.github/workflows/deploy-wasm-preview-netlify.yml` (disabled via `workflow_dispatch` only)
+**Previous workflow**: `.github/workflows/deploy-wasm-preview-cloudflare.yml` (removed)
 
-If you have Netlify billing configured, you can re-enable it by changing the workflow trigger.
-
-### Vercel (Not Yet Implemented)
+### Vercel (Not Implemented)
 
 Vercel can be added as an alternative deployment platform if needed:
 
@@ -422,7 +417,7 @@ Vercel can be added as an alternative deployment platform if needed:
 - Workflow file (see `docs/NETLIFY_BUILD_COMPARISON.md` for reference)
 
 **Why it's not enabled now**:
-- Cloudflare Pages already provides everything we need
+- Netlify already provides everything we need
 - No need to maintain multiple similar platforms
 - Can add later if required
 
@@ -447,6 +442,6 @@ All platforms receive the same pre-built WASM artifacts from GitHub Actions.
 
 ---
 
-**Last Updated**: 2025-11-16
-**Version**: 2.0.0
-**Workflows**: Cloudflare Pages (preview), GitHub Pages (production)
+**Last Updated**: 2025-11-17
+**Version**: 2.1.0
+**Workflows**: Netlify (preview), GitHub Pages (production)
