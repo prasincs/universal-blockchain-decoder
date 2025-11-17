@@ -588,6 +588,219 @@ fn determine_tx_type(tx_ir: &TxIR<'_, 1>) -> String {
     }
 }
 
+// ============================================================================
+// Formal Verification Dashboard Data
+// ============================================================================
+
+/// Get Verus formal verification status for the dashboard
+#[wasm_bindgen]
+pub fn get_verification_status() -> JsValue {
+    let verification_data = serde_json::json!({
+        "overall": {
+            "completed": 67,
+            "total": 185,
+            "percentage": 36
+        },
+        "phases": [
+            {
+                "id": "phase41",
+                "name": "Phase 4.1: Core Library",
+                "status": "complete",
+                "vcs": 67,
+                "total": 67,
+                "modules": [
+                    {
+                        "id": "vt1",
+                        "name": "VT-1: Amount Arithmetic Safety",
+                        "vcs": 20,
+                        "total": 20,
+                        "status": "complete",
+                        "critical": false,
+                        "items": [
+                            "checked_add overflow detection (5 VCs)",
+                            "checked_sub underflow detection (4 VCs)",
+                            "checked_mul overflow detection (6 VCs)",
+                            "Decimal conversion correctness (5 VCs)"
+                        ]
+                    },
+                    {
+                        "id": "vt2",
+                        "name": "VT-2: Canonicalization Determinism",
+                        "vcs": 20,
+                        "total": 20,
+                        "status": "complete",
+                        "critical": true,
+                        "items": [
+                            "to_canonical_bytes() determinism (8 VCs)",
+                            "Borsh encoding panic-freedom (6 VCs)",
+                            "Bounded output size (6 VCs)"
+                        ]
+                    },
+                    {
+                        "id": "vt3",
+                        "name": "VT-3: Error Propagation Safety",
+                        "vcs": 10,
+                        "total": 10,
+                        "status": "complete",
+                        "critical": false,
+                        "items": [
+                            "Error conversion preserves info (4 VCs)",
+                            "Error types exhaustive (3 VCs)",
+                            "Error propagation panic-free (3 VCs)"
+                        ]
+                    },
+                    {
+                        "id": "vt4",
+                        "name": "VT-4: Hook Execution Ordering",
+                        "vcs": 12,
+                        "total": 12,
+                        "status": "complete",
+                        "critical": false,
+                        "items": [
+                            "Priority-based ordering (5 VCs)",
+                            "Failure propagation (4 VCs)",
+                            "State consistency (3 VCs)"
+                        ]
+                    },
+                    {
+                        "id": "vt5",
+                        "name": "VT-5: Version Isolation",
+                        "vcs": 5,
+                        "total": 5,
+                        "status": "complete",
+                        "critical": false,
+                        "items": [
+                            "Type-level distinction (3 VCs)",
+                            "Version preservation (2 VCs)"
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "phase42",
+                "name": "Phase 4.2: Bitcoin Decoder",
+                "status": "planned",
+                "vcs": 0,
+                "total": 63,
+                "modules": [
+                    {
+                        "id": "vt10",
+                        "name": "VT-10: Script Parsing",
+                        "vcs": 0,
+                        "total": 15,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt11",
+                        "name": "VT-11: UTXO Validation",
+                        "vcs": 0,
+                        "total": 12,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt12",
+                        "name": "VT-12: SegWit Handling",
+                        "vcs": 0,
+                        "total": 10,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt13",
+                        "name": "VT-13: Signature Verification",
+                        "vcs": 0,
+                        "total": 18,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt14",
+                        "name": "VT-14: Address Validation",
+                        "vcs": 0,
+                        "total": 8,
+                        "status": "todo"
+                    }
+                ]
+            },
+            {
+                "id": "phase43",
+                "name": "Phase 4.3: Ethereum Decoder",
+                "status": "planned",
+                "vcs": 0,
+                "total": 55,
+                "modules": [
+                    {
+                        "id": "vt20",
+                        "name": "VT-20: RLP Encoding Safety",
+                        "vcs": 0,
+                        "total": 20,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt21",
+                        "name": "VT-21: EIP-155 Replay Protection",
+                        "vcs": 0,
+                        "total": 8,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt22",
+                        "name": "VT-22: Gas Calculation Bounds",
+                        "vcs": 0,
+                        "total": 15,
+                        "status": "todo"
+                    },
+                    {
+                        "id": "vt23",
+                        "name": "VT-23: EIP-2930/1559 Transaction Types",
+                        "vcs": 0,
+                        "total": 12,
+                        "status": "todo"
+                    }
+                ]
+            }
+        ],
+        "properties": [
+            {
+                "name": "Panic-Freedom",
+                "description": "Core library never panics on valid inputs",
+                "impact": "No unexpected crashes in production",
+                "vcs": "VT-1, VT-2, VT-3"
+            },
+            {
+                "name": "Deterministic Serialization",
+                "description": "Same transaction always produces same bytes",
+                "impact": "Signature verification works reliably",
+                "vcs": "VT-2.1, VT-2.2",
+                "critical": true
+            },
+            {
+                "name": "Injectivity (No Collisions)",
+                "description": "Different transactions → different canonical bytes",
+                "impact": "Combined with SHA-256 → collision resistance",
+                "vcs": "VT-2.1"
+            },
+            {
+                "name": "Overflow Safety",
+                "description": "Arithmetic never overflows silently",
+                "impact": "No integer overflow vulnerabilities",
+                "vcs": "VT-1"
+            },
+            {
+                "name": "Type Safety",
+                "description": "TxIR<1> and TxIR<2> are distinct types",
+                "impact": "No version confusion at compile time",
+                "vcs": "VT-5"
+            }
+        ],
+        "timeline": {
+            "completed_weeks": 9,
+            "total_weeks": 24,
+            "remaining_weeks": 15
+        }
+    });
+
+    serde_wasm_bindgen::to_value(&verification_data).unwrap_or(JsValue::NULL)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
