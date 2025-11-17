@@ -262,7 +262,10 @@ mod tests {
 
         // Should succeed (no signatures to verify)
         let result = verify_all_spend_signatures(&tx, ConsensusBranchId::Sapling);
-        assert!(result.is_ok(), "Empty transaction should verify successfully");
+        assert!(
+            result.is_ok(),
+            "Empty transaction should verify successfully"
+        );
     }
 
     #[test]
