@@ -455,3 +455,378 @@ fn test_decode_invalid_protobuf() {
     let result = CosmosDecoder::decode(&invalid_data);
     assert!(result.is_err());
 }
+
+// === Tests for New IBC Message Types ===
+
+#[test]
+fn test_decode_ibc_recv_packet() {
+    use cosmos_sdk_proto::Any;
+    use ibc_proto::ibc::core::channel::v1::{MsgRecvPacket, Packet};
+    use ibc_proto::ibc::core::client::v1::Height;
+    use prost::Message;
+
+    let packet = Packet {
+        sequence: 1,
+        source_port: "transfer".to_string(),
+        source_channel: "channel-0".to_string(),
+        destination_port: "transfer".to_string(),
+        destination_channel: "channel-1".to_string(),
+        data: vec![1, 2, 3, 4],
+        timeout_height: Some(Height {
+            revision_number: 1,
+            revision_height: 1000000,
+        }),
+        timeout_timestamp: 0,
+    };
+
+    let msg = MsgRecvPacket {
+        packet: Some(packet),
+        proof_commitment: vec![5, 6, 7, 8],
+        proof_height: Some(Height {
+            revision_number: 1,
+            revision_height: 999999,
+        }),
+        signer: "cosmos1relayer".to_string(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/ibc.core.channel.v1.MsgRecvPacket".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::IbcRecvPacket(recv) => {
+            assert_eq!(recv.packet.sequence, 1);
+            assert_eq!(recv.packet.source_channel, "channel-0");
+            assert_eq!(recv.signer, "cosmos1relayer");
+        }
+        _ => panic!("Expected IbcRecvPacket"),
+    }
+}
+
+#[test]
+fn test_decode_ibc_acknowledgement() {
+    use cosmos_sdk_proto::Any;
+    use ibc_proto::ibc::core::channel::v1::{MsgAcknowledgement, Packet};
+    use ibc_proto::ibc::core::client::v1::Height;
+    use prost::Message;
+
+    let packet = Packet {
+        sequence: 2,
+        source_port: "transfer".to_string(),
+        source_channel: "channel-0".to_string(),
+        destination_port: "transfer".to_string(),
+        destination_channel: "channel-1".to_string(),
+        data: vec![1, 2, 3, 4],
+        timeout_height: None,
+        timeout_timestamp: 1234567890,
+    };
+
+    let msg = MsgAcknowledgement {
+        packet: Some(packet),
+        acknowledgement: vec![0x01],
+        proof_acked: vec![9, 10, 11],
+        proof_height: Some(Height {
+            revision_number: 1,
+            revision_height: 1000001,
+        }),
+        signer: "cosmos1relayer2".to_string(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/ibc.core.channel.v1.MsgAcknowledgement".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::IbcAcknowledgement(ack) => {
+            assert_eq!(ack.packet.sequence, 2);
+            assert_eq!(ack.acknowledgement, vec![0x01]);
+            assert_eq!(ack.signer, "cosmos1relayer2");
+        }
+        _ => panic!("Expected IbcAcknowledgement"),
+    }
+}
+
+#[test]
+fn test_decode_ibc_update_client() {
+    use cosmos_sdk_proto::Any;
+    use ibc_proto::ibc::core::client::v1::MsgUpdateClient;
+    use prost::Message;
+
+    let msg = MsgUpdateClient {
+        client_id: "07-tendermint-0".to_string(),
+        client_message: Some(ibc_proto::google::protobuf::Any {
+            type_url: "/ibc.lightclients.tendermint.v1.Header".to_string(),
+            value: vec![1, 2, 3, 4, 5],
+        }),
+        signer: "cosmos1relayer3".to_string(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/ibc.core.client.v1.MsgUpdateClient".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::IbcUpdateClient(update) => {
+            assert_eq!(update.client_id, "07-tendermint-0");
+            assert_eq!(update.signer, "cosmos1relayer3");
+            assert_eq!(update.client_message.len(), 5);
+        }
+        _ => panic!("Expected IbcUpdateClient"),
+    }
+}
+
+// === Tests for New CosmWasm Message Types ===
+
+#[test]
+fn test_decode_store_code() {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::{AccessConfig, AccessType, MsgStoreCode};
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let wasm_bytecode = vec![0x00, 0x61, 0x73, 0x6D]; // WASM magic number
+
+    let msg = MsgStoreCode {
+        sender: "cosmos1deployer".to_string(),
+        wasm_byte_code: wasm_bytecode.clone(),
+        instantiate_permission: Some(AccessConfig {
+            permission: AccessType::Everybody as i32,
+            addresses: vec![],
+        }),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmwasm.wasm.v1.MsgStoreCode".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::StoreCode(store) => {
+            assert_eq!(store.sender, "cosmos1deployer");
+            assert_eq!(store.wasm_byte_code, wasm_bytecode);
+            assert!(store.instantiate_permission.is_some());
+        }
+        _ => panic!("Expected StoreCode"),
+    }
+
+    // Test canonicalization
+    let tx_ir = decoded.canonicalize().unwrap();
+    assert_eq!(tx_ir.operations.len(), 1);
+}
+
+#[test]
+fn test_decode_instantiate_contract() {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgInstantiateContract;
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let init_msg = br#"{"count": 0}"#.to_vec();
+
+    let msg = MsgInstantiateContract {
+        sender: "cosmos1creator".to_string(),
+        admin: "cosmos1admin".to_string(),
+        code_id: 42,
+        label: "my-counter".to_string(),
+        msg: init_msg.clone(),
+        funds: vec![Coin {
+            denom: "uatom".to_string(),
+            amount: "1000".to_string(),
+        }],
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmwasm.wasm.v1.MsgInstantiateContract".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::InstantiateContract(instantiate) => {
+            assert_eq!(instantiate.sender, "cosmos1creator");
+            assert_eq!(instantiate.admin, "cosmos1admin");
+            assert_eq!(instantiate.code_id, 42);
+            assert_eq!(instantiate.label, "my-counter");
+            assert_eq!(instantiate.msg, init_msg);
+            assert_eq!(instantiate.funds.len(), 1);
+        }
+        _ => panic!("Expected InstantiateContract"),
+    }
+}
+
+#[test]
+fn test_decode_execute_contract() {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgExecuteContract;
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let exec_msg = br#"{"increment": {}}"#.to_vec();
+
+    let msg = MsgExecuteContract {
+        sender: "cosmos1user".to_string(),
+        contract: "cosmos1contractaddr".to_string(),
+        msg: exec_msg.clone(),
+        funds: vec![],
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmwasm.wasm.v1.MsgExecuteContract".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::ExecuteContract(execute) => {
+            assert_eq!(execute.sender, "cosmos1user");
+            assert_eq!(execute.contract, "cosmos1contractaddr");
+            assert_eq!(execute.msg, exec_msg);
+            assert_eq!(execute.funds.len(), 0);
+        }
+        _ => panic!("Expected ExecuteContract"),
+    }
+}
+
+#[test]
+fn test_decode_migrate_contract() {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgMigrateContract;
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let migrate_msg = br#"{"migrate": "v2"}"#.to_vec();
+
+    let msg = MsgMigrateContract {
+        sender: "cosmos1admin".to_string(),
+        contract: "cosmos1contractaddr".to_string(),
+        code_id: 43,
+        msg: migrate_msg.clone(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmwasm.wasm.v1.MsgMigrateContract".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = create_test_tx(vec![any_msg]);
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::MigrateContract(migrate) => {
+            assert_eq!(migrate.sender, "cosmos1admin");
+            assert_eq!(migrate.contract, "cosmos1contractaddr");
+            assert_eq!(migrate.code_id, 43);
+            assert_eq!(migrate.msg, migrate_msg);
+        }
+        _ => panic!("Expected MigrateContract"),
+    }
+}
+
+// === Helper Functions ===
+
+/// Helper to create a minimal test transaction
+fn create_test_tx(
+    messages: Vec<cosmos_sdk_proto::Any>,
+) -> cosmos_sdk_proto::cosmos::tx::v1beta1::Tx {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+
+    Tx {
+        body: Some(TxBody {
+            messages,
+            memo: "test".to_string(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "5000".to_string(),
+                    }],
+                    gas_limit: 200000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    }
+}

@@ -121,22 +121,48 @@ pub struct Coin {
 /// Message types supported by the decoder
 #[derive(Debug, Clone, PartialEq)]
 pub enum CosmosMessage {
+    // === Bank Messages ===
     /// Bank send message (cosmos.bank.v1beta1.MsgSend)
     Send(MsgSend),
     /// Bank multi-send message (cosmos.bank.v1beta1.MsgMultiSend)
     MultiSend(MsgMultiSend),
+
+    // === Staking Messages ===
     /// Staking delegate message (cosmos.staking.v1beta1.MsgDelegate)
     Delegate(MsgDelegate),
     /// Staking undelegate message (cosmos.staking.v1beta1.MsgUndelegate)
     Undelegate(MsgUndelegate),
     /// Staking begin redelegate message (cosmos.staking.v1beta1.MsgBeginRedelegate)
     BeginRedelegate(MsgBeginRedelegate),
+
+    // === IBC Messages ===
     /// IBC transfer message (ibc.applications.transfer.v1.MsgTransfer)
     IbcTransfer(MsgIbcTransfer),
+    /// IBC receive packet (ibc.core.channel.v1.MsgRecvPacket)
+    IbcRecvPacket(MsgIbcRecvPacket),
+    /// IBC acknowledgement (ibc.core.channel.v1.MsgAcknowledgement)
+    IbcAcknowledgement(MsgIbcAcknowledgement),
+    /// IBC timeout (ibc.core.channel.v1.MsgTimeout)
+    IbcTimeout(MsgIbcTimeout),
+    /// IBC create client (ibc.core.client.v1.MsgCreateClient)
+    IbcCreateClient(MsgIbcCreateClient),
+    /// IBC update client (ibc.core.client.v1.MsgUpdateClient)
+    IbcUpdateClient(MsgIbcUpdateClient),
+
+    // === Governance Messages ===
     /// Governance vote message (cosmos.gov.v1beta1.MsgVote)
     Vote(MsgVote),
-    /// Contract execute message (cosmwasm.wasm.v1.MsgExecuteContract)
+
+    // === CosmWasm Messages ===
+    /// Store WASM code (cosmwasm.wasm.v1.MsgStoreCode)
+    StoreCode(MsgStoreCode),
+    /// Instantiate contract (cosmwasm.wasm.v1.MsgInstantiateContract)
+    InstantiateContract(MsgInstantiateContract),
+    /// Execute contract (cosmwasm.wasm.v1.MsgExecuteContract)
     ExecuteContract(MsgExecuteContract),
+    /// Migrate contract (cosmwasm.wasm.v1.MsgMigrateContract)
+    MigrateContract(MsgMigrateContract),
+
     /// Unknown/unsupported message type
     Unknown { type_url: String, value: Vec<u8> },
 }
@@ -229,13 +255,113 @@ pub struct MsgExecuteContract {
     pub funds: Vec<Coin>,
 }
 
+// === Additional IBC Message Types ===
+
+/// IBC packet structure
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IbcPacket {
+    pub sequence: u64,
+    pub source_port: String,
+    pub source_channel: String,
+    pub destination_port: String,
+    pub destination_channel: String,
+    pub data: Vec<u8>,
+    pub timeout_height: Option<IbcHeight>,
+    pub timeout_timestamp: u64,
+}
+
+/// MsgRecvPacket - Receive an IBC packet
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgIbcRecvPacket {
+    pub packet: IbcPacket,
+    pub proof_commitment: Vec<u8>,
+    pub proof_height: IbcHeight,
+    pub signer: String,
+}
+
+/// MsgAcknowledgement - Acknowledge receipt of an IBC packet
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgIbcAcknowledgement {
+    pub packet: IbcPacket,
+    pub acknowledgement: Vec<u8>,
+    pub proof_acked: Vec<u8>,
+    pub proof_height: IbcHeight,
+    pub signer: String,
+}
+
+/// MsgTimeout - Handle IBC packet timeout
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgIbcTimeout {
+    pub packet: IbcPacket,
+    pub proof_unreceived: Vec<u8>,
+    pub proof_height: IbcHeight,
+    pub next_sequence_recv: u64,
+    pub signer: String,
+}
+
+/// MsgCreateClient - Create a new IBC light client
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgIbcCreateClient {
+    pub client_state: Vec<u8>,
+    pub consensus_state: Vec<u8>,
+    pub signer: String,
+}
+
+/// MsgUpdateClient - Update an IBC light client
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgIbcUpdateClient {
+    pub client_id: String,
+    pub client_message: Vec<u8>,
+    pub signer: String,
+}
+
+// === CosmWasm Message Types ===
+
+/// Access configuration for CosmWasm contracts
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AccessConfig {
+    pub permission: i32,
+    pub addresses: Vec<String>,
+}
+
+/// MsgStoreCode - Upload WASM bytecode to the chain
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgStoreCode {
+    pub sender: String,
+    pub wasm_byte_code: Vec<u8>,
+    pub instantiate_permission: Option<AccessConfig>,
+}
+
+/// MsgInstantiateContract - Create a new contract instance
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgInstantiateContract {
+    pub sender: String,
+    pub admin: String,
+    pub code_id: u64,
+    pub label: String,
+    pub msg: Vec<u8>,
+    pub funds: Vec<Coin>,
+}
+
+/// MsgMigrateContract - Migrate a contract to new code
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MsgMigrateContract {
+    pub sender: String,
+    pub contract: String,
+    pub code_id: u64,
+    pub msg: Vec<u8>,
+}
+
 impl fmt::Display for CosmosMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            // Bank messages
             CosmosMessage::Send(msg) => {
                 write!(f, "MsgSend: {} -> {}", msg.from_address, msg.to_address)
             }
             CosmosMessage::MultiSend(_) => write!(f, "MsgMultiSend"),
+
+            // Staking messages
             CosmosMessage::Delegate(msg) => {
                 write!(
                     f,
@@ -257,6 +383,8 @@ impl fmt::Display for CosmosMessage {
                     msg.delegator_address, msg.validator_src_address, msg.validator_dst_address
                 )
             }
+
+            // IBC messages
             CosmosMessage::IbcTransfer(msg) => {
                 write!(
                     f,
@@ -264,12 +392,66 @@ impl fmt::Display for CosmosMessage {
                     msg.sender, msg.receiver, msg.source_channel
                 )
             }
+            CosmosMessage::IbcRecvPacket(msg) => {
+                write!(
+                    f,
+                    "MsgRecvPacket: seq={} channel={}/{}",
+                    msg.packet.sequence, msg.packet.source_port, msg.packet.source_channel
+                )
+            }
+            CosmosMessage::IbcAcknowledgement(msg) => {
+                write!(
+                    f,
+                    "MsgAcknowledgement: seq={} channel={}/{}",
+                    msg.packet.sequence, msg.packet.source_port, msg.packet.source_channel
+                )
+            }
+            CosmosMessage::IbcTimeout(msg) => {
+                write!(
+                    f,
+                    "MsgTimeout: seq={} channel={}/{}",
+                    msg.packet.sequence, msg.packet.source_port, msg.packet.source_channel
+                )
+            }
+            CosmosMessage::IbcCreateClient(msg) => {
+                write!(f, "MsgCreateClient: signer={}", msg.signer)
+            }
+            CosmosMessage::IbcUpdateClient(msg) => {
+                write!(f, "MsgUpdateClient: client={}", msg.client_id)
+            }
+
+            // Governance messages
             CosmosMessage::Vote(msg) => {
                 write!(f, "MsgVote: {} on proposal {}", msg.voter, msg.proposal_id)
+            }
+
+            // CosmWasm messages
+            CosmosMessage::StoreCode(msg) => {
+                write!(
+                    f,
+                    "MsgStoreCode: sender={} wasm_size={}",
+                    msg.sender,
+                    msg.wasm_byte_code.len()
+                )
+            }
+            CosmosMessage::InstantiateContract(msg) => {
+                write!(
+                    f,
+                    "MsgInstantiateContract: sender={} code_id={} label={}",
+                    msg.sender, msg.code_id, msg.label
+                )
             }
             CosmosMessage::ExecuteContract(msg) => {
                 write!(f, "MsgExecuteContract: {} on {}", msg.sender, msg.contract)
             }
+            CosmosMessage::MigrateContract(msg) => {
+                write!(
+                    f,
+                    "MsgMigrateContract: contract={} new_code_id={}",
+                    msg.contract, msg.code_id
+                )
+            }
+
             CosmosMessage::Unknown { type_url, .. } => {
                 write!(f, "Unknown: {}", type_url)
             }
@@ -279,14 +461,31 @@ impl fmt::Display for CosmosMessage {
 
 /// Known message type URLs
 pub mod type_urls {
+    // Bank messages
     pub const MSG_SEND: &str = "/cosmos.bank.v1beta1.MsgSend";
     pub const MSG_MULTI_SEND: &str = "/cosmos.bank.v1beta1.MsgMultiSend";
+
+    // Staking messages
     pub const MSG_DELEGATE: &str = "/cosmos.staking.v1beta1.MsgDelegate";
     pub const MSG_UNDELEGATE: &str = "/cosmos.staking.v1beta1.MsgUndelegate";
     pub const MSG_BEGIN_REDELEGATE: &str = "/cosmos.staking.v1beta1.MsgBeginRedelegate";
+
+    // IBC messages
     pub const MSG_IBC_TRANSFER: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+    pub const MSG_IBC_RECV_PACKET: &str = "/ibc.core.channel.v1.MsgRecvPacket";
+    pub const MSG_IBC_ACKNOWLEDGEMENT: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
+    pub const MSG_IBC_TIMEOUT: &str = "/ibc.core.channel.v1.MsgTimeout";
+    pub const MSG_IBC_CREATE_CLIENT: &str = "/ibc.core.client.v1.MsgCreateClient";
+    pub const MSG_IBC_UPDATE_CLIENT: &str = "/ibc.core.client.v1.MsgUpdateClient";
+
+    // Governance messages
     pub const MSG_VOTE: &str = "/cosmos.gov.v1beta1.MsgVote";
+
+    // CosmWasm messages
+    pub const MSG_STORE_CODE: &str = "/cosmwasm.wasm.v1.MsgStoreCode";
+    pub const MSG_INSTANTIATE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgInstantiateContract";
     pub const MSG_EXECUTE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgExecuteContract";
+    pub const MSG_MIGRATE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgMigrateContract";
 }
 
 #[cfg(test)]

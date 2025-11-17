@@ -17,7 +17,7 @@ prost = "0.13"
 prost-types = "0.13"
 sha2 = "0.10"
 bech32 = "0.11"
-cosmos-sdk-proto = { version = "0.25", default-features = false }
+cosmos-sdk-proto = { version = "0.25", default-features = false, features = ["cosmwasm"] }
 # IBC support
 ibc-proto = { version = "0.47", default-features = false }
 
