@@ -14,6 +14,7 @@
 //! ```
 //! use decoder_crypto_zk::signature::verify;
 //! use decoder_crypto_zk::field::FieldElement;
+//! use decoder_crypto_zk::VerifyError;
 //!
 //! let public_key = FieldElement::from(123u64);
 //! let message = FieldElement::from(456u64);

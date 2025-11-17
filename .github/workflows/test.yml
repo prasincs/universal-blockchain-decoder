@@ -92,7 +92,33 @@ jobs:
         env:
           PROPTEST_CASES: 1000  # Run 1000 iterations per property
 
-  # Job 3: Integration tests (every commit) - Currently disabled due to Phase 2 decoder work
+  # Job 3: Documentation tests (every commit)
+  doc-tests:
+    name: Documentation Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run documentation tests
+        run: cargo test --doc --all --verbose
+
+  # Job 4: Integration tests (every commit) - Currently disabled due to Phase 2 decoder work
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -121,7 +147,7 @@ jobs:
 
       # Note: decoder integration tests will be enabled in Phase 2 after pure Rust implementations
 
-  # Job 4: Code quality checks (format + clippy combined)
+  # Job 5: Code quality checks (format + clippy combined)
   quality-checks:
     name: Format & Clippy
     runs-on: ubuntu-latest
@@ -152,7 +178,7 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-  # Job 5: Security audit (skip on claude/** branches to save minutes)
+  # Job 6: Security audit (skip on claude/** branches to save minutes)
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
@@ -168,7 +194,7 @@ jobs:
       - name: Run security audit
         run: cargo audit
 
-  # Job 6: Build documentation (skip on claude/** branches to save minutes)
+  # Job 7: Build documentation (skip on claude/** branches to save minutes)
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -197,7 +223,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
 
-  # Job 7: Minimal versions check (skip on claude/** branches to save minutes)
+  # Job 8: Minimal versions check (skip on claude/** branches to save minutes)
   minimal-versions:
     name: Minimal Versions
     runs-on: ubuntu-latest
