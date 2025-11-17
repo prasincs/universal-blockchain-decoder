@@ -20,6 +20,8 @@ decoder-bitcoin = { path = "../decoder-bitcoin" }
 decoder-ethereum = { path = "../decoder-ethereum" }
 decoder-solana = { path = "../decoder-solana" }
 decoder-cosmos = { path = "../decoder-cosmos" }
+decoder-starknet = { path = "../decoder-starknet" }
+decoder-crypto-zk = { path = "../decoder-crypto-zk" }
 
 # WASM infrastructure
 wasm-bindgen = "0.2"

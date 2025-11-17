@@ -11,6 +11,7 @@ use decoder_bitcoin::BitcoinDecoder;
 use decoder_cosmos::CosmosDecoder;
 use decoder_ethereum::EthereumDecoder;
 use decoder_solana::SolanaDecoder;
+use decoder_starknet::StarknetDecoder;
 use universal_decoder_core::prelude::{CanonicalSerialize, Canonicalizer, ChainDecoder};
 
 /// Result of decoding a transaction (serializable to JavaScript).
@@ -57,7 +58,7 @@ pub fn init() {
 ///
 /// # Arguments
 ///
-/// * `chain` - Chain name: "bitcoin", "ethereum", "solana", "cosmos"
+/// * `chain` - Chain name: "bitcoin", "ethereum", "solana", "cosmos", "starknet"
 /// * `hex` - Hex-encoded transaction bytes
 ///
 /// # Returns
@@ -78,8 +79,9 @@ pub fn decode_transaction(chain: &str, hex: &str) -> Result<DecodeResult, JsValu
         "ethereum" => decode_with::<EthereumDecoder>(&bytes),
         "solana" => decode_with::<SolanaDecoder>(&bytes),
         "cosmos" => decode_with::<CosmosDecoder>(&bytes),
+        "starknet" => decode_with::<StarknetDecoder>(&bytes),
         _ => Err(JsValue::from_str(&format!(
-            "Unsupported chain: {}. Supported: bitcoin, ethereum, solana, cosmos",
+            "Unsupported chain: {}. Supported: bitcoin, ethereum, solana, cosmos, starknet",
             chain
         ))),
     }
@@ -93,6 +95,7 @@ pub fn supported_chains() -> Vec<String> {
         "ethereum".to_string(),
         "solana".to_string(),
         "cosmos".to_string(),
+        "starknet".to_string(),
     ]
 }
 
@@ -112,6 +115,9 @@ pub fn auto_detect_chain(hex: &str) -> Result<String, JsValue> {
     }
     if SolanaDecoder::decode(&bytes).is_ok() {
         return Ok("solana".to_string());
+    }
+    if StarknetDecoder::decode(&bytes).is_ok() {
+        return Ok("starknet".to_string());
     }
     if CosmosDecoder::decode(&bytes).is_ok() {
         return Ok("cosmos".to_string());
@@ -167,9 +173,10 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_supported_chains() {
         let chains = supported_chains();
-        assert_eq!(chains.len(), 4);
+        assert_eq!(chains.len(), 5);
         assert!(chains.contains(&"bitcoin".to_string()));
         assert!(chains.contains(&"ethereum".to_string()));
+        assert!(chains.contains(&"starknet".to_string()));
     }
 
     #[wasm_bindgen_test]
