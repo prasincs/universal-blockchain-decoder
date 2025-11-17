@@ -1,11 +1,11 @@
 # Verification Targets for Universal Blockchain Decoder
 
-**Last Updated**: 2025-11-12
-**Coverage**: 20% (3 targets annotated, awaiting Verus verification)
+**Last Updated**: 2025-11-17
+**Coverage**: 53% (8 targets annotated, awaiting Verus verification)
 
 This document tracks formal verification progress using Verus. Each verification target (VT) represents a critical safety property that must be proven.
 
-**Phase 4 Status**: 🚧 In Progress - VT-1 implementation complete with annotations and tests
+**Phase 4 Status**: ✅ Phase 4.1 Complete, ✅ Phase 4.2 Complete (Bitcoin Decoder Annotations)
 
 ---
 
@@ -14,9 +14,9 @@ This document tracks formal verification progress using Verus. Each verification
 | Phase | Total VTs | Verified | Annotations Ready | Todo | Coverage |
 |-------|-----------|----------|-------------------|------|----------|
 | Core  | 5         | 0        | 3 (VT-1.1-1.3)    | 2    | 60%      |
-| Bitcoin | 5       | 0        | 0                 | 5    | 0%       |
+| Bitcoin | 5       | 0        | 5 (VT-10 to VT-14) | 0    | 100%     |
 | Ethereum | 5      | 0        | 0                 | 5    | 0%       |
-| **Total** | **15** | **0**   | **3**            | **12** | **20%** |
+| **Total** | **15** | **0**   | **8**            | **7** | **53%** |
 
 ---
 
@@ -179,18 +179,20 @@ impl<'a> TxIR<'a, V> {
 
 ### VT-10: Varint Parsing Safety ⚡ PRIORITY: HIGH
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-10.1: `parse_varint` never panics (bounds-checked)
-- ❌ VT-10.2: Non-canonical varints are rejected
-- ❌ VT-10.3: Varint value fits in u64
+- ✅ VT-10.1: `parse_varint` never panics (bounds-checked) - annotated
+- ✅ VT-10.2: Non-canonical varints are rejected - annotated
+- ✅ VT-10.3: Varint value fits in u64 - annotated
 
 **Files**:
-- `crates/decoder-encodings/src/varint.rs`
+- `crates/decoder-bitcoin/src/parsing.rs:25-84` (read_varint implementation)
 
-**Verification Conditions**: 0 / ~18 proven
-**Estimated Effort**: 2 weeks
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~18 proven (annotations ready)
+**Test Coverage**: Comprehensive unit tests in parsing.rs:290-382
+**Estimated Effort**: 2 weeks (implementation complete)
+**Next Step**: Run Verus verification
+**Last Updated**: 2025-11-17
 
 **Why Important**:
 - Varint parsing is a common attack vector
@@ -225,68 +227,85 @@ pub fn parse_varint(bytes: &[u8]) -> (result: Result<(u64, usize), VarIntError>)
 
 ### VT-11: Transaction Parsing Bounds
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-11.1: Input parsing never reads out of bounds
-- ❌ VT-11.2: Output parsing never reads out of bounds
-- ❌ VT-11.3: Witness parsing is bounds-checked
+- ✅ VT-11.1: Input parsing never reads out of bounds - annotated
+- ✅ VT-11.2: Output parsing never reads out of bounds - annotated
+- ✅ VT-11.3: Witness parsing is bounds-checked - annotated
 
 **Files**:
-- `crates/decoder-bitcoin/src/parsing.rs`
+- `crates/decoder-bitcoin/src/parsing.rs:127-175` (parse_input)
+- `crates/decoder-bitcoin/src/parsing.rs:194-230` (parse_output)
+- `crates/decoder-bitcoin/src/parsing.rs:257-296` (parse_witness)
 
-**Verification Conditions**: 0 / ~45 proven
-**Estimated Effort**: 4-6 weeks
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~45 proven (annotations ready)
+**Test Coverage**: Comprehensive unit tests in parsing.rs:384-537
+**Estimated Effort**: 4-6 weeks (implementation complete)
+**Next Step**: Run Verus verification
+**Last Updated**: 2025-11-17
 
 ---
 
 ### VT-12: Fee Calculation Overflow Safety
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-12.1: Total input value doesn't overflow
-- ❌ VT-12.2: Total output value doesn't overflow
-- ❌ VT-12.3: Fee calculation handles underflow correctly
+- ✅ VT-12.1: Total input value doesn't overflow - annotated
+- ✅ VT-12.2: Total output value doesn't overflow - annotated
+- ✅ VT-12.3: Fee calculation handles underflow correctly - annotated
 
 **Files**:
-- `crates/decoder-bitcoin/src/lib.rs` (calculate_fee method)
+- `crates/decoder-bitcoin/src/types.rs:141-164` (total_output_value)
+- `crates/decoder-bitcoin/src/types.rs:167-199` (calculate_fee)
 
-**Verification Conditions**: 0 / ~8 proven
-**Estimated Effort**: 1 week
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~8 proven (annotations ready)
+**Test Coverage**: Unit tests in types.rs:417-491
+**Estimated Effort**: 1 week (implementation complete)
+**Next Step**: Run Verus verification
+**Last Updated**: 2025-11-17
 
 ---
 
 ### VT-13: TXID Calculation Correctness
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-13.1: TXID is deterministic (same tx → same TXID)
-- ❌ VT-13.2: SegWit TXID excludes witness data
-- ❌ VT-13.3: Hash computation never panics
+- ✅ VT-13.1: TXID is deterministic (same tx → same TXID) - annotated
+- ✅ VT-13.2: SegWit TXID excludes witness data - annotated
+- ✅ VT-13.3: Hash computation never panics - annotated
 
 **Files**:
-- `crates/decoder-bitcoin/src/lib.rs` (compute_txid method)
+- `crates/decoder-bitcoin/src/types.rs:60-99` (txid)
+- `crates/decoder-bitcoin/src/types.rs:101-158` (serialize_without_witness)
 
-**Verification Conditions**: 0 / ~6 proven
-**Estimated Effort**: 1 week
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~6 proven (annotations ready)
+**Test Coverage**: Implicit in existing integration tests
+**Estimated Effort**: 1 week (implementation complete)
+**Next Step**: Run Verus verification
+**Last Updated**: 2025-11-17
 
 ---
 
-### VT-14: Bitcoin Canonicalization Injectivity
+### VT-14: Bitcoin Canonicalization Injectivity ⚡ PRIORITY: CRITICAL
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotations Complete (Awaiting Verus Verification)
 **Properties**:
-- ❌ VT-14.1: `encode(decode(bytes)) == bytes` (roundtrip)
-- ❌ VT-14.2: Signature verification is preserved
+- ✅ VT-14.1: `encode(decode(bytes)) == bytes` (roundtrip) - annotated
+- ✅ VT-14.2: Signature verification is preserved - annotated
 
 **Files**:
-- `crates/decoder-bitcoin/src/lib.rs` (canonicalize method)
+- `crates/decoder-bitcoin/src/types.rs:398-440` (TxHashable impl)
 
-**Verification Conditions**: 0 / ~15 proven
-**Estimated Effort**: 3-4 weeks
-**Last Verified**: Never
+**Verification Conditions**: 0 / ~15 proven (annotations ready)
+**Test Coverage**: Implicit in existing canonicalization tests
+**Estimated Effort**: 3-4 weeks (implementation complete)
+**Next Step**: Run Verus verification
+**Last Updated**: 2025-11-17
+
+**Why Critical**:
+- Canonical representation must preserve exact transaction bytes
+- Critical for signature verification and transaction integrity
+- Any mismatch breaks transaction validation
 
 ---
 
