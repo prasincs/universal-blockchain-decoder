@@ -14,10 +14,14 @@ use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
+mod explorer_parser;
 mod registry;
+mod rpc_fetcher;
 mod secure_input;
 
+use explorer_parser::ExplorerUrl;
 use registry::DecoderRegistry;
+use rpc_fetcher::RpcFetcher;
 use secure_input::{SecureHexInput, SecureViewingKey, ViewingKeyType};
 use universal_decoder_core::prelude::*;
 
@@ -34,6 +38,16 @@ use universal_decoder_core::prelude::*;
 ///
 /// # Ethereum transaction from file
 /// universal-tx-decoder -c eth -f transaction.hex
+///
+/// # Fetch and decode from explorer URL (easiest for demos!)
+/// universal-tx-decoder --from-url "https://etherscan.io/tx/0xabc..." --fetch
+/// universal-tx-decoder --from-url "https://mempool.space/tx/abc123..." --fetch
+///
+/// # Fetch from RPC endpoint with custom endpoint
+/// universal-tx-decoder -c eth --fetch --txid 0xabc... --rpc-endpoint https://mainnet.infura.io/v3/YOUR-KEY
+///
+/// # Fetch from public RPC (for quick demos, rate-limited)
+/// universal-tx-decoder -c btc --fetch --txid abc123...
 ///
 /// # Zcash shielded transaction with viewing key
 /// universal-tx-decoder -c zec --viewing-key-file ~/.zcash/viewkey --decrypt -f tx.hex
@@ -71,6 +85,39 @@ struct Cli {
     /// Read transaction from stdin (recommended for piping)
     #[arg(long)]
     stdin: bool,
+
+    /// Fetch transaction from RPC endpoint
+    ///
+    /// Requires --rpc-endpoint or uses public endpoint (rate-limited).
+    /// Must provide transaction ID via --txid or TRANSACTION argument.
+    #[arg(long)]
+    fetch: bool,
+
+    /// RPC endpoint URL (for --fetch mode)
+    ///
+    /// If not provided, uses public endpoints (not recommended for production).
+    /// Examples:
+    ///   - Bitcoin: https://your-bitcoin-node.com:8332
+    ///   - Ethereum: https://mainnet.infura.io/v3/YOUR-KEY
+    ///   - Solana: https://api.mainnet-beta.solana.com
+    #[arg(long, env = "RPC_ENDPOINT")]
+    rpc_endpoint: Option<String>,
+
+    /// Transaction ID (for --fetch mode, or with --from-url)
+    #[arg(long)]
+    txid: Option<String>,
+
+    /// Parse explorer URL to extract chain and txid
+    ///
+    /// Supports popular explorers:
+    ///   - Bitcoin: blockchain.com, mempool.space
+    ///   - Ethereum: etherscan.io, polygonscan.com, etc.
+    ///
+    /// Examples:
+    ///   universal-tx-decoder --from-url "https://etherscan.io/tx/0xabc..."
+    ///   universal-tx-decoder --from-url "https://mempool.space/tx/abc..." --fetch
+    #[arg(long)]
+    from_url: Option<String>,
 
     /// Show canonical IR representation
     #[arg(long, short = 'C')]
@@ -170,17 +217,34 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
-    // Chain is required for decoding
-    let chain_str = cli
-        .chain
-        .as_ref()
-        .context("--chain is required (or use --list-chains)")?;
+    // Handle --from-url to extract chain and txid from explorer URL
+    let (chain_str, txid_from_url) = if let Some(url) = &cli.from_url {
+        let parsed = ExplorerUrl::parse(url)
+            .context("Failed to parse explorer URL. Use --chain and --txid manually.")?;
+
+        if cli.verbose {
+            eprintln!("Parsed explorer URL:");
+            eprintln!("  Chain:  {}", parsed.chain);
+            eprintln!("  TxID:   {}", parsed.txid);
+        }
+
+        (parsed.chain, Some(parsed.txid))
+    } else {
+        // Chain is required for decoding (unless --from-url is used)
+        let chain = cli
+            .chain
+            .as_ref()
+            .context("--chain is required (or use --list-chains or --from-url)")?
+            .clone();
+
+        (chain, None)
+    };
 
     // Find chain info (by name or ID)
     let chain_info = if let Ok(chain_id) = chain_str.parse::<u64>() {
         registry.find_by_id(chain_id)?
     } else {
-        registry.find_by_name(chain_str)?
+        registry.find_by_name(&chain_str)?
     };
 
     if cli.verbose {
@@ -197,7 +261,41 @@ fn run() -> Result<()> {
     }
 
     // Get transaction hex from one of the sources (secure input handling)
-    let tx_bytes = get_transaction_input(&cli)?;
+    let tx_bytes = if cli.fetch || cli.from_url.is_some() {
+        // Fetch mode: Download transaction from RPC
+        let txid = cli
+            .txid
+            .as_ref()
+            .or(txid_from_url.as_ref())
+            .context("Transaction ID required for --fetch mode (use --txid or --from-url)")?;
+
+        if cli.verbose {
+            eprintln!("Fetching transaction {} from RPC endpoint...", txid);
+        }
+
+        let fetcher = RpcFetcher::new().context("Failed to create RPC fetcher")?;
+
+        let bytes = if let Some(endpoint) = &cli.rpc_endpoint {
+            // Custom RPC endpoint provided
+            fetcher.fetch_transaction(endpoint, txid, &chain_str)?
+        } else {
+            // Use public endpoint (with warning)
+            if cli.verbose {
+                eprintln!("Warning: Using public RPC endpoint (rate-limited)");
+                eprintln!("For production use, provide your own endpoint with --rpc-endpoint");
+            }
+            fetcher.fetch_from_public_endpoint(&chain_str, txid)?
+        };
+
+        if cli.verbose {
+            eprintln!("Successfully fetched {} bytes", bytes.len());
+        }
+
+        bytes
+    } else {
+        // Standard mode: Read from hex/file/stdin
+        get_transaction_input(&cli)?
+    };
 
     if cli.verbose {
         eprintln!("Transaction size: {} bytes", tx_bytes.len());

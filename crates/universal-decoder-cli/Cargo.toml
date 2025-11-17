@@ -36,10 +36,18 @@ decoder-chains-common = { path = "../decoder-chains-common" }
 # CLI-specific dependencies (not in core library)
 clap = { version = "4.5", features = ["derive", "env"] }
 anyhow = "1.0.100"
+serde_json = "1.0"  # For RPC JSON communication (CLI only, NOT in core)
 
 # Security: Protect sensitive data in memory
 secrecy = { version = "0.8", features = ["serde"] }
 zeroize = "1.8"
+
+# Network functionality (CLI only - NOT in core library)
+# IMPORTANT: Network code is ONLY allowed in CLI binary, never in core library
+# This preserves airgapped operation for security-critical deployments
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+url = "2.5"
+base64 = "0.22"  # For Solana transaction decoding
 
 [dev-dependencies]
 # For testing CLI
