@@ -7,6 +7,7 @@
 [![Tests](https://img.shields.io/badge/tests-322%20unit%20%2B%20100%2B%20property-brightgreen.svg)](https://github.com/prasincs/universal-blockchain-decoder/actions)
 [![Code Quality](https://img.shields.io/badge/code%20quality-9%2F10-brightgreen.svg)](#-quality--testing)
 [![CI](https://img.shields.io/badge/CI-8%20workflows-blue.svg)](https://github.com/prasincs/universal-blockchain-decoder/actions)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-trustless--txir-blueviolet.svg)](https://trustless-txir.netlify.app)
 
 ## 🎯 Overview
 
@@ -20,6 +21,18 @@ The Universal Blockchain Decoder is a **Pandoc for blockchains** - it provides a
 - **🛡️ Non-Malleable**: Canonical representation ensures deterministic hashing
 - **✅ Formally Verifiable**: Designed for integration with tools like Prusti and Verus
 - **🔗 Multi-Chain**: Supports UTXO (Bitcoin), Account (Ethereum), and Instruction-based (Solana) models
+
+## 🌐 Live Demo
+
+**Try it in your browser!** → [https://trustless-txir.netlify.app](https://trustless-txir.netlify.app)
+
+The interactive WASM demo lets you:
+- Decode transactions from 500+ EVM chains, Bitcoin, Cosmos SDK, and OP Stack
+- Visualize the canonical TxIR representation
+- Experiment with different blockchain formats
+- See the decoder in action without installing anything
+
+All processing happens locally in your browser - no data is sent to any server.
 
 ## 🏆 Quality & Testing
 
