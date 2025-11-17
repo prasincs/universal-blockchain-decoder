@@ -1,0 +1,22 @@
+[package]
+name = "decoder-move"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Unified Move VM family decoder for universal-decoder (Aptos, Sui, Movement)"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
+decoder-aptos = { path = "../decoder-aptos" }
+decoder-sui = { path = "../decoder-sui" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }

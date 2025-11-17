@@ -11,6 +11,7 @@ members = [
     "crates/decoder-ethereum",
     "crates/decoder-solana",
     "crates/decoder-svm",           # SVM family decoder (Solana, Eclipse, Pyth, etc.)
+    "crates/decoder-move",          # Move VM family decoder (Aptos, Sui, Movement)
     "crates/decoder-evm",           # Generic EVM decoder for 2000+ chains
     "crates/universal-decoder-cli",
 
