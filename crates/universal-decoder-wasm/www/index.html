@@ -17,9 +17,6 @@
         <h1>🔗 Universal Blockchain Decoder</h1>
         <p class="tagline">Zero-trust transaction decoding. Nothing leaves your browser.</p>
         <div class="links">
-            <a href="comparison.html">📊 Type System</a>
-            <a href="treemap.html">🗺️ Chain Treemap</a>
-            <a href="graph.html">🕸️ Relationship Graph</a>
             <a href="https://github.com/prasincs/universal-blockchain-decoder" target="_blank">GitHub</a>
             <a href="https://github.com/prasincs/universal-blockchain-decoder/blob/main/docs/WASM_DEMO.md" target="_blank">Docs</a>
         </div>
@@ -29,25 +26,16 @@
         <div class="controls">
             <label for="chain-select">Chain:</label>
             <select id="chain-select">
-                <option value="bitcoin">Bitcoin</option>
-                <option value="ethereum">Ethereum</option>
-                <option value="solana">Solana</option>
-                <option value="cosmos">Cosmos</option>
+                <option value="">Loading chains...</option>
             </select>
 
             <label for="example-select">Example:</label>
             <select id="example-select">
                 <option value="">-- Select Example --</option>
-                <option value="btc-simple">Bitcoin: Simple Transfer</option>
-                <option value="btc-segwit">Bitcoin: SegWit Transaction</option>
-                <option value="eth-legacy">Ethereum: Legacy Transaction</option>
-                <option value="eth-eip1559">Ethereum: EIP-1559 Transaction</option>
-                <option value="sol-transfer">Solana: Token Transfer</option>
-                <option value="cosmos-send">Cosmos: Bank Send</option>
             </select>
 
-            <button id="decode-btn" class="primary" disabled>Loading WASM...</button>
-            <button id="auto-detect-btn" disabled>Auto-Detect Chain</button>
+            <button id="decode-btn" class="primary">Decode Transaction</button>
+            <button id="auto-detect-btn">Auto-Detect Chain</button>
         </div>
 
         <div class="container">
@@ -89,7 +77,11 @@
                         <span id="meta-chain">-</span>
                     </div>
                     <div class="metadata-row">
-                        <span class="label">Hash:</span>
+                        <span class="label">TX ID:</span>
+                        <span id="meta-txid" class="monospace">-</span>
+                    </div>
+                    <div class="metadata-row">
+                        <span class="label">Canonical Hash:</span>
                         <span id="meta-hash" class="monospace">-</span>
                     </div>
                     <div class="metadata-row">
@@ -113,13 +105,6 @@
     </footer>
 
     <div id="error-toast" class="error-toast"></div>
-
-    <!-- Loading overlay with quotes -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div id="loading-content" class="loading-content">
-            <!-- Dynamic content injected by JavaScript -->
-        </div>
-    </div>
 
     <script type="module" src="main.js"></script>
 </body>
