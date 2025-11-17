@@ -44,9 +44,9 @@ This provides:
 
 **What We Extract**:
 - ✅ Poseidon hash (Hades permutation)
-- 🚧 Pedersen hash (elliptic curve based)
-- 📋 ECDSA verification (STARK curve)
-- 📋 Curve primitives
+- ✅ Pedersen hash (elliptic curve based)
+- ✅ ECDSA verification (STARK curve)
+- ✅ Curve primitives (STARK curve parameters, affine/projective points)
 
 **Dependencies of Vendored Code**:
 The vendored code depends on:

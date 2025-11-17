@@ -20,11 +20,11 @@ Instead of implementing Starknet, Zcash, Polygon zkEVM, Mina, and Aleo decoders 
 
 | Primitive | Chains Unlocked | Status |
 |-----------|-----------------|--------|
-| **STARK Field** | 230+ (Starknet ecosystem) | 🚧 In Progress |
-| **Poseidon Hash** | 265+ (Starknet, zkEVM, Mina, Aleo, Aztec, Scroll) | 🚧 In Progress |
-| **Pedersen Hash** | 235+ (Starknet, Zcash, Aztec) | 📋 Planned |
-| **STARK Curve** | 230+ (Starknet ecosystem) | 📋 Planned |
-| **ECDSA on STARK** | 230+ (Starknet ecosystem) | 📋 Planned |
+| **STARK Field** | 230+ (Starknet ecosystem) | ✅ Complete |
+| **Poseidon Hash** | 265+ (Starknet, zkEVM, Mina, Aleo, Aztec, Scroll) | ✅ Complete |
+| **Pedersen Hash** | 235+ (Starknet, Zcash, Aztec) | ✅ Complete |
+| **STARK Curve** | 230+ (Starknet ecosystem) | ✅ Complete |
+| **ECDSA on STARK** | 230+ (Starknet ecosystem) | ✅ Complete |
 
 ## Chains Enabled
 

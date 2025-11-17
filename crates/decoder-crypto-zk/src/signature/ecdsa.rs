@@ -12,7 +12,7 @@
 //! # Usage
 //!
 //! ```
-//! use decoder_crypto_zk::signature::verify;
+//! use decoder_crypto_zk::signature::{verify, VerifyError};
 //! use decoder_crypto_zk::field::FieldElement;
 //!
 //! let public_key = FieldElement::from(123u64);

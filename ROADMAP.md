@@ -1,10 +1,10 @@
 # Universal Blockchain Decoder Roadmap
 
-## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅, Phase 3.6a Research Complete ✅, Phase 1.5.3 Complete ✅)
+## Current Status: v0.1.0-alpha (Phase 3.5 Complete ✅, Phase 3.6a Implementation Complete ✅, Phase 1.5.3 Complete ✅)
 
-**Latest**: CLAUDE.md Streamlined for 6x Faster Chain Addition & Testing
-**Current Phase**: Phase 1.5.3 - Documentation Productivity Improvements (Complete)
-**Previous**: Starknet & ZK Crypto Infrastructure Research (Phase 3.6a)
+**Latest**: Phase 3.6a ZK Crypto Infrastructure Complete (decoder-crypto-zk crate)
+**Current Phase**: Phase 3.2 (OP Stack) - 90% complete
+**Previous**: ZK Crypto Infrastructure Implementation (Phase 3.6a) - decoder-crypto-zk crate with 38 passing tests
 **Research Branch**: `claude/research-starknet-chains-01TKiKpvAsFe1KsmwoKxGtCQ`
 **Documentation Branch**: `claude/add-claude-md-guide-01FBVGJMS42S4ViGqv5quDdM`
 **Completed**:
@@ -1166,7 +1166,7 @@ Tasks:
 
 **Priority**: **CRITICAL** (Unlocks 300+ ZK chains)
 **Timeline**: 2-3 weeks
-**Status**: ✅ Research complete - Ready to implement
+**Status**: ✅ IMPLEMENTED (Weeks 1-2 complete, Week 3 mostly complete - benchmarks TODO)
 **See**:
 - `docs/STARKNET_RESEARCH.md` (844 lines) - Starknet architecture & feasibility
 - `docs/STARKNET_REUSABLE_COMPONENTS.md` (893 lines) - Infrastructure reuse analysis
@@ -1189,41 +1189,41 @@ This is a **strategic inflection point** that transforms the project from sequen
 - Result: 16 weeks for 5 ZK chains, large TCB, external dependencies
 - **Strategic approach (this phase)**: 7 weeks for 5 ZK chains, minimal TCB, zero external crypto dependencies
 
-#### Week 1: STARK Field + Poseidon Hash
+#### Week 1: STARK Field + Poseidon Hash ✅ COMPLETE
 
 **Tasks**:
-- [ ] Create `crates/decoder-crypto-zk/` structure
-- [ ] Vendor `starknet-crypto` using git subtree
+- [x] Create `crates/decoder-crypto-zk/` structure
+- [x] Vendor `starknet-crypto` using git subtree
   ```bash
   git subtree add \
       --prefix crates/decoder-crypto-zk/vendored/starknet-crypto \
       https://github.com/xJonathanLEI/starknet-rs.git \
       starknet-crypto/v0.7.0 --squash
   ```
-- [ ] Extract STARK field implementation (252-bit modular arithmetic) - 200 LOC
-- [ ] Extract Poseidon hash (Hades permutation) - 500 LOC
-- [ ] Implement property tests for field operations (determinism, commutativity, etc.)
-- [ ] Cross-validate with `starknet-crypto` in dev-dependencies
+- [x] Extract STARK field implementation (252-bit modular arithmetic) - 200 LOC
+- [x] Extract Poseidon hash (Hades permutation) - 500 LOC
+- [x] Implement property tests for field operations (determinism, commutativity, etc.)
+- [x] Cross-validate with `starknet-crypto` in dev-dependencies
 
-#### Week 2: Pedersen Hash + STARK Curve + ECDSA
-
-**Tasks**:
-- [ ] Extract Pedersen hash implementation - 400 LOC
-- [ ] Implement elliptic curve point operations
-- [ ] Extract STARK curve primitives - 300 LOC
-- [ ] Extract ECDSA verification - 300 LOC
-- [ ] Write signature validation tests
-
-#### Week 3: Testing, Validation & Documentation
+#### Week 2: Pedersen Hash + STARK Curve + ECDSA ✅ COMPLETE
 
 **Tasks**:
-- [ ] Comprehensive testing (100+ test vectors from Starknet docs)
-- [ ] Property-based tests (roundtrip, determinism, correctness)
-- [ ] Performance benchmarks (vs external implementations)
-- [ ] Document all algorithms with references to specifications
-- [ ] Add VENDORED.md with complete audit trail
-- [ ] Update ROADMAP.md with completed tasks
-- [ ] Integrate with CI/CD pipeline
+- [x] Extract Pedersen hash implementation - 400 LOC
+- [x] Implement elliptic curve point operations
+- [x] Extract STARK curve primitives - 300 LOC
+- [x] Extract ECDSA verification - 300 LOC
+- [x] Write signature validation tests
+
+#### Week 3: Testing, Validation & Documentation ✅ MOSTLY COMPLETE
+
+**Tasks**:
+- [x] Comprehensive testing (38 tests: 27 unit + 11 doc tests, cross-validated)
+- [x] Property-based tests (roundtrip, determinism, correctness)
+- [ ] Performance benchmarks (vs external implementations) - TODO: Add benches/
+- [x] Document all algorithms with references to specifications
+- [x] Add VENDORED.md with complete audit trail
+- [x] Update ROADMAP.md with completed tasks
+- [x] Integrate with CI/CD pipeline (test.yml includes all crates)
 
 **Deliverables**:
 - ✅ `crates/decoder-crypto-zk/` (~1,800 LOC)
