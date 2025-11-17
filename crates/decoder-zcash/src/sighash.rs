@@ -52,6 +52,7 @@ use decoder_primitives::prelude::*;
 
 /// Consensus branch IDs for different Zcash network upgrades
 #[derive(Debug, Clone, Copy)]
+#[repr(u32)]
 #[allow(clippy::enum_clike_unportable_variant)]
 pub enum ConsensusBranchId {
     /// Overwinter (network upgrade 1)
