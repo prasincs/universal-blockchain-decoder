@@ -174,19 +174,6 @@ The tool is integrated into `.github/workflows/autonomous-executor.yml`:
 - [ ] Add task dependency detection
 - [ ] Add self-optimization (learn from failures)
 
-## Comparison: Rust vs Python
-
-| Aspect | Rust | Python |
-|--------|------|--------|
-| Performance | ✅ Fast (~10ms startup) | ⚠️ Slower (~100ms startup) |
-| Type Safety | ✅ Compile-time checks | ⚠️ Runtime only |
-| Dependencies | ✅ Single binary | ⚠️ Requires Python + pip |
-| Error Handling | ✅ Result<T, E> | ⚠️ Exceptions |
-| Consistency | ✅ Same toolchain as project | ⚠️ Different ecosystem |
-| Iteration Speed | ⚠️ Slower (compile time) | ✅ Fast (interpreted) |
-
-**Verdict**: Rust implementation aligns better with project principles (minimal TCB, type safety, formal verification potential).
-
 ## Documentation
 
 - **Main Guide**: `docs/AUTONOMOUS_EXECUTOR.md`

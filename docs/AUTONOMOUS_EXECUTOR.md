@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Autonomous Executor** is a self-improving system available in both **Rust** (recommended) and **Python** implementations that:
+The **Autonomous Executor** is a self-improving system written in **pure Rust** that:
 
 1. **Analyzes** the `ROADMAP.md` to find highest ROI tasks
 2. **Prioritizes** tasks using a scoring algorithm (impact / time)
@@ -11,18 +11,17 @@ The **Autonomous Executor** is a self-improving system available in both **Rust*
 5. **Creates PRs** and auto-merges when CI passes
 6. **Repeats** until full test coverage or roadmap completion
 
-## Implementations
-
-### Rust Implementation (Recommended) ⭐
+## Implementation
 
 **Location**: `tools/autonomous-executor/`
 
 **Advantages**:
 - ✅ **Type Safety**: Compile-time error checking
-- ✅ **Performance**: ~10ms startup vs ~100ms for Python
-- ✅ **Single Binary**: No Python/pip dependencies
+- ✅ **Performance**: ~10ms startup time
+- ✅ **Single Binary**: No external dependencies (~5MB)
 - ✅ **Consistency**: Same toolchain as the entire project
 - ✅ **Formal Verification**: Can be verified with Verus in the future
+- ✅ **Minimal TCB**: Aligns with project principles
 
 **Usage**:
 ```bash
@@ -37,27 +36,6 @@ cargo build --release -p autonomous-executor
 ```
 
 **See**: `tools/autonomous-executor/README.md` for full documentation
-
-### Python Implementation (Legacy)
-
-**Location**: `scripts/autonomous_executor.py`
-
-**Advantages**:
-- ✅ **Fast Iteration**: No compilation step
-- ✅ **Familiar**: Python is widely known
-
-**Disadvantages**:
-- ⚠️ **Runtime Errors**: No compile-time checking
-- ⚠️ **Dependencies**: Requires Python + pip packages
-- ⚠️ **Slower**: ~100ms startup time
-
-**Usage**:
-```bash
-python scripts/autonomous_executor.py --list-tasks
-python scripts/autonomous_executor.py --top-n 1
-```
-
-**Recommendation**: Use the Rust implementation for production. The Python version is kept for rapid prototyping and as a reference implementation.
 
 ## Architecture
 
