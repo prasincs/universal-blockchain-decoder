@@ -192,12 +192,17 @@ pub fn parse_message(msg: &Any) -> Result<CosmosMessage> {
 
         // Governance messages
         type_urls::MSG_VOTE => parse_msg_vote(&msg.value),
+        type_urls::MSG_SUBMIT_PROPOSAL => parse_msg_submit_proposal(&msg.value),
+        type_urls::MSG_DEPOSIT => parse_msg_deposit(&msg.value),
 
         // CosmWasm messages
         type_urls::MSG_STORE_CODE => parse_msg_store_code(&msg.value),
         type_urls::MSG_INSTANTIATE_CONTRACT => parse_msg_instantiate_contract(&msg.value),
         type_urls::MSG_EXECUTE_CONTRACT => parse_msg_execute_contract(&msg.value),
         type_urls::MSG_MIGRATE_CONTRACT => parse_msg_migrate_contract(&msg.value),
+
+        // Distribution messages
+        type_urls::MSG_WITHDRAW_DELEGATOR_REWARD => parse_msg_withdraw_delegator_reward(&msg.value),
 
         _ => Ok(CosmosMessage::Unknown {
             type_url: msg.type_url.clone(),
@@ -547,6 +552,61 @@ fn parse_msg_migrate_contract(data: &[u8]) -> Result<CosmosMessage> {
         contract: msg.contract,
         code_id: msg.code_id,
         msg: msg.msg,
+    }))
+}
+
+/// Parse MsgWithdrawDelegatorReward
+fn parse_msg_withdraw_delegator_reward(data: &[u8]) -> Result<CosmosMessage> {
+    let msg =
+        cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward::decode(data)
+            .map_err(|e| {
+            DecoderError::invalid_structure(format!(
+                "Failed to parse MsgWithdrawDelegatorReward: {}",
+                e
+            ))
+        })?;
+
+    Ok(CosmosMessage::WithdrawDelegatorReward(
+        MsgWithdrawDelegatorReward {
+            delegator_address: msg.delegator_address,
+            validator_address: msg.validator_address,
+        },
+    ))
+}
+
+/// Parse MsgSubmitProposal
+fn parse_msg_submit_proposal(data: &[u8]) -> Result<CosmosMessage> {
+    let msg =
+        cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal::decode(data).map_err(|e| {
+            DecoderError::invalid_structure(format!("Failed to parse MsgSubmitProposal: {}", e))
+        })?;
+
+    let content = msg
+        .content
+        .ok_or_else(|| DecoderError::invalid_structure("Missing proposal content"))?;
+
+    let initial_deposit: Vec<Coin> = msg.initial_deposit.into_iter().map(parse_coin).collect();
+
+    Ok(CosmosMessage::SubmitProposal(MsgSubmitProposal {
+        content_type_url: content.type_url,
+        content_value: content.value,
+        initial_deposit,
+        proposer: msg.proposer,
+    }))
+}
+
+/// Parse MsgDeposit
+fn parse_msg_deposit(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = cosmos_sdk_proto::cosmos::gov::v1beta1::MsgDeposit::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgDeposit: {}", e))
+    })?;
+
+    let amount: Vec<Coin> = msg.amount.into_iter().map(parse_coin).collect();
+
+    Ok(CosmosMessage::Deposit(MsgDeposit {
+        proposal_id: msg.proposal_id,
+        depositor: msg.depositor,
+        amount,
     }))
 }
 
