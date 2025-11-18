@@ -1,0 +1,9 @@
+{
+  "description": "Dogecoin simple P2PKH transaction",
+  "fork": "Dogecoin (DOGE)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Dogecoin forked from Litecoin and uses identical transaction format to Bitcoin/Litecoin."
+}

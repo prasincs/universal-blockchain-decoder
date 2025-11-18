@@ -1,0 +1,9 @@
+{
+  "description": "Dash version 1 transaction",
+  "fork": "Dash (DASH)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Dash v1-v2 transactions use identical format to Bitcoin. V3+ special transactions have extra_payload field."
+}
