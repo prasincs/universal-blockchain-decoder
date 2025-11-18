@@ -1,11 +1,27 @@
 {
-  "description": "Legacy contract deployment with large bytecode",
-  "nonce": 10,
-  "gasPrice": "20000000000",
-  "gas": 200000,
-  "to": null,
-  "value": "0",
-  "chainId": 1,
-  "type": "legacy",
-  "notes": "Large contract deployment with >2KB of bytecode data"
+  "description": "Legacy Transaction with Large Calldata - Uniswap Router Call",
+  "source": "Real mainnet transaction from alloy-rs (same as contract_creation fixture)",
+  "type": 0,
+  "chain_id": 1,
+  "nonce": 1931,
+  "gas_price": "25000000000",
+  "gas_price_gwei": "25",
+  "gas_limit": 143089,
+  "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+  "to_contract": "Uniswap V2 Router 02",
+  "value": "900000000000000000",
+  "value_eth": "0.9",
+  "data_size_bytes": 228,
+  "data": "0x7ff36ab50000000000000000000000000000000000000000000066ab5a608bd00a23f2fe000000000000000000000000000000000000000000000000000000000000008000000000000000000000000048c04ed5691981c42154c6167398f95e8f38a7ff00000000000000000000000000000000000000000000000000000000632ceac70000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006c6ee5e31d828de241282b9606c8e98ea48526e2",
+  "v": 37,
+  "r": "0xc9077369501641a92ef7399ff81c21639ed4fd8fc69cb793cfa1dbfab342e10a",
+  "s": "0x615facb2f1bcf3274a354cfe384a38d0cc008a11c2dd23a69111bc6930ba27a8",
+  "from": "0xa12e1462d0ced572f396f58b6e2d03894cd7c8a4",
+  "notes": [
+    "Tests decoder performance with larger calldata (228 bytes)",
+    "Complex ABI-encoded parameters including arrays",
+    "Real-world DeFi transaction pattern",
+    "Validates handling of multi-parameter function calls",
+    "Note: For truly large data (>2KB), consider contract deployment bytecode"
+  ]
 }

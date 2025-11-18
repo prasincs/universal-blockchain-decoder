@@ -1,12 +1,28 @@
 {
-  "description": "EIP-1559 simple ETH transfer",
+  "description": "EIP-1559 Transaction (Type 2) - Dynamic Fee ETH Transfer",
+  "source": "Real mainnet transaction - alloy-rs test reference",
+  "type": 2,
+  "chain_id": 1,
   "nonce": 241,
-  "maxPriorityFeePerGas": "1000000000",
-  "maxFeePerGas": "350000000000",
-  "gas": 21000,
+  "max_priority_fee_per_gas": "1000000000",
+  "max_priority_fee_per_gas_gwei": "1",
+  "max_fee_per_gas": "90000000127",
+  "max_fee_per_gas_gwei": "90.000000127",
+  "gas_limit": 21000,
   "to": "0xe0e5d2b4edcc473b988b44b4d13c3972cb6694cb",
-  "value": "1000000000000000000",
-  "chainId": 1,
-  "type": "eip1559",
-  "notes": "Simple ETH transfer using EIP-1559 fee market - 1 ETH transfer"
+  "value": "138571741669022494",
+  "value_eth": "0.138571741669022494",
+  "data": "0x",
+  "access_list": [],
+  "y_parity": 1,
+  "r": "0x7eb3335f4fd4de25ec3452c08882f28fb098b2eaa37a332941f918d869f5c2ad",
+  "s": "0x59b9d4aa997c7fa34f1b167f98a12432bb1a4a35660d723a9c19bb76b4cd025d",
+  "hash": "0x0a7d81c47b5a298e190315eb465f73124deb68faa9fa4e5ed372911fc0051dc9",
+  "notes": [
+    "EIP-1559 transaction introduced in London hard fork",
+    "Uses maxFeePerGas and maxPriorityFeePerGas instead of gasPrice",
+    "Empty access list",
+    "Simple value transfer with no data",
+    "Signature uses yParity (0 or 1) instead of v value"
+  ]
 }

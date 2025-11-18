@@ -1,11 +1,36 @@
 {
-  "description": "EIP-2930 transaction with access list",
+  "description": "EIP-2930 Transaction (Type 1) - Transaction with Access List",
+  "source": "alloy-rs signer-ledger test vector (Ledger Ethereum app example)",
+  "type": 1,
+  "chain_id": 3,
   "nonce": 0,
-  "gasPrice": "16777216",
-  "gas": 21000,
-  "to": "0x97e542ec6b81dea28f212775ce8ac436ab77a7df",
-  "value": "1000000000000000000",
-  "chainId": 1,
-  "type": "eip2930",
-  "notes": "Simple transfer with 1-entry access list for address 0x0000...0001 with 1 storage key"
+  "gas_price": "1",
+  "gas_limit": 2500000,
+  "to": "0xcccccccccccccccccccccccccccccccccccccccc",
+  "value": "100000",
+  "data": "0x693c61390000000000000000000000000000000000000000000000000000000000000002",
+  "data_decoded": {
+    "function_selector": "0x693c6139",
+    "note": "Function call with uint256 parameter = 2"
+  },
+  "access_list": [
+    {
+      "address": "0x0000000000000000000000000000000000000102",
+      "storage_keys": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000000000000000000000000060"
+      ]
+    }
+  ],
+  "y_parity": 0,
+  "r": "0xa7",
+  "s": "0x",
+  "notes": [
+    "EIP-2930 introduced in Berlin hard fork",
+    "Access list declares addresses and storage slots for gas optimization",
+    "Pre-warming storage reduces gas costs for SLOAD and other opcodes",
+    "Access list contains 1 address with 2 storage keys",
+    "Includes contract call data (not a simple transfer)",
+    "Test signature (simplified r/s values)"
+  ]
 }

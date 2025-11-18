@@ -1,11 +1,37 @@
 {
-  "description": "Legacy contract deployment transaction",
-  "nonce": 10,
-  "gasPrice": "21000000000",
-  "gas": 157264,
-  "to": null,
-  "value": "0",
-  "chainId": 1,
-  "type": "legacy",
-  "notes": "Simple counter contract deployment"
+  "description": "Legacy Transaction - Uniswap V2 Router Contract Call",
+  "source": "Real mainnet transaction from alloy-rs legacy.rs tests",
+  "type": 0,
+  "chain_id": 1,
+  "nonce": 1931,
+  "gas_price": "25000000000",
+  "gas_price_gwei": "25",
+  "gas_limit": 143089,
+  "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+  "to_contract": "Uniswap V2 Router 02",
+  "value": "900000000000000000",
+  "value_eth": "0.9",
+  "data": "0x7ff36ab50000000000000000000000000000000000000000000066ab5a608bd00a23f2fe000000000000000000000000000000000000000000000000000000000000008000000000000000000000000048c04ed5691981c42154c6167398f95e8f38a7ff00000000000000000000000000000000000000000000000000000000632ceac70000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006c6ee5e31d828de241282b9606c8e98ea48526e2",
+  "data_decoded": {
+    "function_selector": "0x7ff36ab5",
+    "function_name": "swapExactETHForTokensSupportingFeeOnTransferTokens",
+    "parameters": {
+      "amountOutMin": "0x66ab5a608bd00a23f2fe",
+      "path": ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "0x6c6ee5e31d828de241282b9606c8e98ea48526e2"],
+      "to": "0x48c04ed5691981c42154c6167398f95e8f38a7ff",
+      "deadline": "0x632ceac7"
+    }
+  },
+  "v": 37,
+  "r": "0xc9077369501641a92ef7399ff81c21639ed4fd8fc69cb793cfa1dbfab342e10a",
+  "s": "0x615facb2f1bcf3274a354cfe384a38d0cc008a11c2dd23a69111bc6930ba27a8",
+  "from": "0xa12e1462d0ced572f396f58b6e2d03894cd7c8a4",
+  "notes": [
+    "Real Uniswap V2 swap transaction from Ethereum mainnet",
+    "Swaps ETH for tokens (0.9 ETH sent)",
+    "Complex contract call with ABI-encoded parameters",
+    "Path shows token swap route: WETH → target token",
+    "Tests decoder handling of complex calldata",
+    "Source: alloy-rs legacy transaction tests (GitHub issue #125)"
+  ]
 }

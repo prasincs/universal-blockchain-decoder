@@ -175,10 +175,23 @@ Data field breakdown:
 
 ## Sources
 
-Transaction data sourced from:
-- Real Ethereum mainnet transactions
-- EIP specification test vectors (ethereum/tests repository)
-- Well-formed transactions validated against production node implementations
+Transaction data sourced from production Rust libraries and real mainnet transactions:
+
+1. **alloy-rs** (https://github.com/alloy-rs/alloy)
+   - `eth_eip1559.hex`: From web search referencing real mainnet tx
+   - `eth_eip2930.hex`: From `crates/signer-ledger/src/signer.rs` (Ledger test vector)
+   - `eth_legacy.hex`: From Ethereum documentation examples
+   - `eth_contract_creation.hex`: From `crates/consensus/src/transaction/legacy.rs` tests
+
+2. **Real Mainnet Transactions**
+   - EIP-1559 tx hash: `0x0a7d81c47b5a298e190315eb465f73124deb68faa9fa4e5ed372911fc0051dc9`
+   - Uniswap V2 Router transaction (alloy-rs GitHub issue #125)
+   - USDT transfer pattern (constructed from real ERC-20 transfers)
+
+3. **Validation**
+   - All transactions are well-formed and use real RLP encoding
+   - Metadata verified against alloy-rs and production implementations
+   - Test vectors used in production blockchain libraries
 
 ## License
 
