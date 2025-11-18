@@ -10,9 +10,21 @@ description = "Tron transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
+decoder-chains-common = { path = "../decoder-chains-common" }
 serde = { workspace = true }
+borsh = { version = "1.3", features = ["derive"] }
 thiserror = { workspace = true }
+
+# Protobuf support
+prost = "0.13"
+prost-types = "0.13"
+
+# Cryptography (for address encoding and hashing)
+sha2 = "0.10"
+sha3 = "0.10"
+bs58 = "0.5"  # Base58 encoding for TRON addresses
 
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+hex = "0.4"
