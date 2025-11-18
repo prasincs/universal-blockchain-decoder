@@ -5,7 +5,7 @@
 //!
 //! ## References
 //!
-//! - **ZIP-243**: https://zips.z.cash/zip-0243
+//! - **ZIP-243**: <https://zips.z.cash/zip-0243>
 //! - **Zcash Protocol Specification**: Section 4.9 "Transaction Encoding and Consensus"
 //!
 //! ## SIGHASH Algorithm

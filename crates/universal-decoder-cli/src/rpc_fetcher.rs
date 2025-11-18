@@ -34,7 +34,7 @@ impl RpcFetcher {
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - RPC endpoint URL (e.g., "https://mainnet.infura.io/v3/YOUR-KEY")
+    /// * `endpoint` - RPC endpoint URL (e.g., "<https://mainnet.infura.io/v3/YOUR-KEY>")
     /// * `txid` - Transaction ID/hash
     /// * `chain` - Chain short name (e.g., "btc", "eth")
     ///

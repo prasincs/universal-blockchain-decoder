@@ -41,7 +41,7 @@ pub enum OptimismTransaction {
 ///
 /// ## Specification
 ///
-/// See: https://specs.optimism.io/protocol/deposits.html
+/// See: <https://specs.optimism.io/protocol/deposits.html>
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct DepositTransaction {
     /// Source hash that uniquely identifies the origin of this deposit on L1

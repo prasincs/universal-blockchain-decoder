@@ -48,9 +48,9 @@
 //!
 //! ## Specification
 //!
-//! - ArbOS documentation: https://docs.arbitrum.io/arbos/
-//! - Retryable tickets: https://docs.arbitrum.io/arbos/l1-to-l2-messaging
-//! - Delayed inbox: https://docs.arbitrum.io/arbos/geth
+//! - ArbOS documentation: <https://docs.arbitrum.io/arbos/>
+//! - Retryable tickets: <https://docs.arbitrum.io/arbos/l1-to-l2-messaging>
+//! - Delayed inbox: <https://docs.arbitrum.io/arbos/geth>
 
 pub mod parsing;
 pub mod types;

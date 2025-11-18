@@ -33,9 +33,9 @@
 //!
 //! ## References
 //!
-//! - **RedJubjub Specification**: https://zips.z.cash/protocol/protocol.pdf Section 5.4.6
+//! - **RedJubjub Specification**: <https://zips.z.cash/protocol/protocol.pdf> Section 5.4.6
 //! - **ZIP-243**: Transaction signature validation
-//! - **redjubjub**: https://github.com/ZcashFoundation/redjubjub
+//! - **redjubjub**: <https://github.com/ZcashFoundation/redjubjub>
 
 use crate::sapling::SpendDescription;
 use crate::sighash::{compute_sighash, ConsensusBranchId, SigHashType};

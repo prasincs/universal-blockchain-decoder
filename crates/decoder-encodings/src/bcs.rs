@@ -205,7 +205,7 @@ pub fn read_string<R: Read>(reader: &mut R) -> Result<String> {
         .map_err(|e| DecoderError::invalid_structure(format!("Invalid UTF-8 string: {}", e)))
 }
 
-/// Read a BCS-encoded option<T>
+/// Read a BCS-encoded `option<T>`
 ///
 /// Format:
 /// - 0x00 => None

@@ -203,7 +203,7 @@ pub fn read_u128_le(bytes: &[u8], offset: &mut usize) -> Result<u128> {
     Ok(u128::from_le_bytes(buf))
 }
 
-/// Read an Option<T> encoded as SCALE
+/// Read an `Option<T>` encoded as SCALE
 /// 0x00 = None, 0x01 + value = Some(value)
 pub fn read_option_bool(bytes: &[u8], offset: &mut usize) -> Result<Option<bool>> {
     let tag = read_u8(bytes, offset)?;
