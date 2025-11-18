@@ -1,24 +1,37 @@
 {
-  "description": "Legacy contract creation transaction - Simple storage contract deployment",
+  "description": "Legacy Transaction - Uniswap V2 Router Contract Call",
+  "source": "Real mainnet transaction from alloy-rs legacy.rs tests",
   "type": 0,
-  "hash": "0x5555555555555555555555555555555555555555555555555555555555555555",
-  "from": "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
-  "to": null,
-  "value": "0x00",
-  "gas": 157264,
-  "gasPrice": "0x04e3b29200",
-  "nonce": 0,
-  "data": "0x608060405234801561001057600080fd5b506101358061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80632e64cec11460375780636057361d146051575b600080fd5b603d6069565b6040516048919060c2565b60405180910390f35b6067600480360381019060639190608f565b6072565b005b60008054905090565b8060008190555050565b60008135905060898160e8565b92915050565b60006020828403121560a057600080fd5b600060ac84828501607c565b91505092915050565b60bc8160db565b82525050565b600060208201905060d5600083018460b5565b92915050565b6000819050919050565b60ef8160db565b811460f957600080fd5b5056fea26469706673582212209a0c3a7b6d7f8c3c7f7e7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f64736f6c63430008040033",
-  "v": 27,
-  "r": "0xf3c5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5",
-  "s": "0x5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d",
-  "block_number": 10000000,
+  "chain_id": 1,
+  "nonce": 1931,
+  "gas_price": "25000000000",
+  "gas_price_gwei": "25",
+  "gas_limit": 143089,
+  "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+  "to_contract": "Uniswap V2 Router 02",
+  "value": "900000000000000000",
+  "value_eth": "0.9",
+  "data": "0x7ff36ab50000000000000000000000000000000000000000000066ab5a608bd00a23f2fe000000000000000000000000000000000000000000000000000000000000008000000000000000000000000048c04ed5691981c42154c6167398f95e8f38a7ff00000000000000000000000000000000000000000000000000000000632ceac70000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006c6ee5e31d828de241282b9606c8e98ea48526e2",
+  "data_decoded": {
+    "function_selector": "0x7ff36ab5",
+    "function_name": "swapExactETHForTokensSupportingFeeOnTransferTokens",
+    "parameters": {
+      "amountOutMin": "0x66ab5a608bd00a23f2fe",
+      "path": ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "0x6c6ee5e31d828de241282b9606c8e98ea48526e2"],
+      "to": "0x48c04ed5691981c42154c6167398f95e8f38a7ff",
+      "deadline": "0x632ceac7"
+    }
+  },
+  "v": 37,
+  "r": "0xc9077369501641a92ef7399ff81c21639ed4fd8fc69cb793cfa1dbfab342e10a",
+  "s": "0x615facb2f1bcf3274a354cfe384a38d0cc008a11c2dd23a69111bc6930ba27a8",
+  "from": "0xa12e1462d0ced572f396f58b6e2d03894cd7c8a4",
   "notes": [
-    "Legacy (Type 0) contract creation transaction",
-    "Empty 'to' field indicates contract creation",
-    "Data field contains contract bytecode (Solidity simple storage contract)",
-    "Contract implements store() and retrieve() functions",
-    "RLP format: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])",
-    "After deployment, contract can be interacted with at the created address"
+    "Real Uniswap V2 swap transaction from Ethereum mainnet",
+    "Swaps ETH for tokens (0.9 ETH sent)",
+    "Complex contract call with ABI-encoded parameters",
+    "Path shows token swap route: WETH → target token",
+    "Tests decoder handling of complex calldata",
+    "Source: alloy-rs legacy transaction tests (GitHub issue #125)"
   ]
 }

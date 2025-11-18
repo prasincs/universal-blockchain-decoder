@@ -1,32 +1,36 @@
 {
-  "description": "EIP-2930 (Type 1) transaction - Transaction with access list",
+  "description": "EIP-2930 Transaction (Type 1) - Transaction with Access List",
+  "source": "alloy-rs signer-ledger test vector (Ledger Ethereum app example)",
   "type": 1,
-  "hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-  "chain_id": 1,
-  "from": "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
-  "to": "0x97e542ec6b81dea28f212775ce8ac436ab77a7df",
-  "value": "0x0de0b6b3a7640000",
-  "gas": 21000,
-  "gasPrice": "0x3b9aca00",
+  "chain_id": 3,
   "nonce": 0,
-  "data": "0x",
-  "accessList": [
+  "gas_price": "1",
+  "gas_limit": 2500000,
+  "to": "0xcccccccccccccccccccccccccccccccccccccccc",
+  "value": "100000",
+  "data": "0x693c61390000000000000000000000000000000000000000000000000000000000000002",
+  "data_decoded": {
+    "function_selector": "0x693c6139",
+    "note": "Function call with uint256 parameter = 2"
+  },
+  "access_list": [
     {
-      "address": "0x0000000000000000000000000000000000000001",
-      "storageKeys": [
-        "0x0000000000000000000000000000000000000000000000000000000000000001"
+      "address": "0x0000000000000000000000000000000000000102",
+      "storage_keys": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000000000000000000000000060"
       ]
     }
   ],
-  "v": 0,
-  "r": "0x627c0cf70f7dcf0fdc1e35be7f6e4f9cd9352e6f7ac4e8c8df09c0c2e8d8e8e8",
-  "s": "0x7d573eef31fdebf0f5f93eb7721924a082907419eb97a8dda0dd20a4a5b954a1",
-  "block_number": 12500000,
+  "y_parity": 0,
+  "r": "0xa7",
+  "s": "0x",
   "notes": [
-    "EIP-2930 access list transaction from post-Berlin fork",
-    "Type 1 transaction with access list for gas optimization",
-    "Access list declares addresses and storage slots accessed",
-    "Helps save gas on cross-contract calls",
-    "RLP format: 0x01 || RLP([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, signatureYParity, r, s])"
+    "EIP-2930 introduced in Berlin hard fork",
+    "Access list declares addresses and storage slots for gas optimization",
+    "Pre-warming storage reduces gas costs for SLOAD and other opcodes",
+    "Access list contains 1 address with 2 storage keys",
+    "Includes contract call data (not a simple transfer)",
+    "Test signature (simplified r/s values)"
   ]
 }
