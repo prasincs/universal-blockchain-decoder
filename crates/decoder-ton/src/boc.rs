@@ -118,10 +118,8 @@ pub fn parse_boc(bytes: &[u8]) -> Result<Vec<Cell>> {
     let magic = read_u32_be(&mut cursor)?;
 
     // Verify magic number
-    let (has_idx, has_crc32c) = match magic {
-        BOC_MAGIC_STANDARD => (false, false),
-        BOC_MAGIC_IDX => (true, false),
-        BOC_MAGIC_CRC32C => (false, true),
+    match magic {
+        BOC_MAGIC_STANDARD | BOC_MAGIC_IDX | BOC_MAGIC_CRC32C => {}
         _ => {
             return Err(DecoderError::invalid_structure(format!(
                 "Invalid BoC magic: 0x{:08x}",
@@ -134,7 +132,10 @@ pub fn parse_boc(bytes: &[u8]) -> Result<Vec<Cell>> {
     let flags_byte = read_u8(&mut cursor)?;
 
     // Parse flags: has_idx(1) | has_crc32c(1) | has_cache_bits(1) | flags(2) | size(3)
-    let _size = (flags_byte & 0x07) as usize; // Last 3 bits
+    let has_idx = (flags_byte & 0x80) != 0; // Bit 7
+    let has_crc32c = (flags_byte & 0x40) != 0; // Bit 6
+    let _has_cache_bits = (flags_byte & 0x20) != 0; // Bit 5
+    let _size = (flags_byte & 0x07) as usize; // Last 3 bits (bits 2-0)
 
     // Read offset size (1 byte)
     let off_bytes = read_u8(&mut cursor)? as usize;

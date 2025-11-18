@@ -16,3 +16,6 @@ thiserror = { workspace = true }
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+base64 = "0.22"
+# TON library for validation testing only
+tonlib-core = "0.26"
