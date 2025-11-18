@@ -119,66 +119,84 @@ pub struct TxIR<'a, const V: u8> {
 
 ---
 
-## Category 2: DAG-Based Consensus 🟡
+## Category 2: Transaction-Level DAG References 🟡
 
-**Risk Level**: MEDIUM - Needs metadata extensions
-**Timeline**: Already in production (IOTA, Hedera, Kaspa)
-**When to Revisit**: When DAG chains represent >5% market cap or user requests
+**Risk Level**: LOW-MEDIUM - Minor metadata extensions
+**Timeline**: Production (IOTA, Nano), limited adoption
+**When to Revisit**: User requests or significant IoT blockchain adoption
 
 ### What They Are
 
-Transactions form Directed Acyclic Graph (DAG) instead of linear chain. Each transaction validates multiple previous transactions.
+**IMPORTANT**: This category is about **transaction format**, not consensus mechanisms. Only chains where the transaction bytes themselves contain explicit parent references.
+
+Transactions that include references to multiple parent transactions as part of their structure. The DAG topology is embedded in the transaction data, not just the consensus layer.
 
 ### Examples
 
-| Project | Status | Model | Notes |
-|---------|--------|-------|-------|
-| **IOTA (Tangle)** | Production | Each tx validates 2+ parents | IoT-focused |
-| **Hedera Hashgraph** | Production | Gossip + virtual voting | Enterprise adoption |
-| **Nano** | Production | Block-lattice (1 chain/account) | Feeless transfers |
-| **Kaspa** | Production | BlockDAG with parallel blocks | High throughput |
-| **Constellation** | Development | DAG with microservices | Data layer |
+| Project | Status | Model | Parent Refs in TX? |
+|---------|--------|-------|-------------------|
+| **IOTA (Tangle)** | Production | Each tx includes 2 parent hashes | ✅ YES |
+| **Nano** | Production | Block-lattice, each block refs previous | ✅ YES |
+| **Hedera Hashgraph** | Production | Gossip + virtual voting | ❌ NO (consensus only) |
+| **Kaspa** | Production | BlockDAG parallel blocks | ❌ NO (block-level, not tx) |
+
+**Note**: Hedera and Kaspa use DAG-based **consensus** but have standard transaction formats. They don't need TxIR changes.
 
 ### Why It Challenges Current Pattern
 
-**Current Assumption**: Transaction is atomic, references single blockchain state
+**Current Assumption**: Transaction references blockchain state implicitly (via block)
 
 ```rust
 pub struct TxMetadata {
     pub tx_hash: Option<Vec<u8>>,
-    pub block_hash: Option<Vec<u8>>,  // Single parent block
+    pub block_hash: Option<Vec<u8>>,  // Single parent block (implicit)
     pub timestamp: Option<u64>,
     // ...
 }
 ```
 
-**DAG Reality**: Transaction references multiple parent transactions
+**Transaction-Level DAG**: Parent references are **explicit in transaction bytes**
 
 ```rust
-// IOTA Tangle structure
-pub struct TangleTransaction {
-    pub transaction: Transaction,
-    pub trunk_hash: [u8; 32],   // Parent 1
-    pub branch_hash: [u8; 32],  // Parent 2
-    pub weight_magnitude: u8,   // Proof of work
+// IOTA Tangle: Transaction format includes parent hashes
+pub struct IotaTransaction {
+    pub signature_or_message: Payload,
+    pub address: [u8; 49],
+    pub value: i64,
+    pub obsolete_tag: [u8; 27],
+    pub timestamp: u64,
+    pub current_index: u64,
+    pub last_index: u64,
+
+    // ← These are IN the transaction bytes!
+    pub trunk_transaction: [u8; 32],   // Parent 1 hash
+    pub branch_transaction: [u8; 32],  // Parent 2 hash
+
+    pub tag: [u8; 27],
+    pub attachment_timestamp: u64,
+    pub nonce: [u8; 27],
 }
 
-// Kaspa BlockDAG
-pub struct KaspaBlock {
-    pub transactions: Vec<Transaction>,
-    pub parent_hashes: Vec<[u8; 32]>,  // Multiple parents!
-    pub blue_score: u64,  // Consensus ordering
+// Nano: Each block references previous block in account chain
+pub struct NanoBlock {
+    pub account: [u8; 32],
+    pub previous: [u8; 32],  // ← Parent hash in transaction
+    pub representative: [u8; 32],
+    pub balance: u128,
+    pub link: [u8; 32],
+    pub signature: [u8; 64],
+    pub work: u64,
 }
 ```
 
 ### Key Differences
 
-| Aspect | Linear Chain | DAG |
-|--------|-------------|-----|
-| **Parent Reference** | Single block | Multiple transactions/blocks |
-| **Consensus** | Block-level | Transaction-level or hybrid |
-| **Ordering** | Explicit (block height) | Computed (topological sort) |
-| **Finality** | Confirmation depth | Cumulative weight/virtual voting |
+| Aspect | Standard Transaction | DAG Transaction |
+|--------|---------------------|-----------------|
+| **Parent Reference** | Implicit (via block) | Explicit (in tx bytes) |
+| **Validation** | Block validates tx | Tx validates other txs |
+| **Topology** | Linear chain | Graph structure |
+| **Self-Contained** | Needs block context | Includes graph edges |
 
 ### Proposed Future Extension
 
@@ -787,7 +805,7 @@ Operation {
 | Category | Risk | Status | Revisit Trigger |
 |----------|------|--------|----------------|
 | Intent-Based | 🔴 HIGH | Research | Anoma mainnet + >10k DAU |
-| DAG Consensus | 🟡 MEDIUM | Production | User requests or >5% market cap |
+| Transaction-Level DAG | 🟡 LOW-MEDIUM | Production | User requests for IOTA/Nano |
 | Parallel Execution | 🔴 HIGH | Production | Phase 3.5+ (Sui/Aptos decoders) |
 | Modular Layers | 🟠 MEDIUM | Production | Phase 3.10+ (Celestia/Fuel adoption) |
 | ZK Batching | 🔴 HIGH | Production | Phase 4+ (privacy focus) |
