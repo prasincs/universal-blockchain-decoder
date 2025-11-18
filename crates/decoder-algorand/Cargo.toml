@@ -22,3 +22,4 @@ proptest = { workspace = true }
 algonaut = "0.4"
 algonaut_core = "0.4"
 algonaut_transaction = "0.4"
+hex = "0.4"
