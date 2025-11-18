@@ -50,6 +50,7 @@ members = [
     "tools/registry-generator",
     "tools/ai-refactor-suggest",
     "tools/auto-update-docs",
+    "tools/autonomous-executor",
     "crates/decoder-generator", "crates/decoder-mina",
 ]
 resolver = "2"
