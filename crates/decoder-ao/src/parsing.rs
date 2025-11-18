@@ -14,8 +14,64 @@
 //! - data: remaining bytes
 
 use crate::types::{AOMessage, SignatureType, Tag};
-use decoder_primitives::bytes::ByteReader;
 use universal_decoder_core::error::{DecoderError, Result};
+
+/// Simple byte reader for parsing ANS-104 messages
+pub struct ByteReader<'a> {
+    data: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> ByteReader<'a> {
+    pub fn new(data: &'a [u8]) -> Self {
+        Self { data, pos: 0 }
+    }
+
+    pub fn read_u8(&mut self) -> Result<u8> {
+        if self.pos >= self.data.len() {
+            return Err(DecoderError::invalid_structure("Unexpected end of data"));
+        }
+        let val = self.data[self.pos];
+        self.pos += 1;
+        Ok(val)
+    }
+
+    pub fn read_u16_be(&mut self) -> Result<u16> {
+        if self.pos + 2 > self.data.len() {
+            return Err(DecoderError::invalid_structure("Unexpected end of data"));
+        }
+        let val = u16::from_be_bytes([self.data[self.pos], self.data[self.pos + 1]]);
+        self.pos += 2;
+        Ok(val)
+    }
+
+    pub fn read_u64_be(&mut self) -> Result<u64> {
+        if self.pos + 8 > self.data.len() {
+            return Err(DecoderError::invalid_structure("Unexpected end of data"));
+        }
+        let mut bytes = [0u8; 8];
+        bytes.copy_from_slice(&self.data[self.pos..self.pos + 8]);
+        self.pos += 8;
+        Ok(u64::from_be_bytes(bytes))
+    }
+
+    pub fn read_bytes(&mut self, len: usize) -> Result<&'a [u8]> {
+        if self.pos + len > self.data.len() {
+            return Err(DecoderError::invalid_structure(format!(
+                "Cannot read {} bytes, only {} remaining",
+                len,
+                self.data.len() - self.pos
+            )));
+        }
+        let bytes = &self.data[self.pos..self.pos + len];
+        self.pos += len;
+        Ok(bytes)
+    }
+
+    pub fn remaining(&self) -> &'a [u8] {
+        &self.data[self.pos..]
+    }
+}
 
 /// Parse an ANS-104 DataItem from bytes
 pub fn parse_ans104(bytes: &[u8]) -> Result<AOMessage> {

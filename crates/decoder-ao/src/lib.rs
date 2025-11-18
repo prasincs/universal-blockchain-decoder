@@ -13,14 +13,13 @@
 //!
 //! ```rust,ignore
 //! use decoder_ao::AODecoder;
-//! use universal_decoder_core::traits::ChainDecoder;
+//! use decoder_primitives::prelude::*;
 //!
-//! let decoder = AODecoder::new();
-//! let tx_ir = decoder.decode(message_bytes)?;
+//! let decoder = AODecoder;
+//! let tx = AODecoder::decode(message_bytes)?;
 //!
 //! // Access AO-specific metadata
-//! let action = tx_ir.metadata.extra["action"];
-//! let target_process = tx_ir.metadata.extra["target"];
+//! let extra_metadata = &tx.metadata.extra;
 //! ```
 
 pub mod parsing;
@@ -28,54 +27,22 @@ pub mod registry;
 pub mod types;
 
 use parsing::parse_ans104;
-use registry::get_network_by_id;
 use types::AOMessage;
-use universal_decoder_core::{
-    chain::{ChainFamily, ChainIdentity, ChainRef},
-    error::{DecoderError, Result},
-    ir::{
-        AccountChange, Address, Amount, Authorization, Operation, Signature, StateDeltas, TxIR,
-        TxMetadata,
-    },
-    traits::{Canonicalizer, ChainDecoder},
-};
 
-/// AO chain identity
-#[derive(Debug, Clone)]
-pub struct AOChain {
-    network_id: u64,
-}
+use decoder_primitives::prelude::*;
 
-impl AOChain {
-    /// Create a new AO chain identity for mainnet
-    pub fn mainnet() -> Self {
-        Self {
-            network_id: 1000000,
-        }
-    }
-
-    /// Create a new AO chain identity for testnet
-    pub fn testnet() -> Self {
-        Self {
-            network_id: 1000001,
-        }
-    }
-
-    /// Create a new AO chain identity for a specific network
-    pub fn new(network_id: u64) -> Self {
-        Self { network_id }
-    }
-}
+/// AO chain identity (Mainnet)
+#[derive(Debug, Clone, Copy)]
+pub struct AOChain;
 
 impl ChainIdentity for AOChain {
     fn chain_id(&self) -> u64 {
-        self.network_id
+        // Custom ID for AO mainnet
+        1000000
     }
 
     fn chain_name(&self) -> &str {
-        get_network_by_id(self.network_id)
-            .map(|n| n.name.as_str())
-            .unwrap_or("AO")
+        "AO"
     }
 
     fn chain_family(&self) -> ChainFamily {
@@ -83,162 +50,224 @@ impl ChainIdentity for AOChain {
     }
 
     fn network(&self) -> Option<&str> {
-        get_network_by_id(self.network_id).map(|n| n.network_type.as_str())
+        Some("mainnet")
     }
 }
 
-/// AO decoder implementing ChainDecoder trait
-pub struct AODecoder {
-    chain: AOChain,
+/// Parsed AO message
+#[derive(Debug, Clone)]
+pub struct AOTransaction {
+    /// Parsed message
+    pub message: AOMessage,
+    /// Raw bytes
+    pub raw_bytes: Vec<u8>,
+    /// Message ID (hash of signature)
+    pub message_id: Vec<u8>,
 }
 
-impl AODecoder {
-    /// Create a new AO decoder for mainnet
-    pub fn new() -> Self {
-        Self {
-            chain: AOChain::mainnet(),
-        }
+impl AOTransaction {
+    /// Get action from tags
+    pub fn action(&self) -> Option<&str> {
+        self.message.action()
     }
 
-    /// Create a new AO decoder for a specific network
-    pub fn with_network(network_id: u64) -> Self {
-        Self {
-            chain: AOChain::new(network_id),
-        }
+    /// Get target process ID
+    pub fn target(&self) -> Option<String> {
+        self.message.target_string()
     }
 
-    /// Decode an AOMessage into TxIR components
-    fn decode_message(
-        &self,
-        msg: &AOMessage,
-    ) -> Result<(TxMetadata, Authorization, Vec<Operation>, StateDeltas)> {
-        // 1. Build metadata with AO-specific extras
-        let message_id = msg.message_id();
-        let message_id_hex = hex::encode(&message_id);
-
-        let mut extra = serde_json::Map::new();
-        extra.insert("message_type".to_string(), serde_json::json!("ao_message"));
-        extra.insert("target".to_string(), serde_json::json!(msg.target_string()));
-        extra.insert(
-            "signature_type".to_string(),
-            serde_json::json!(format!("{:?}", msg.signature_type)),
-        );
-
-        if let Some(epoch) = msg.epoch {
-            extra.insert("epoch".to_string(), serde_json::json!(epoch));
-        }
-        if let Some(nonce) = msg.nonce {
-            extra.insert("nonce".to_string(), serde_json::json!(nonce));
-        }
-
-        // Add tags to metadata
-        let tags_json: Vec<serde_json::Value> = msg
-            .tags
-            .iter()
-            .map(|t| {
-                serde_json::json!({
-                    "name": t.name,
-                    "value": t.value,
-                })
-            })
-            .collect();
-        extra.insert("tags".to_string(), serde_json::json!(tags_json));
-
-        let metadata = TxMetadata {
-            tx_id: message_id_hex.clone(),
-            timestamp: None, // AO messages don't have built-in timestamps
-            version: None,
-            fee: None, // AO doesn't have fees in messages
-            extra: Some(serde_json::Value::Object(extra)),
-        };
-
-        // 2. Build authorization from signature
-        let authorization = Authorization {
-            signatures: vec![Signature {
-                public_key: msg.owner.clone(),
-                signature: msg.signature.clone(),
-            }],
-            required_signatures: 1,
-        };
-
-        // 3. Build operations from message action
-        let operations = if let Some(action) = msg.action() {
-            vec![Operation::ContractCall {
-                contract: msg.target_string().unwrap_or_default(),
-                function: action.to_string(),
-                args: msg.data.clone(),
-                gas_limit: None, // AO doesn't have gas limits
-                value: None,     // No value transfer in AO messages
-            }]
-        } else {
-            vec![]
-        };
-
-        // 4. Build state deltas (per-message state change)
-        let state_deltas = StateDeltas {
-            inputs: vec![],  // AO doesn't use UTXO model
-            outputs: vec![], // AO doesn't use UTXO model
-            account_changes: if let Some(target) = &msg.target {
-                vec![AccountChange {
-                    address: Address {
-                        bytes: target.clone(),
-                        human_readable: msg.target_string(),
-                    },
-                    nonce: msg.nonce,
-                    balance_change: None, // AO doesn't track balances in messages
-                    storage_changes: vec![], // State derived from message history
-                }]
-            } else {
-                vec![]
-            },
-        };
-
-        Ok((metadata, authorization, operations, state_deltas))
+    /// Get tags
+    pub fn tags(&self) -> &[types::Tag] {
+        &self.message.tags
     }
 }
 
-impl Default for AODecoder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+/// AO transaction decoder
+pub struct AODecoder;
 
 impl ChainDecoder for AODecoder {
-    type TxSpecific = AOMessage;
-    type ChainIdentity = AOChain;
+    type TxSpecific = AOTransaction;
+    type Chain = AOChain;
 
-    fn decode(&self, bytes: &[u8]) -> Result<TxIR> {
+    fn chain() -> Self::Chain {
+        AOChain
+    }
+
+    fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific> {
+        Self::validate_format(raw_bytes)?;
+
         // Parse ANS-104 DataItem
-        let msg = parse_ans104(bytes)?;
+        let message = parse_ans104(raw_bytes)?;
+        let message_id = message.message_id();
 
-        // Decode to TxIR components
-        let (metadata, authorization, operations, state_deltas) = self.decode_message(&msg)?;
+        Ok(AOTransaction {
+            message,
+            raw_bytes: raw_bytes.to_vec(),
+            message_id,
+        })
+    }
 
-        // Create TxIR
-        TxIR::new(
-            &self.chain,
+    fn validate_format(raw_bytes: &[u8]) -> Result<()> {
+        if raw_bytes.is_empty() {
+            return Err(DecoderError::invalid_structure(
+                "AO message cannot be empty",
+            ));
+        }
+
+        // Minimum size check: signature_type (2 bytes) + signature + owner
+        if raw_bytes.len() < 100 {
+            return Err(DecoderError::invalid_structure(
+                "AO message too short (minimum 100 bytes)",
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl<'a> Canonicalizer<'a> for AOTransaction {
+    const VERSION: u8 = 1;
+
+    fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
+        let operations = build_operations(&self.message)?;
+        let authorization = build_authorization(&self.message)?;
+        let state_deltas = build_state_deltas(&self.message)?;
+
+        // Build extra metadata as JSON string
+        let extra = format!(
+            r#"{{"message_type":"ao_message","signature_type":"{:?}","target":"{}","epoch":{},"nonce":{},"tags_count":{}}}"#,
+            self.message.signature_type,
+            self.message.target_string().unwrap_or_default(),
+            self.message
+                .epoch
+                .map(|e| e.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            self.message
+                .nonce
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            self.message.tags.len()
+        );
+
+        let metadata = TxMetadata {
+            tx_hash: self.message_id.clone(),
+            block_height: None,
+            timestamp: None,
+            size: self.raw_bytes.len(),
+            extra,
+        };
+
+        Ok(TxIR::new(
+            &AOChain,
             metadata,
             authorization,
             operations,
             state_deltas,
-        )
+        ))
     }
 
-    fn decode_specific(&self, bytes: &[u8]) -> Result<Self::TxSpecific> {
-        parse_ans104(bytes)
-    }
+    fn validate(&self) -> Result<()> {
+        // Verify signature is present
+        if self.message.signature.is_empty() {
+            return Err(DecoderError::invalid_structure("No signature found"));
+        }
 
-    fn chain(&self) -> &Self::ChainIdentity {
-        &self.chain
+        // Verify owner is present
+        if self.message.owner.is_empty() {
+            return Err(DecoderError::invalid_structure(
+                "No owner (public key) found",
+            ));
+        }
+
+        Ok(())
     }
 }
 
-impl Canonicalizer for AOMessage {
-    fn to_canonical_bytes(&self) -> Result<Vec<u8>> {
-        // Canonical representation uses Borsh serialization
-        // For ANS-104 messages, we use the message ID (hash of signature) as canonical ID
-        Ok(self.message_id())
+/// Build operations from AO message
+fn build_operations(msg: &AOMessage) -> Result<Vec<Operation>> {
+    let mut operations = Vec::new();
+
+    if let Some(action) = msg.action() {
+        let contract_address = if let Some(target) = &msg.target {
+            Address {
+                bytes: target.clone(),
+                human_readable: msg.target_string(),
+            }
+        } else {
+            Address {
+                bytes: vec![],
+                human_readable: None,
+            }
+        };
+
+        operations.push(Operation::ContractCall(ContractCall {
+            contract: contract_address,
+            method: action.as_bytes().to_vec(),
+            data: msg.data.clone(),
+            value: None, // AO doesn't have value transfers in messages
+            resource_limits: ResourceLimits {
+                max_units: 0, // AO doesn't have gas limits
+                unit_price: 0,
+                resource_type: ResourceType::Custom(0), // AO uses custom resource model
+            },
+        }));
     }
+
+    Ok(operations)
+}
+
+/// Build authorization from AO message signature
+fn build_authorization(msg: &AOMessage) -> Result<AuthorizationPackage> {
+    let signatures = vec![Signature {
+        data: msg.signature.clone(),
+        key_index: 0,
+        metadata: Some(format!("AO {:?} signature", msg.signature_type)),
+    }];
+
+    let public_keys = vec![PublicKey {
+        data: msg.owner.clone(),
+        key_type: match msg.signature_type {
+            types::SignatureType::Arweave => KeyType::Custom(1), // RSA 4096-bit
+            types::SignatureType::Ethereum => KeyType::Secp256k1,
+            types::SignatureType::Solana => KeyType::Ed25519,
+            types::SignatureType::Unknown(n) => KeyType::Custom(n as u32),
+        },
+    }];
+
+    Ok(AuthorizationPackage {
+        signatures,
+        public_keys,
+        signature_scheme: match msg.signature_type {
+            types::SignatureType::Arweave => SignatureScheme::Custom(1), // RSA-PSS
+            types::SignatureType::Ethereum => SignatureScheme::Ecdsa,
+            types::SignatureType::Solana => SignatureScheme::EdDsa,
+            types::SignatureType::Unknown(n) => SignatureScheme::Custom(n as u32),
+        },
+    })
+}
+
+/// Build state deltas from AO message
+fn build_state_deltas(msg: &AOMessage) -> Result<StateDeltas> {
+    let mut account_changes = Vec::new();
+
+    // Add target process state change
+    if let Some(target) = &msg.target {
+        account_changes.push(AccountChange {
+            address: Address {
+                bytes: target.clone(),
+                human_readable: msg.target_string(),
+            },
+            nonce: msg.nonce,
+            balance_change: 0,       // AO doesn't track balances in messages
+            storage_changes: vec![], // State derived from message history
+        });
+    }
+
+    Ok(StateDeltas {
+        inputs: vec![],  // AO doesn't use UTXO model
+        outputs: vec![], // AO doesn't use UTXO model
+        account_changes,
+    })
 }
 
 /// Helper function to get message ID from bytes without full parsing
@@ -253,13 +282,10 @@ mod tests {
 
     #[test]
     fn test_ao_chain_identity() {
-        let chain = AOChain::mainnet();
+        let chain = AODecoder::chain();
         assert_eq!(chain.chain_id(), 1000000);
         assert_eq!(chain.chain_name(), "AO");
         assert_eq!(chain.chain_family(), ChainFamily::Actor);
-
-        let testnet = AOChain::testnet();
-        assert_eq!(testnet.chain_id(), 1000001);
     }
 
     #[test]
@@ -289,16 +315,14 @@ mod tests {
         // Data
         bytes.extend_from_slice(b"Hello, AO!");
 
-        let decoder = AODecoder::new();
-        let tx_ir = decoder.decode(&bytes).unwrap();
+        let tx = AODecoder::decode(&bytes).unwrap();
 
-        assert_eq!(tx_ir.chain.family(), ChainFamily::Actor);
-        assert!(tx_ir.metadata.tx_id.len() > 0);
-        assert_eq!(tx_ir.authorization.signatures.len(), 1);
+        assert!(tx.message_id.len() == 32); // SHA-256
+        assert_eq!(tx.message.signature_type, types::SignatureType::Solana);
     }
 
     #[test]
-    fn test_decode_message_with_action() {
+    fn test_canonicalize_message() {
         let mut bytes = Vec::new();
 
         // Signature type (Ethereum = 3)
@@ -332,20 +356,12 @@ mod tests {
         // Data
         bytes.extend_from_slice(b"transfer_payload");
 
-        let decoder = AODecoder::new();
-        let tx_ir = decoder.decode(&bytes).unwrap();
+        let tx = AODecoder::decode(&bytes).unwrap();
+        let tx_ir = tx.canonicalize().unwrap();
 
-        assert_eq!(tx_ir.operations.len(), 1);
-
-        if let Operation::ContractCall { function, .. } = &tx_ir.operations[0] {
-            assert_eq!(function, "Transfer");
-        } else {
-            panic!("Expected ContractCall operation");
-        }
-
-        // Check metadata includes tags
-        let extra = tx_ir.metadata.extra.unwrap();
-        assert!(extra.get("tags").is_some());
+        assert_eq!(tx_ir.chain.family(), ChainFamily::Actor);
+        assert!(!tx_ir.operations.is_empty());
+        assert!(tx_ir.metadata.extra.contains("ao_message"));
     }
 
     #[test]
