@@ -3,6 +3,7 @@
 
 // Example transactions for quick testing
 import { EXAMPLES } from './examples.js';
+import { initVerificationDashboard, addVerificationStyles } from './verification.js';
 
 // Global state
 let wasmModule = null;
@@ -61,6 +62,10 @@ async function initWasm() {
         // Dynamically populate example dropdown (scoped to first chain)
         const firstChain = chainSelect.value;
         populateExampleDropdown(firstChain);
+
+        // Initialize verification dashboard
+        addVerificationStyles();
+        initVerificationDashboard(wasmModule);
 
         // Restore saved input for the initially selected chain
         if (firstChain) {
