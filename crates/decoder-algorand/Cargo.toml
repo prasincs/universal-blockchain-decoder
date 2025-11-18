@@ -10,9 +10,15 @@ description = "Algorand transaction decoder for universal-decoder"
 [dependencies]
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+rmp-serde = "1.1"
+base64 = "0.21"
+sha2 = "0.10"
 
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+algonaut = "0.4"
+algonaut_core = "0.4"
+algonaut_transaction = "0.4"
