@@ -1,0 +1,40 @@
+{
+  "name": "Signed Transaction with Nonce and Tip",
+  "description": "Signed balance transfer with non-zero nonce and priority tip",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "is_signed": true,
+  "from_address": {
+    "type": "AccountId32",
+    "address_hex": "0x7d0a7f1df9e6921f897db26f4ea5e4ab14881c7a9f8f8f8f8f8f8f8f8f8f8f"
+  },
+  "signature": {
+    "signature_type": "Sr25519",
+    "signature_bytes": 64
+  },
+  "signed_extensions": {
+    "era": "Immortal",
+    "nonce": 5,
+    "tip": 256
+  },
+  "call": {
+    "pallet_index": 4,
+    "pallet_name": "Balances",
+    "call_index": 0,
+    "call_name": "transfer",
+    "parameters": {
+      "dest": {
+        "type": "AccountId32",
+        "address": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "value": 100000000000
+    }
+  },
+  "metadata": {
+    "source": "Generated from Polkadot SDK extrinsic encoding specification",
+    "chain": "Polkadot Relay Chain",
+    "note": "Demonstrates nonce increment and tip for priority",
+    "nonce_info": "Sequential transaction counter (5th transaction from sender)",
+    "tip_info": "256 units paid to block producer as priority fee"
+  }
+}

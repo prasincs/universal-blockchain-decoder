@@ -1,0 +1,37 @@
+{
+  "description": "Mina Protocol payment with detailed memo",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture demonstrating memo field usage",
+  "format": "Custom JSON + binary encoding",
+  "network": "mainnet",
+  "transaction": {
+    "version": 1,
+    "version_description": "Transaction format version",
+    "nonce": 3,
+    "nonce_description": "Transaction nonce (sequence number)",
+    "from": "B62qpJiAspJsLwFvN7Zu7T5F8h9PrWGu7Lh7SAk2KxsfHXQ7MVNB1QJ",
+    "from_description": "Sender address (base58check encoded)",
+    "to": "B62qrPN5Y5yxFQnqVfVawc6fV8YsZbWvsBGg6HkXBw1tMHkdAZRrVLe",
+    "to_description": "Receiver address (base58check encoded)",
+    "amount": "5000000000",
+    "amount_mina": "5000",
+    "amount_description": "Amount in nanoMINA (5000 MINA total)",
+    "fee": "1000000",
+    "fee_mina": "1",
+    "fee_description": "Transaction fee in nanoMINA",
+    "memo": "Invoice #12345 - Monthly subscription payment",
+    "memo_description": "Business reference: invoice number and payment type",
+    "validUntil": 4294967295,
+    "validUntil_description": "Latest timestamp transaction is valid",
+    "networkId": "mainnet"
+  },
+  "expected_properties": {
+    "transaction_type": "payment",
+    "network": "mainnet",
+    "sender_count": 1,
+    "receiver_count": 1,
+    "total_amount": "5000000000",
+    "total_fee": "1000000",
+    "memo_length": 45
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "description": "Simple ADA transfer on Cardano mainnet",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture for initial decoder testing",
+  "format": "CBOR (Concise Binary Object Representation)",
+  "era": "Shelley",
+  "transaction": {
+    "type": 0,
+    "inputs": [
+      {
+        "transaction_id": "f8d9459f007df845c666c4a4c3b6f1e8d9459f007df845c666c4a4c3b6f1e8d9",
+        "index": 0,
+        "description": "Previous transaction output being spent"
+      }
+    ],
+    "outputs": [
+      {
+        "address": "addr1qy2qxvf547n9k26r0cdpl245rqvfam467pcnghettw8x8nshsf2uqndgwyg24",
+        "amount": 2000000,
+        "amount_ada": "2.0",
+        "assets": []
+      }
+    ],
+    "fee": 200000,
+    "fee_ada": "0.2",
+    "ttl": 5000000,
+    "ttl_description": "Time-to-live (absolute slot number)",
+    "validity_start": 4990000,
+    "validity_start_description": "Earliest slot this transaction is valid"
+  },
+  "expected_properties": {
+    "inputs_count": 1,
+    "outputs_count": 1,
+    "total_input_value": "Should match previous tx output",
+    "total_output_value": 2000000,
+    "total_fee": 200000
+  }
+}

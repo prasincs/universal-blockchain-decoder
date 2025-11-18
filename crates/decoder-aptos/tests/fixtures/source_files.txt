@@ -1,0 +1,7 @@
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/forge/src/interface/aptos.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/smoke-test/src/rosetta.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/smoke-test/src/test_utils.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/smoke-test/src/transaction.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/smoke-test/src/rest_api.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/smoke-test/src/keyless.rs
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/aptos-core/testsuite/fuzzer/fuzz/fuzz_targets/signed_transaction_deserialize.rs

@@ -1,0 +1,46 @@
+{
+  "description": "Multi-asset transaction with native tokens on Cardano",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture demonstrating Cardano multi-asset capability",
+  "format": "CBOR (Concise Binary Object Representation)",
+  "era": "Shelley with native tokens (Mary era feature)",
+  "transaction": {
+    "type": 0,
+    "inputs": [
+      {
+        "transaction_id": "a7c5b8e2f1d9e3a6b4c7e9f2d5a8b1c4e7a9d2f5b8c1e4a7d9e2f5a8b1c4",
+        "index": 1,
+        "description": "Previous transaction output being spent"
+      }
+    ],
+    "outputs": [
+      {
+        "address": "addr1qy2qxvf547n9k26r0cdpl245rqvfam467pcnghettw8x8nshsf2uqndgwyg24",
+        "amount": 1500000,
+        "amount_ada": "1.5",
+        "assets": [
+          {
+            "policy_id": "7eae28f74e6ad802187518ea87c33b2e0e4c9a6e05e5a0f3e9b8c7d6a5e4d3c2",
+            "policy_id_description": "NFT/Token policy identifier",
+            "asset_name": "5465737420546f6b656e",
+            "asset_name_utf8": "Test Token",
+            "quantity": 1000,
+            "quantity_description": "Number of tokens transferred"
+          }
+        ]
+      }
+    ],
+    "fee": 250000,
+    "fee_ada": "0.25",
+    "ttl": 5100000,
+    "validity_start": 5090000
+  },
+  "expected_properties": {
+    "inputs_count": 1,
+    "outputs_count": 1,
+    "ada_output": 1500000,
+    "native_token_count": 1,
+    "token_quantity": 1000,
+    "total_fee": 250000
+  }
+}

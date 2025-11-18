@@ -1,0 +1,37 @@
+{
+  "description": "Mina Protocol stake delegation transaction",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture for consensus participation",
+  "format": "Custom JSON + binary encoding",
+  "network": "testnet",
+  "transaction": {
+    "version": 1,
+    "version_description": "Transaction format version",
+    "nonce": 2,
+    "nonce_description": "Transaction nonce (sequence number)",
+    "from": "B62qrPN5Y5yxFQnqVfVawc6fV8YsZbWvsBGg6HkXBw1tMHkdAZRrVLe",
+    "from_description": "Account delegating stake",
+    "delegation": {
+      "delegator": "B62qrPN5Y5yxFQnqVfVawc6fV8YsZbWvsBGg6HkXBw1tMHkdAZRrVLe",
+      "delegator_description": "Account whose stake is being delegated",
+      "delegatee": "B62qpJiAspJsLwFvN7Zu7T5F8h9PrWGu7Lh7SAk2KxsfHXQ7MVNB1QJ",
+      "delegatee_description": "Block producer receiving delegated stake",
+      "fee": "1000000",
+      "fee_mina": "1",
+      "fee_description": "Transaction fee in nanoMINA",
+      "nonce": 2
+    },
+    "memo": "Delegate stake",
+    "memo_description": "Text memo explaining delegation",
+    "validUntil": 4294967295,
+    "validUntil_description": "Latest timestamp transaction is valid",
+    "networkId": "testnet"
+  },
+  "expected_properties": {
+    "transaction_type": "delegation",
+    "network": "testnet",
+    "delegator": "B62qrPN5Y5yxFQnqVfVawc6fV8YsZbWvsBGg6HkXBw1tMHkdAZRrVLe",
+    "delegatee": "B62qpJiAspJsLwFvN7Zu7T5F8h9PrWGu7Lh7SAk2KxsfHXQ7MVNB1QJ",
+    "total_fee": "1000000"
+  }
+}

@@ -1,0 +1,17 @@
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/math/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/tools/cosmovisor/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/tools/confix/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/client/keys/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/client/v2/autocli/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/client/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/testutil/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/orm/model/ormtable/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/orm/model/ormdb/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/tests/e2e/tx/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/x/tx/signing/textual/internal/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/x/tx/signing/textual/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/x/genutil/types/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/crypto/hd/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/crypto/keyring/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/depinject/testdata
+/home/user/universal-blockchain-decoder/tmp/fixture_fetch/cosmos-sdk/fuzz/tests/testdata

@@ -1,0 +1,33 @@
+{
+  "description": "Algorand asset transfer (Algorand Standard Asset - ASA)",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture demonstrating ASA/token transfers",
+  "format": "MessagePack (binary serialization)",
+  "network": "Testnet",
+  "transaction": {
+    "snd": "72f1991d4f6d643bbc69ee49fa7286926d7f002b5f113f88becc4baeb78f820e",
+    "snd_description": "Sender address",
+    "rcv": "932b6bd8e9f88267ba24d00d7d5a5c6f1d41a1e5f4a6b8c2d7e9f1a3b5c7d9",
+    "rcv_description": "Receiver address",
+    "xaid": 12345,
+    "xaid_description": "Asset ID (Algorand Standard Asset)",
+    "aamt": 500000,
+    "aamt_description": "Asset amount (quantity of tokens)",
+    "fee": 1000,
+    "fee_algo": 0.001,
+    "fee_description": "Transaction fee in microAlgos",
+    "fv": 1000,
+    "fv_description": "First valid round",
+    "lv": 2000,
+    "lv_description": "Last valid round",
+    "type": "axfer"
+  },
+  "expected_properties": {
+    "transaction_type": "asset_transfer",
+    "asset_id": 12345,
+    "asset_amount": 500000,
+    "sender_count": 1,
+    "receiver_count": 1,
+    "total_fee": 1000
+  }
+}

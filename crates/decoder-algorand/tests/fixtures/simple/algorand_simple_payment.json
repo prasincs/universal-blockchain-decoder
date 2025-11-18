@@ -1,0 +1,34 @@
+{
+  "description": "Simple Algorand payment transaction",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture for initial decoder testing",
+  "format": "MessagePack (binary serialization)",
+  "network": "Testnet",
+  "transaction": {
+    "snd": "72f1991d4f6d643bbc69ee49fa7286926d7f002b5f113f88becc4baeb78f820e",
+    "snd_description": "Sender address (32-byte public key in hex)",
+    "rcv": "932b6bd8e9f88267ba24d00d7d5a5c6f1d41a1e5f4a6b8c2d7e9f1a3b5c7d9",
+    "rcv_description": "Receiver address (32-byte public key in hex)",
+    "amt": 1000000,
+    "amt_algo": 1.0,
+    "amt_description": "Amount in microAlgos (1 ALGO = 1,000,000 microAlgos)",
+    "fee": 1000,
+    "fee_algo": 0.001,
+    "fee_description": "Transaction fee in microAlgos",
+    "fv": 1000,
+    "fv_description": "First valid round (earliest block this is valid on)",
+    "lv": 2000,
+    "lv_description": "Last valid round (latest block this is valid on)",
+    "note": "5061796d656e7420666f72207365727669636573",
+    "note_utf8": "Payment for services",
+    "type": "pay"
+  },
+  "expected_properties": {
+    "transaction_type": "payment",
+    "sender_count": 1,
+    "receiver_count": 1,
+    "total_amount": 1000000,
+    "total_fee": 1000,
+    "validity_rounds": 1000
+  }
+}

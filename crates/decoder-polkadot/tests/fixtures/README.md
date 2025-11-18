@@ -2,13 +2,30 @@
 
 This directory contains real mainnet-style Polkadot, Kusama, and parachain transaction data for comprehensive integration testing.
 
-## Fixture Format
+1. **Polkadot SDK Test Vectors**
+   - Repository: https://github.com/paritytech/polkadot-sdk
+   - Version: polkadot-v1.7.0
+   - Location: `substrate/frame/*/src/tests.rs`
 
 Each fixture consists of two files:
 - `.hex` - Raw SCALE-encoded extrinsic bytes (hex string, no 0x prefix)
 - `.json` - Expected values and metadata for validation
 
-## Sources
+## Extrinsic Types
+
+- Signed vs Unsigned
+- Balance transfers
+- Staking operations
+- Governance votes
+- XCM (cross-chain) messages
+
+## Format
+
+All fixtures are stored as:
+- `.scale` - SCALE-encoded extrinsic (hex or binary)
+- `.json` - Expected decoded output with metadata
+
+## License
 
 All transactions are mainnet-style SCALE-encoded extrinsics that can be verified on:
 - **Polkadot.js Apps**: https://polkadot.js.org/apps/

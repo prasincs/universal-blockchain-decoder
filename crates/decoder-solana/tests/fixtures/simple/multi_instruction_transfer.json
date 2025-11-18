@@ -1,0 +1,75 @@
+{
+  "type": "legacy_transaction",
+  "name": "multi_instruction_transfer",
+  "description": "Transfer with multiple instructions (allocate + assign + transfer)",
+  "accounts": {
+    "0": {
+      "address": "Alice (payer)",
+      "is_signer": true,
+      "is_writable": true,
+      "role": "payer"
+    },
+    "1": {
+      "address": "NewAccount",
+      "is_signer": true,
+      "is_writable": true,
+      "role": "new_account_being_created"
+    },
+    "2": {
+      "address": "Bob",
+      "is_signer": false,
+      "is_writable": true
+    },
+    "3": {
+      "address": "System Program",
+      "is_signer": false,
+      "is_writable": false,
+      "public_key": "11111111111111111111111111111111"
+    }
+  },
+  "message": {
+    "header": {
+      "num_required_signatures": 2,
+      "num_readonly_signed_accounts": 0,
+      "num_readonly_unsigned_accounts": 0
+    },
+    "account_keys": [
+      "Alice",
+      "NewAccount",
+      "Bob",
+      "System Program"
+    ],
+    "recent_blockhash": "11111111111111111111111111111111",
+    "instructions": [
+      {
+        "program_id_index": 3,
+        "accounts": [
+          1
+        ],
+        "instruction_type": "allocate",
+        "lamports": 1000000000
+      },
+      {
+        "program_id_index": 3,
+        "accounts": [
+          1,
+          3
+        ],
+        "instruction_type": "assign"
+      },
+      {
+        "program_id_index": 3,
+        "accounts": [
+          0,
+          2
+        ],
+        "instruction_type": "transfer",
+        "lamports": 5000000
+      }
+    ]
+  },
+  "signatures": [
+    "[Alice signature]",
+    "[NewAccount signature]"
+  ]
+}

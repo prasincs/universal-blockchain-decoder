@@ -1,0 +1,36 @@
+{
+  "description": "Simple Mina Protocol payment transaction",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture for initial decoder testing",
+  "format": "Custom JSON + binary encoding",
+  "network": "testnet",
+  "transaction": {
+    "version": 1,
+    "version_description": "Transaction format version",
+    "nonce": 1,
+    "nonce_description": "Transaction nonce (sequence number from account)",
+    "from": "B62qrPN5Y5yxFQnqVfVawc6fV8YsZbWvsBGg6HkXBw1tMHkdAZRrVLe",
+    "from_description": "Sender address (base58check encoded)",
+    "to": "B62qnzbXQTCf8mwwcsSf9f7vPb1Z5Fde3YEn8LTmXXhDXYWhkgSqUQb",
+    "to_description": "Receiver address (base58check encoded)",
+    "amount": "1000000000",
+    "amount_mina": "1000",
+    "amount_description": "Amount in nanoMINA (1 MINA = 1,000,000,000 nanoMINA)",
+    "fee": "1000000",
+    "fee_mina": "1",
+    "fee_description": "Transaction fee in nanoMINA",
+    "memo": "Test payment",
+    "memo_description": "Arbitrary text memo (max 32 bytes on-chain)",
+    "validUntil": 4294967295,
+    "validUntil_description": "Latest timestamp transaction is valid",
+    "networkId": "testnet"
+  },
+  "expected_properties": {
+    "transaction_type": "payment",
+    "network": "testnet",
+    "sender_count": 1,
+    "receiver_count": 1,
+    "total_amount": "1000000000",
+    "total_fee": "1000000"
+  }
+}
