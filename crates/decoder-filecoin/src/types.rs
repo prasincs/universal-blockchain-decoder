@@ -279,13 +279,19 @@ impl FilecoinSignedMessage {
 
     /// Calculate message CID (Content Identifier)
     ///
-    /// Filecoin uses CIDs for transaction hashes, which are based on Blake2b-256
+    /// Filecoin uses CIDs for transaction hashes, which are based on Blake2b-256.
+    /// This computes the Blake2b-256 hash of the raw transaction bytes.
+    ///
+    /// Note: Full CID encoding includes multicodec prefix (0x12) and multibase encoding.
+    /// For transaction hashing purposes, the raw Blake2b-256 hash is sufficient.
     pub fn calculate_cid(&self) -> Vec<u8> {
-        use sha2::{Digest, Sha256};
-        // Note: Real implementation would use Blake2b-256 and proper CID encoding
-        // For now, using SHA-256 as placeholder
-        // TODO: Add blake2 dependency and implement proper CID calculation
-        Sha256::digest(&self.raw_bytes).to_vec()
+        use blake2::digest::consts::U32;
+        use blake2::{Blake2b, Digest};
+
+        // Blake2b with 32-byte (256-bit) output
+        let mut hasher = Blake2b::<U32>::new();
+        hasher.update(&self.raw_bytes);
+        hasher.finalize().to_vec()
     }
 }
 

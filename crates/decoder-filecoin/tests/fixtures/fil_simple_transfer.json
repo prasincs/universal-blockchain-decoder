@@ -1,0 +1,39 @@
+{
+  "description": "Simple Filecoin transfer (method 0)",
+  "message": {
+    "version": 0,
+    "to": {
+      "protocol": "id",
+      "payload_hex": "00"
+    },
+    "from": {
+      "protocol": "id",
+      "payload_hex": "02"
+    },
+    "sequence": 0,
+    "value": "0",
+    "value_fil": "0",
+    "gas_limit": 1000000,
+    "gas_fee_cap": "0",
+    "gas_premium": "0",
+    "method_num": 0,
+    "params_hex": ""
+  },
+  "signature": {
+    "type": "secp256k1",
+    "type_code": 1,
+    "data_hex": "00"
+  },
+  "cbor_structure": {
+    "outer": "array[Message, Signature]",
+    "message": "array[10 fields]",
+    "signature": "array[type, data]"
+  },
+  "notes": [
+    "Minimal valid transfer transaction",
+    "Method 0 indicates simple value transfer",
+    "Empty value (0 FIL) for testing purposes",
+    "ID addresses: from=f0/2, to=f0/0",
+    "Signature is minimal placeholder for structure testing"
+  ]
+}

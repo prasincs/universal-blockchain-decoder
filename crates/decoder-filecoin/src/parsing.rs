@@ -187,7 +187,7 @@ mod tests {
         let cbor_zero = vec![0x40]; // CBOR empty byte string
         let mut decoder = Decoder::new(&cbor_zero);
         let result = parse_bigint(&mut decoder).unwrap();
-        assert_eq!(result, vec![]);
+        assert_eq!(result, Vec::<u8>::new());
     }
 
     #[test]

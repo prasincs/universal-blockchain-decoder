@@ -1,0 +1,39 @@
+{
+  "description": "Filecoin actor method call (method 1)",
+  "message": {
+    "version": 0,
+    "to": {
+      "protocol": "id",
+      "payload_hex": "00"
+    },
+    "from": {
+      "protocol": "id",
+      "payload_hex": "02"
+    },
+    "sequence": 1,
+    "value": "0",
+    "value_fil": "0",
+    "gas_limit": 1000000,
+    "gas_fee_cap": "0",
+    "gas_premium": "0",
+    "method_num": 1,
+    "params_hex": "4141414141"
+  },
+  "signature": {
+    "type": "bls",
+    "type_code": 2,
+    "data_hex": "0100"
+  },
+  "cbor_structure": {
+    "outer": "array[Message, Signature]",
+    "message": "array[10 fields]",
+    "signature": "array[type, data]"
+  },
+  "notes": [
+    "Actor method call with method_num=1",
+    "Non-empty params field (5 bytes: AAAAA)",
+    "Uses BLS signature type (type 2)",
+    "ID addresses: from=f0/2, to=f0/0",
+    "Sequence = 1 (second transaction from this account)"
+  ]
+}

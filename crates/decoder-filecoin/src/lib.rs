@@ -190,8 +190,6 @@ impl TxHashable for FilecoinTransaction {
 
     fn compute_hash(&self) -> Vec<u8> {
         // Filecoin uses CIDs (Content Identifiers) based on Blake2b-256
-        // For now, using the calculate_cid method which uses SHA-256 as placeholder
-        // TODO: Implement proper CID calculation with Blake2b-256
         self.signed_message.calculate_cid()
     }
 }

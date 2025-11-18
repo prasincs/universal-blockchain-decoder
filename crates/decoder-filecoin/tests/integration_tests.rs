@@ -104,20 +104,100 @@ fn test_filecoin_message_is_transfer() {
     assert!(!method_call_msg.is_transfer());
 }
 
-// TODO: Add tests with real Filecoin transaction fixtures
-// These would be CBOR-encoded signed messages from the Filecoin mainnet
-//
-// Example test structure:
-// #[test]
-// fn test_decode_real_filecoin_transfer() {
-//     // Real Filecoin transaction bytes (CBOR-encoded)
-//     let tx_bytes = include_bytes!("fixtures/filecoin_transfer.cbor");
-//
-//     let tx = FilecoinDecoder::decode(tx_bytes).unwrap();
-//     assert!(tx.message().is_transfer());
-//
-//     // Verify canonicalization
-//     let tx_ir = tx.canonicalize().unwrap();
-//     assert_eq!(tx_ir.chain.chain_name, "Filecoin");
-//     assert!(matches!(tx_ir.operations[0], Operation::Transfer(_)));
-// }
+// Fixture tests with real CBOR-encoded transactions
+
+#[test]
+fn test_decode_simple_transfer_fixture() {
+    // Load raw transaction bytes from fixture
+    let tx_hex = include_str!("fixtures/fil_simple_transfer.hex");
+    let tx_bytes = hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
+
+    // Decode transaction
+    let tx = FilecoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
+
+    // Verify message fields
+    assert_eq!(tx.message().version, 0);
+    assert_eq!(tx.message().method_num, 0); // Transfer
+    assert_eq!(tx.message().sequence, 0);
+    assert!(tx.message().is_transfer());
+
+    // Verify addresses
+    assert_eq!(tx.message().from.protocol, AddressProtocol::Id);
+    assert_eq!(tx.message().to.protocol, AddressProtocol::Id);
+
+    // Verify signature
+    assert_eq!(tx.signature().sig_type, SignatureType::Secp256k1);
+
+    // Verify canonicalization
+    let tx_ir = tx.canonicalize().expect("Failed to canonicalize");
+    assert_eq!(tx_ir.metadata.size, tx_bytes.len());
+
+    // Verify operations
+    assert!(!tx_ir.operations.is_empty());
+    assert!(matches!(tx_ir.operations[0], Operation::Transfer(_)));
+
+    // Verify hash calculation (Blake2b-256)
+    let hash = tx.hash();
+    assert_eq!(hash.len(), 32); // Blake2b-256 produces 32 bytes
+}
+
+#[test]
+fn test_decode_actor_call_fixture() {
+    // Load raw transaction bytes from fixture
+    let tx_hex = include_str!("fixtures/fil_actor_call.hex");
+    let tx_bytes = hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
+
+    // Decode transaction
+    let tx = FilecoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
+
+    // Verify message fields
+    assert_eq!(tx.message().version, 0);
+    assert_eq!(tx.message().method_num, 1); // Actor method call
+    assert_eq!(tx.message().sequence, 1);
+    assert!(!tx.message().is_transfer()); // Not a simple transfer
+
+    // Verify params are present
+    assert!(!tx.message().params.is_empty());
+
+    // Verify signature type
+    assert_eq!(tx.signature().sig_type, SignatureType::Bls);
+
+    // Verify canonicalization
+    let tx_ir = tx.canonicalize().expect("Failed to canonicalize");
+
+    // Verify operations (should be ContractCall for actor methods)
+    assert!(!tx_ir.operations.is_empty());
+    assert!(matches!(tx_ir.operations[0], Operation::ContractCall(_)));
+
+    // Verify hash calculation
+    let hash = tx.hash();
+    assert_eq!(hash.len(), 32); // Blake2b-256 produces 32 bytes
+}
+
+#[test]
+fn test_fixture_validation() {
+    // Test both fixtures pass validation
+    let transfer_hex = include_str!("fixtures/fil_simple_transfer.hex");
+    let transfer_bytes = hex::decode(transfer_hex.trim()).unwrap();
+    assert!(FilecoinDecoder::validate_format(&transfer_bytes).is_ok());
+
+    let actor_hex = include_str!("fixtures/fil_actor_call.hex");
+    let actor_bytes = hex::decode(actor_hex.trim()).unwrap();
+    assert!(FilecoinDecoder::validate_format(&actor_bytes).is_ok());
+}
+
+#[test]
+fn test_fixture_hash_determinism() {
+    // Ensure hash calculation is deterministic
+    let tx_hex = include_str!("fixtures/fil_simple_transfer.hex");
+    let tx_bytes = hex::decode(tx_hex.trim()).unwrap();
+
+    let tx1 = FilecoinDecoder::decode(&tx_bytes).unwrap();
+    let tx2 = FilecoinDecoder::decode(&tx_bytes).unwrap();
+
+    let hash1 = tx1.hash();
+    let hash2 = tx2.hash();
+
+    assert_eq!(hash1, hash2);
+    assert_eq!(hash1.len(), 32); // Blake2b-256
+}
