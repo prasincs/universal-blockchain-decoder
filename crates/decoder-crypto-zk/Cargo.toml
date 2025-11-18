@@ -16,6 +16,10 @@ thiserror = { workspace = true }
 # This provides the STARK field (252-bit) used across Starknet ecosystem
 starknet-types-core = { version = "0.2.0", default-features = false, features = ["curve", "hash", "serde"] }
 
+# Goldilocks field for Polygon zkEVM
+# Note: Using winterfell which has stable Rust support
+winterfell = {version = "0.10", default-features = false, features = ["std"] }
+
 # Big integer arithmetic (used by vendored crypto)
 crypto-bigint = { version = "0.5.1", default-features = false, features = ["generic-array"] }
 num-bigint = { version = "0.4.3", default-features = false }
