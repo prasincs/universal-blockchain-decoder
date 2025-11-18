@@ -90,8 +90,9 @@ pub mod prelude {
         PrivateAddress, RangeProofSystem, ViewingKey, ViewingKeyType,
     };
     pub use crate::traits::{
-        BatchDecoder, Canonicalizer, ChainDecoder, DecoderPlugin, DoubleSha256, FormallyVerifiable,
-        HashAlgorithm, Keccak256Hash, Sha256Hash, TxHashable, TxVerifier, TxVersion,
+        BatchDecoder, Canonicalizer, ChainDecoder, ChainEncoder, DecoderPlugin, DoubleSha256,
+        FormallyVerifiable, HashAlgorithm, Keccak256Hash, Sha256Hash, TxHashable, TxVerifier,
+        TxVersion,
     };
 }
 

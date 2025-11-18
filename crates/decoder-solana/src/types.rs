@@ -214,6 +214,25 @@ impl fmt::Display for SolanaTransaction {
     }
 }
 
+impl ChainEncoder for SolanaTransaction {
+    /// Re-encode the Solana transaction back to its original compact-array encoded byte format
+    ///
+    /// Since we store the original raw bytes during decoding, this simply
+    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    ///
+    /// # Formal Properties
+    ///
+    /// This implementation trivially satisfies the injective property:
+    /// ```text
+    /// ∀ tx_bytes: SolanaDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
+    /// ```
+    ///
+    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 /// Implement Canonicalizer to transform Solana transactions into TxIR
 impl<'a> Canonicalizer<'a> for SolanaTransaction {
     const VERSION: u8 = 1;

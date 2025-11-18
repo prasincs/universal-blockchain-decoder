@@ -35,7 +35,10 @@ pub fn parse_signed_message(raw_bytes: &[u8]) -> Result<FilecoinTransaction> {
 
     let signed_message = FilecoinSignedMessage::new(message, signature, raw_bytes.to_vec());
 
-    Ok(FilecoinTransaction { signed_message })
+    Ok(FilecoinTransaction {
+        signed_message,
+        raw_bytes: raw_bytes.to_vec(),
+    })
 }
 
 /// Parse a Filecoin message from CBOR

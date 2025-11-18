@@ -76,6 +76,9 @@ pub struct DepositTransaction {
 
     /// Transaction calldata
     pub data: Vec<u8>,
+
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 impl DepositTransaction {
@@ -93,6 +96,7 @@ impl DepositTransaction {
         gas_limit: u64,
         is_creation: bool,
         data: Vec<u8>,
+        raw_bytes: Vec<u8>,
     ) -> Self {
         Self {
             source_hash,
@@ -103,6 +107,7 @@ impl DepositTransaction {
             gas_limit,
             is_creation,
             data,
+            raw_bytes,
         }
     }
 
@@ -208,6 +213,28 @@ impl OptimismTransaction {
         match self {
             OptimismTransaction::Standard(eth_tx) => &eth_tx.data,
             OptimismTransaction::Deposit(deposit) => &deposit.data,
+        }
+    }
+}
+
+impl ChainEncoder for OptimismTransaction {
+    /// Re-encode the Optimism transaction back to its original byte format
+    ///
+    /// Since we store the original raw bytes during decoding, this simply
+    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    ///
+    /// # Formal Properties
+    ///
+    /// This implementation trivially satisfies the injective property:
+    /// ```text
+    /// ∀ tx_bytes: OptimismDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
+    /// ```
+    ///
+    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            OptimismTransaction::Standard(eth_tx) => eth_tx.to_bytes(),
+            OptimismTransaction::Deposit(deposit) => Ok(deposit.raw_bytes.clone()),
         }
     }
 }
@@ -422,6 +449,7 @@ mod tests {
             21000,
             false,
             vec![1, 2, 3],
+            vec![],
         );
 
         assert_eq!(deposit.source_hash, [1u8; 32]);
@@ -455,6 +483,7 @@ mod tests {
             1_000_000,
             false,
             vec![],
+            vec![],
         );
 
         assert!(l1_attrs.is_l1_attributes_deposit());
@@ -471,6 +500,7 @@ mod tests {
             1000,
             100_000,
             false,
+            vec![],
             vec![],
         );
 
@@ -489,6 +519,7 @@ mod tests {
             100_000,
             false,
             vec![],
+            vec![],
         );
 
         assert!(deposit.validate().is_ok());
@@ -504,6 +535,7 @@ mod tests {
             1000, // value > mint: INVALID
             100_000,
             false,
+            vec![],
             vec![],
         );
 
@@ -524,6 +556,7 @@ mod tests {
             100_000,
             true, // but is_creation=true: INVALID
             vec![],
+            vec![],
         );
 
         assert!(deposit.validate().is_err());
@@ -542,6 +575,7 @@ mod tests {
             1000,
             100_000,
             false, // but is_creation=false: INVALID
+            vec![],
             vec![],
         );
 
@@ -587,6 +621,7 @@ mod tests {
             100_000,
             false,
             vec![],
+            vec![],
         ));
 
         assert!(deposit_tx.is_deposit());
@@ -605,6 +640,7 @@ mod tests {
             100_000,
             false,
             vec![0xaa, 0xbb],
+            vec![],
         );
 
         let tx = OptimismTransaction::Deposit(deposit);

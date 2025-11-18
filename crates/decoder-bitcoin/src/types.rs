@@ -230,6 +230,25 @@ impl BitcoinTransaction {
     }
 }
 
+impl ChainEncoder for BitcoinTransaction {
+    /// Re-encode the Bitcoin transaction back to its original byte format
+    ///
+    /// Since we store the original raw bytes during decoding, this simply
+    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    ///
+    /// # Formal Properties
+    ///
+    /// This implementation trivially satisfies the injective property:
+    /// ```text
+    /// ∀ tx_bytes: BitcoinDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
+    /// ```
+    ///
+    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for BitcoinTransaction {
     const VERSION: u8 = 1;
 

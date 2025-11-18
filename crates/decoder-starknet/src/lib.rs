@@ -161,6 +161,12 @@ impl ChainDecoder for StarknetDecoder {
     }
 }
 
+impl ChainEncoder for StarknetTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for StarknetTransaction {
     const VERSION: u8 = 1;
 

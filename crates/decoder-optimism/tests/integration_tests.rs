@@ -392,6 +392,7 @@ fn test_deposit_canonicalization() {
         100_000,
         false,
         vec![1, 2, 3, 4],
+        vec![],
     );
 
     let tx = OptimismTransaction::Deposit(deposit);

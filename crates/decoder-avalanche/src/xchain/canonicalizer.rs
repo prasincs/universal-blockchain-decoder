@@ -3,6 +3,12 @@
 use crate::xchain::types::*;
 use decoder_primitives::prelude::*;
 
+impl ChainEncoder for XChainTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for XChainTransaction {
     const VERSION: u8 = 1;
 

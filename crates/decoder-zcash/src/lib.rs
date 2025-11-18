@@ -109,7 +109,7 @@ impl ChainDecoder for ZcashDecoder {
                 // Sapling or later (Overwinter bit set)
                 // Phase 1: Only transparent transactions
                 // Phase 2+: Full Sapling support
-                parse_zcash_v4_transaction(&mut cursor, version, version_group_id)?
+                parse_zcash_v4_transaction(&mut cursor, version, version_group_id, raw_bytes)?
             }
             5 => {
                 // Orchard (NU5+)

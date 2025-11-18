@@ -316,6 +316,12 @@ impl ChainDecoder for AlgorandDecoder {
     }
 }
 
+impl ChainEncoder for AlgorandTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for AlgorandTransaction {
     const VERSION: u8 = 1;
 

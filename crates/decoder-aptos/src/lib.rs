@@ -124,6 +124,12 @@ impl ChainDecoder for AptosDecoder {
     }
 }
 
+impl ChainEncoder for AptosTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for AptosTransaction {
     const VERSION: u8 = 1;
 

@@ -11,11 +11,12 @@ use crate::ir::TxIR;
 ///
 /// This trait is the entry point for decoding raw transaction bytes from a specific
 /// blockchain into a chain-specific structured type. The associated type `TxSpecific`
-/// must implement the `Canonicalizer` trait to enable transformation into the universal TxIR.
+/// must implement the `Canonicalizer` trait to enable transformation into the universal TxIR,
+/// and must also implement `ChainEncoder` to support re-encoding back to original bytes.
 ///
 /// # Type Parameters
 ///
-/// - `TxSpecific`: The chain-specific transaction type that can be canonicalized
+/// - `TxSpecific`: The chain-specific transaction type that can be canonicalized and re-encoded
 /// - `Chain`: The chain identity type implementing `ChainIdentity`
 ///
 /// # Example
@@ -42,8 +43,8 @@ use crate::ir::TxIR;
 /// }
 /// ```
 pub trait ChainDecoder {
-    /// The chain-specific transaction type that implements Canonicalizer
-    type TxSpecific: for<'a> Canonicalizer<'a>;
+    /// The chain-specific transaction type that implements Canonicalizer and ChainEncoder
+    type TxSpecific: for<'a> Canonicalizer<'a> + ChainEncoder;
 
     /// The chain identity type
     type Chain: ChainIdentity;
@@ -60,6 +61,15 @@ pub trait ChainDecoder {
     /// # Returns
     ///
     /// * `Result<Self::TxSpecific>` - The decoded chain-specific transaction or an error
+    ///
+    /// # Formal Properties
+    ///
+    /// This method must satisfy the injective property (roundtrip):
+    /// ```text
+    /// ∀ tx_bytes: Self::decode(tx_bytes)?.to_bytes() == tx_bytes
+    /// ```
+    ///
+    /// This property is verified through property-based testing.
     fn decode(raw_bytes: &[u8]) -> Result<Self::TxSpecific>;
 
     /// Optional: Validate the raw bytes before decoding
@@ -104,6 +114,90 @@ pub trait Canonicalizer<'a> {
     fn validate(&self) -> Result<()> {
         Ok(())
     }
+}
+
+/// Trait for re-encoding chain-specific transactions back to their original byte format.
+///
+/// **CRITICAL REQUIREMENT**: This trait enables verification of the injective property.
+/// Every chain decoder MUST implement this trait to support roundtrip verification.
+///
+/// # Purpose
+///
+/// This trait is used for:
+/// - ✅ Verifying lossless decoding (roundtrip property)
+/// - ✅ Forensic reconstruction of exact original bytes
+/// - ✅ Formal verification of codec correctness
+/// - ✅ Integrity checks and auditing
+///
+/// This is **NOT** for transaction construction (building new transactions from scratch).
+///
+/// # Formal Properties
+///
+/// Implementations MUST satisfy the injective property:
+/// ```text
+/// ∀ tx_bytes: ChainDecoder::decode(tx_bytes)?.to_bytes() == tx_bytes
+/// ```
+///
+/// This property is verified through mandatory property-based testing.
+///
+/// # Example
+///
+/// ```ignore
+/// use universal_decoder_core::prelude::*;
+///
+/// // Decode transaction
+/// let decoded_tx = BitcoinDecoder::decode(original_bytes)?;
+///
+/// // Re-encode back to original format
+/// let re_encoded = decoded_tx.to_bytes()?;
+///
+/// // Verify roundtrip (injective property)
+/// assert_eq!(original_bytes, re_encoded);
+/// ```
+///
+/// # Implementation Requirements
+///
+/// 1. **Determinism**: `to_bytes()` must always produce the same output for the same input
+/// 2. **Exact Reconstruction**: Must produce byte-for-byte identical output to original input
+/// 3. **No External Dependencies**: Must not require chain state, network calls, or external data
+/// 4. **Panic-Freedom**: Must return `Result::Err` on failure, never panic
+///
+/// # Example Implementation
+///
+/// ```ignore
+/// impl ChainEncoder for BitcoinTransaction {
+///     fn to_bytes(&self) -> Result<Vec<u8>> {
+///         // For structures that store original bytes, simply return them
+///         Ok(self.raw_bytes.clone())
+///
+///         // For structures that don't store original bytes,
+///         // reconstruct by serializing each field
+///         // (this is more complex but still stateless and deterministic)
+///     }
+/// }
+/// ```
+pub trait ChainEncoder {
+    /// Re-encode the transaction back to its original chain-specific byte format
+    ///
+    /// This method MUST produce the exact same bytes that were originally decoded.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<u8>>` - The re-encoded transaction bytes, or an error if encoding fails
+    ///
+    /// # Errors
+    ///
+    /// Should return an error if:
+    /// - The transaction structure is invalid (though this should be caught during decode)
+    /// - Internal data is inconsistent
+    ///
+    /// # Formal Guarantees (Verus)
+    ///
+    /// ```text
+    /// ensures(result.is_ok() ==> decode(result.unwrap())? == self)
+    /// ensures(forall |tx_bytes| decode(tx_bytes)?.to_bytes()? == tx_bytes)
+    /// ```
+    fn to_bytes(&self) -> Result<Vec<u8>>;
 }
 
 /// Trait for computing canonical byte representation of transactions.

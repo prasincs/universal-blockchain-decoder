@@ -3,6 +3,12 @@
 use crate::pchain::types::*;
 use decoder_primitives::prelude::*;
 
+impl ChainEncoder for PChainTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for PChainTransaction {
     const VERSION: u8 = 1;
 

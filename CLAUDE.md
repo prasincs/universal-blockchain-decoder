@@ -35,37 +35,44 @@ Create a **small, reviewable, formally verifiable core library** that serves as 
 
 ---
 
-## Project Scope: Decoding Only 🎯
+## Project Scope: Decoding & Verification 🎯
 
-**IMPORTANT**: This project is **exclusively focused on transaction decoding and analysis**.
+**IMPORTANT**: This project focuses on **transaction decoding, analysis, and codec verification**.
 
 **In Scope** ✅:
-- Decoding blockchain transactions (chain-specific bytes → TxIR)
-- Canonical serialization for hashing/analysis (TxIR → Borsh bytes)
-- Transaction validation and structural analysis
-- Signature verification (checking existing signatures)
-- Chain-agnostic intermediate representation (TxIR)
+- **Decoding** blockchain transactions (chain-specific bytes → TxSpecific → TxIR)
+- **Re-encoding for verification** (TxSpecific → chain-specific bytes)
+  - **CRITICAL**: Must support roundtrip: `encode(decode(tx_bytes)) = tx_bytes` (injective property)
+  - Purpose: Verify lossless decoding, forensic reconstruction, formal verification
+  - **NOT** for building new transactions - only for encoding existing decoded transactions back to bytes
+- **Canonical serialization** for hashing/analysis (TxIR → Borsh bytes)
+- **Transaction validation** and structural analysis
+- **Signature verification** (checking existing signatures)
+- **Chain-agnostic intermediate representation** (TxIR)
 
 **Out of Scope** ❌:
-- **Transaction encoding** (TxIR → chain-specific bytes)
-- **Transaction construction** (building new transactions)
-- **Transaction signing** (creating signatures)
+- **Transaction construction** (building new transactions from scratch)
+- **Transaction signing** (creating new signatures)
 - **Fee estimation** (requires chain state, mempool data)
 - **UTXO selection** (wallet functionality)
 - **Nonce management** (account state tracking)
 - **Gas price estimation** (requires market data)
 - **Transaction broadcasting** (network operations)
 
+**Critical Distinction**:
+- ✅ **Re-encoding** = `decoded_tx.to_bytes()` (reconstruct original bytes for verification)
+- ❌ **Construction** = `TransactionBuilder::new().add_output(...).build()` (create new transactions)
+
 **Rationale**:
-1. **Different Problem Domains**: Decoding (defensive, untrusted input) vs Encoding (constructive, constraint satisfaction)
-2. **Security Model Mismatch**: Different threat models require different verification strategies
-3. **TCB Preservation**: Encoding would double complexity and violate "minimal TCB < 3000 LOC"
-4. **Dependency Explosion**: Construction requires chain state, fee markets, key management
-5. **Clear Focus**: Serves explorers, indexers, forensics, auditing (not wallets, dApps)
+1. **Injective Property is Mandatory**: Without re-encoding, we cannot verify `encode(decode(x)) = x`, which is a core formal property
+2. **Forensics & Analysis**: Being able to reconstruct exact original bytes is critical for forensic work
+3. **No State Dependencies**: Re-encoding a decoded transaction requires no external state (unlike construction)
+4. **TCB Preservation**: Re-encoding existing structures is simple and auditable; construction is complex
+5. **Clear Use Cases**:
+   - ✅ Decode transaction → analyze → re-encode to verify no data loss
+   - ❌ Build new transaction with fee estimation, UTXO selection, etc.
 
-**Future Consideration**: If transaction encoding becomes necessary, it should be a **separate project** (`universal-blockchain-encoder`) that depends on `universal-decoder-core` for TxIR types. This preserves the minimal TCB of the decoder while allowing encoding to have its own security model and dependencies.
-
-**See**: "Decision Log" section below for detailed analysis of encoding scope.
+**See**: "Decision Log" section below for detailed analysis of re-encoding vs construction.
 
 ## Design Criteria
 
@@ -112,24 +119,28 @@ pub enum ChainId {
 
 **Critical Properties to Verify**:
 
-1. **Injectivity of Canonicalization**:
+1. **Injectivity (Roundtrip Property)** - **MANDATORY**:
    ```
-   ∀ tx_bytes: encode(canonicalize(decode(tx_bytes))) = tx_bytes
+   ∀ tx_bytes: encode(decode(tx_bytes)) = tx_bytes
    ```
+   This is the **fundamental requirement**: decoding must be lossless and reversible.
+   Without this property, forensic analysis and verification are impossible.
 
 2. **Panic-Freedom**:
    ```
    ∀ input: decode(input) either returns Result::Ok or Result::Err (never panics)
    ```
 
-3. **Determinism**:
+3. **Determinism of Canonical Encoding**:
    ```
    ∀ tx: to_canonical_bytes(tx) = to_canonical_bytes(tx)
    ```
+   Note: This is for TxIR → Borsh bytes (canonical format), separate from chain-specific encoding.
 
 4. **Resource Bounds**:
    ```
-   ∀ tx: size(canonical_repr(tx)) ≤ K * size(tx) for constant K
+   ∀ tx: size(encode(decode(tx))) = size(tx) (exact reconstruction)
+   ∀ tx: size(canonical_bytes(tx)) ≤ K * size(tx) for constant K
    ```
 
 **Verification Strategy**:
@@ -1311,53 +1322,55 @@ cargo tree -p universal-decoder-core -e normal --depth 1 | grep -v "^universal" 
 
 ## Decision Log
 
-### Why Decoding Only (No Encoding)?
+### Re-encoding for Verification vs Transaction Construction
 
-**Decision**: Project scope limited to transaction decoding; encoding is out of scope
+**Decision**: Re-encoding (for verification) is **IN SCOPE**; transaction construction is **OUT OF SCOPE**
 
-**Date**: 2025-11-13
+**Date**: 2025-11-18 (Updated from 2025-11-13)
 
-**Rationale**:
-- **Different Problem Domains**:
-  - Decoding: Defensive programming, handle malicious/malformed input, bounds checking
-  - Encoding: Constructive programming, constraint satisfaction, fee estimation, state management
-  - These require fundamentally different architectural approaches
+**Key Distinction**:
+- ✅ **Re-encoding**: `decoded_tx.to_bytes()` - Reconstruct original transaction bytes from decoded structure
+- ❌ **Construction**: `TransactionBuilder::new().add_output(...).build()` - Create new transactions
 
-- **TCB Preservation**:
-  - Current core: ~2700 LOC (within target < 3000 LOC)
-  - Adding encoding: Would add ~2500+ LOC (construction logic, validation, fee handling)
-  - Would violate core principle of minimal, verifiable TCB
+**Rationale for Re-encoding (IN SCOPE)**:
+- **Mandatory for Formal Verification**: The injective property `encode(decode(x)) = x` is a fundamental requirement
+- **Forensic Reconstruction**: Must be able to reconstruct exact original bytes for forensic analysis
+- **No External Dependencies**: Re-encoding a decoded transaction requires no chain state, fee oracles, or UTXO sets
+- **Simple & Auditable**: Re-encoding is deterministic byte serialization, not complex construction logic
+- **TCB Impact**: Minimal (~200-300 LOC per decoder for serialization, well within budget)
+
+**Rationale for Transaction Construction (OUT OF SCOPE)**:
+- **Different Problem Domain**:
+  - Re-encoding: Serialize existing decoded structure (deterministic, stateless)
+  - Construction: Build valid transaction from user intent (stateful, requires external data)
 
 - **Dependency Explosion**:
-  - Current: 5 production dependencies (serde, borsh, thiserror, sha2, sha3)
-  - Encoding would need: chain state providers, fee oracles, UTXO selectors, nonce managers
-  - Violates "minimal dependencies" and "airgapped operation" requirements
+  - Re-encoding: Zero additional dependencies (just serialization)
+  - Construction: Needs chain state providers, fee oracles, UTXO selectors, nonce managers
 
-- **Security Model**:
-  - Decoding: Trust boundary is clear (external bytes → validated TxIR)
-  - Encoding: Trust boundary is complex (user intent → valid transaction with fees, nonces, gas)
-  - Verification strategies differ significantly
+- **Complexity**:
+  - Re-encoding: ~200-300 LOC per chain (simple byte serialization)
+  - Construction: ~2500+ LOC per chain (validation, fee estimation, state management)
 
-- **Primary Use Cases Served**:
-  - ✅ Block explorers (decode historical transactions)
-  - ✅ Forensics and auditing (analyze existing transactions)
-  - ✅ Indexers and analytics (extract structured data)
-  - ✅ Chain monitoring (detect patterns, anomalies)
-  - ❌ Wallets (need encoding + signing + broadcasting)
-  - ❌ dApps (need transaction construction)
+**Primary Use Cases Served**:
+- ✅ Block explorers (decode + verify roundtrip)
+- ✅ Forensics and auditing (decode + reconstruct exact bytes)
+- ✅ Indexers and analytics (decode + verify)
+- ✅ Formal verification (prove lossless codec)
+- ✅ Chain monitoring (decode + re-encode for integrity checks)
+- ❌ Wallets (need transaction construction with fee estimation)
+- ❌ dApps (need transaction building with state management)
 
-**Trade-offs**:
-- **Advantage**: Clear scope, minimal complexity, verifiable core, faster development
-- **Disadvantage**: Users need separate tools for transaction construction
-- **Mitigation**: Document clearly, point to wallet SDKs for construction
+**Implementation Requirements**:
+1. Every `ChainDecoder` implementation MUST provide re-encoding capability
+2. Property test required: `encode(decode(tx_bytes)) = tx_bytes` for all chains
+3. Re-encoding must be deterministic and produce exact original bytes
+4. No external dependencies allowed (no chain state, network calls, etc.)
 
-**Future Path**: If encoding becomes critical:
-1. Create separate `universal-blockchain-encoder` repository
-2. Depends on `universal-decoder-core` for TxIR types
-3. Different security model, dependencies, and verification strategy
-4. Users can choose: decode-only (lightweight) or full codec (comprehensive)
-
-**Status**: Documented in scope boundaries (see "Project Scope" section above)
+**Status**:
+- ✅ Architecture updated to include re-encoding trait
+- 🚧 Implementation in progress for all supported chains
+- 📋 Property tests to be added for all decoders
 
 ---
 
@@ -1413,11 +1426,16 @@ All contributions must adhere to these design criteria:
 5. ✅ **Zero-cost abstractions** (static dispatch)
 6. ✅ **Comprehensive tests** (unit + property + integration)
 7. ✅ **Security-first** (audit-friendly code)
-8. ✅ **Decoding only** (no transaction encoding, construction, or signing)
+8. ✅ **Re-encoding support** (must support `encode(decode(x)) = x` for verification)
+9. ✅ **Property tests for injectivity** (roundtrip property test required for all decoders)
 
 **See**: `CONTRIBUTING.md` for detailed guidelines
 
-**Note**: Contributions that add transaction encoding, construction, signing, or broadcasting will be rejected as out of scope. This project focuses exclusively on decoding and analysis.
+**IMPORTANT Distinctions**:
+- ✅ **Re-encoding** (IN SCOPE): `decoded_tx.to_bytes()` - Reconstruct original bytes for verification
+- ❌ **Transaction construction** (OUT OF SCOPE): Building new transactions with fee estimation, UTXO selection, etc.
+
+**Note**: Contributions that add transaction **construction**, **signing**, or **broadcasting** will be rejected as out of scope. However, **re-encoding** (for roundtrip verification) is mandatory for all decoders.
 
 ## References
 
@@ -1443,37 +1461,84 @@ All contributions must adhere to these design criteria:
 
 ## Frequently Asked Questions
 
-### Q: Why doesn't this project support transaction encoding/construction?
+### Q: Does this project support re-encoding transactions back to bytes?
 
-**A**: This project is **intentionally decoding-only** to maintain a minimal, verifiable trusted computing base (TCB). Transaction encoding requires:
+**A**: **YES!** Re-encoding is **IN SCOPE** and **mandatory**. Every decoder MUST support:
+```rust
+let decoded_tx = BitcoinDecoder::decode(tx_bytes)?;
+let re_encoded = decoded_tx.to_bytes()?;
+assert_eq!(tx_bytes, re_encoded); // Must be identical
+```
+
+This is required for:
+- ✅ Formal verification of the injective property: `encode(decode(x)) = x`
+- ✅ Forensic reconstruction of exact original bytes
+- ✅ Verifying lossless decoding
+- ✅ Integrity checks and auditing
+
+### Q: Why doesn't this project support transaction construction?
+
+**A**: Transaction **construction** (building new transactions) is **OUT OF SCOPE**. There's a critical difference:
+- ✅ **Re-encoding**: `decoded_tx.to_bytes()` - Serialize existing decoded transaction (simple, stateless)
+- ❌ **Construction**: `TransactionBuilder::new().add_output(...)` - Build new transactions (complex, stateful)
+
+Transaction construction requires:
 - Chain state access (nonces, balances, UTXO sets)
 - Fee estimation (mempool data, gas markets)
 - Complex validation (sufficient funds, gas limits)
 - Different security model (constructive vs defensive)
 
-Adding encoding would **double the complexity** and violate our core principle of "minimal TCB < 3000 LOC." For transaction construction, use chain-specific wallet SDKs:
+For transaction construction, use chain-specific wallet SDKs:
 - Bitcoin: `bitcoin` crate, BDK (Bitcoin Dev Kit)
 - Ethereum: `ethers-rs`, `alloy`
 - Solana: `solana-sdk`
 
-### Q: Can I use TxIR to build transactions?
+### Q: Can I use TxIR to build new transactions from scratch?
 
-**A**: TxIR is designed as a **read-only intermediate representation** for analysis. While it contains all transaction data, it lacks the construction logic needed to build valid transactions (fee calculation, UTXO selection, nonce management). Use chain-specific wallet libraries for transaction creation.
-
-### Q: Will encoding support be added in the future?
-
-**A**: Not to this project. If transaction encoding becomes necessary, it will be a **separate project** (`universal-blockchain-encoder`) that depends on `universal-decoder-core` for TxIR types. This preserves the decoder's minimal TCB while allowing encoding to have its own dependencies and security model.
+**A**: **No**. TxIR is designed for analysis of existing transactions. While you can re-encode a decoded transaction back to bytes, you cannot use TxIR to construct new transactions from scratch. That would require fee calculation, UTXO selection, nonce management, etc., which are out of scope. Use chain-specific wallet libraries for transaction creation.
 
 ### Q: What about roundtrip testing (encode(decode(x)) = x)?
 
-**A**: Roundtrip property testing is valuable, but we test it differently:
-1. **Canonical Serialization**: Test `borsh_encode(borsh_decode(x)) = x` (in scope, for Borsh roundtrips)
-2. **Chain Format**: Test against reference implementations in dev-dependencies (e.g., decode with our parser, compare to `bitcoin` crate's parser)
-3. **No Reverse Encoding**: We don't test `chain_encode(chain_decode(x)) = x` because encoding is out of scope
+**A**: **YES!** This is a **mandatory requirement** for all decoders:
+1. **Chain-Specific Roundtrip**: `encode(decode(tx_bytes)) = tx_bytes` (REQUIRED property test for every decoder)
+2. **Canonical Serialization**: `borsh_encode(borsh_decode(x)) = x` (for TxIR → Borsh bytes)
+3. **Verification**: All decoders MUST pass property tests verifying lossless roundtrip
+
+Every decoder implementation must include property tests like:
+```rust
+proptest! {
+    #[test]
+    fn roundtrip_property(tx_bytes: Vec<u8>) {
+        if let Ok(decoded) = decode(&tx_bytes) {
+            let re_encoded = decoded.to_bytes()?;
+            prop_assert_eq!(tx_bytes, re_encoded);
+        }
+    }
+}
+```
 
 ---
 
 ## Changelog
+
+### 2025-11-18 - v0.3.0 - **MAJOR UPDATE: Re-encoding is Mandatory**
+- **BREAKING CHANGE**: Re-encoding (for verification) is now **IN SCOPE** and **MANDATORY**
+  - Updated project scope from "Decoding Only" to "Decoding & Verification"
+  - All decoders MUST support `encode(decode(tx_bytes)) = tx_bytes` (injective property)
+  - Added re-encoding requirement to formal verification criteria
+  - Clarified distinction: Re-encoding (✅ in scope) vs Transaction Construction (❌ out of scope)
+- **Updated**: Decision log with "Re-encoding for Verification vs Transaction Construction"
+  - Detailed rationale for why re-encoding is mandatory
+  - TCB impact assessment: ~200-300 LOC per decoder (minimal)
+  - No dependency explosion (re-encoding is stateless, unlike construction)
+- **Updated**: FAQ section with new questions about re-encoding
+  - Added mandatory roundtrip property test examples
+  - Clarified use cases for re-encoding vs construction
+- **Updated**: Contributing criteria
+  - Added criterion #8: Re-encoding support mandatory
+  - Added criterion #9: Property tests for injectivity required
+- **Impact**: All existing decoders need to implement re-encoding capability
+- **Timeline**: Implementation plan to be created in next phase
 
 ### 2025-11-18 - v0.2.1
 - **Added**: Actor Model chain family documentation (Phase 3.11)
@@ -1529,5 +1594,7 @@ Adding encoding would **double the complexity** and violate our core principle o
 ---
 
 **Last Updated**: 2025-11-18
-**Version**: 0.2.1
+**Version**: 0.3.0
 **Status**: Living Document
+
+**Major Change in v0.3.0**: Re-encoding is now mandatory for all decoders to verify the injective property.

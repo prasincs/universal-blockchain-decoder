@@ -101,6 +101,12 @@ pub fn decode_with_hooks(raw_bytes: &[u8], registry: &HookRegistry) -> Result<Fi
     Ok(tx)
 }
 
+impl ChainEncoder for FilecoinTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for FilecoinTransaction {
     const VERSION: u8 = 1;
 

@@ -298,6 +298,8 @@ impl FilecoinSignedMessage {
 pub struct FilecoinTransaction {
     /// The signed message
     pub signed_message: FilecoinSignedMessage,
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 impl FilecoinTransaction {
