@@ -313,85 +313,134 @@ pub fn parse_varint(bytes: &[u8]) -> (result: Result<(u64, usize), VarIntError>)
 
 ### VT-20: RLP Parsing Safety
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotated (Specifications Documented)
 **Properties**:
-- ❌ VT-20.1: RLP decode never panics
-- ❌ VT-20.2: RLP decode rejects malformed input
-- ❌ VT-20.3: RLP length fields are validated
+- ✅ VT-20.1: RLP decode never panics (~15 VCs annotated)
+- ✅ VT-20.2: RLP decode rejects malformed input (~10 VCs annotated)
+- ✅ VT-20.3: RLP length fields are validated (~5 VCs annotated)
 
 **Files**:
-- `crates/decoder-encodings/src/rlp.rs`
+- `crates/decoder-encodings/src/rlp.rs` (implementation)
+- `crates/decoder-ethereum/src/verus_annotations.rs` (specifications)
 
-**Verification Conditions**: 0 / ~30 proven
-**Estimated Effort**: 3-4 weeks
-**Last Verified**: Never
+**Verification Conditions**: ~30 VCs specified (0 proven - awaiting Verus proofs)
+**Implementation Complete**: 2025-11-17
+**Test Coverage**: Comprehensive unit tests in rlp.rs:335-419
+**Estimated Effort**: 3-4 weeks for full Verus proofs
+**Last Updated**: 2025-11-17
+
+**Why Critical**:
+- RLP is the foundation of all Ethereum transaction parsing
+- Buffer overflows in RLP parsing are a known attack vector
+- Non-canonical encodings can cause consensus bugs
+- Recursive list parsing must be proven to terminate
 
 ---
 
 ### VT-21: Gas Calculation Overflow Safety
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotated (Specifications Documented)
 **Properties**:
-- ❌ VT-21.1: Gas limit * gas price doesn't overflow
-- ❌ VT-21.2: EIP-1559 fee calculations are safe
-- ❌ VT-21.3: Priority fee + base fee doesn't overflow
+- ✅ VT-21.1: Gas limit * gas price doesn't overflow (~4 VCs annotated)
+- ✅ VT-21.2: EIP-1559 fee calculations are safe (~4 VCs annotated)
+- ✅ VT-21.3: Priority fee + base fee doesn't overflow (~2 VCs annotated)
 
 **Files**:
-- `crates/decoder-ethereum/src/lib.rs`
+- `crates/decoder-ethereum/src/types.rs` (implementation: lines 80, 92-94, 339-341)
+- `crates/decoder-ethereum/src/verus_annotations.rs` (specifications)
 
-**Verification Conditions**: 0 / ~10 proven
-**Estimated Effort**: 2 weeks
-**Last Verified**: Never
+**Verification Conditions**: ~10 VCs specified (0 proven - awaiting Verus proofs)
+**Implementation Complete**: 2025-11-17
+**Test Coverage**: Integration tests in ethereum decoder tests
+**Estimated Effort**: 2 weeks for full Verus proofs
+**Last Updated**: 2025-11-17
+
+**Why Important**:
+- Financial calculations must be overflow-safe
+- Gas prices in Wei can be very large
+- EIP-1559 introduced complex fee model with multiple fee components
 
 ---
 
 ### VT-22: EIP-2718 Transaction Type Detection
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotated (Specifications Documented)
 **Properties**:
-- ❌ VT-22.1: Transaction type is correctly identified
-- ❌ VT-22.2: Type-specific parsing is safe
-- ❌ VT-22.3: Unknown types are rejected
+- ✅ VT-22.1: Transaction type correctly identified (~3 VCs annotated)
+- ✅ VT-22.2: Type-specific parsing is safe (~3 VCs annotated)
+- ✅ VT-22.3: Unknown types are rejected (~2 VCs annotated)
 
 **Files**:
-- `crates/decoder-ethereum/src/lib.rs`
+- `crates/decoder-ethereum/src/types.rs` (implementation: lines 54-65, 129-138, 148-153, 224-229, 265-270)
+- `crates/decoder-ethereum/src/verus_annotations.rs` (specifications)
 
-**Verification Conditions**: 0 / ~8 proven
-**Estimated Effort**: 1 week
-**Last Verified**: Never
+**Verification Conditions**: ~8 VCs specified (0 proven - awaiting Verus proofs)
+**Implementation Complete**: 2025-11-17
+**Test Coverage**: Unit tests in types.rs:640-645
+**Estimated Effort**: 1 week for full Verus proofs
+**Last Updated**: 2025-11-17
+
+**Supported Transaction Types**:
+- Legacy (pre-EIP-2718): 9 fields
+- EIP-2930 (Access Lists): 11 fields
+- EIP-1559 (Fee Market): 12 fields
+- EIP-4844 (Blob Transactions): 12+ fields
 
 ---
 
 ### VT-23: Signature Recovery Safety
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotated (Specifications Documented)
 **Properties**:
-- ❌ VT-23.1: Recovery ID (v) is validated
-- ❌ VT-23.2: Signature (r, s) are in valid range
-- ❌ VT-23.3: Address recovery never panics
+- ✅ VT-23.1: Recovery ID (v) validated (~4 VCs annotated)
+- ✅ VT-23.2: Signature (r, s) in valid range (~5 VCs annotated)
+- ✅ VT-23.3: Address recovery never panics (~3 VCs annotated)
 
 **Files**:
-- `crates/decoder-ethereum/src/lib.rs`
+- `crates/decoder-ethereum/src/types.rs` (implementation: lines 102-106, 185, 239, 281, 348-352, 383-397, 610-614)
+- `crates/decoder-ethereum/src/verus_annotations.rs` (specifications)
 
-**Verification Conditions**: 0 / ~12 proven
-**Estimated Effort**: 2 weeks
-**Last Verified**: Never
+**Verification Conditions**: ~12 VCs specified (0 proven - awaiting Verus proofs)
+**Implementation Complete**: 2025-11-17
+**Test Coverage**: Unit tests in types.rs:648-663 (signature parsing)
+**Estimated Effort**: 2 weeks for full Verus proofs
+**Last Updated**: 2025-11-17
+
+**Signature Validation**:
+- Legacy: v in [27, 28] or v >= 35 (EIP-155 chain ID encoding)
+- EIP-2930/EIP-1559: v in [0, 1] (y-parity)
+- r, s != 0 (zero components invalid)
+- r, s < secp256k1_order (field validity)
+
+**Note**: Full ECDSA recovery not yet implemented (requires secp256k1 crate).
+Current implementation validates signature components and returns placeholder address.
 
 ---
 
 ### VT-24: Ethereum Canonicalization Determinism
 
-**Status**: ❌ Not Started
+**Status**: ✅ Annotated (Specifications Documented)
 **Properties**:
-- ❌ VT-24.1: RLP encoding is deterministic
-- ❌ VT-24.2: Transaction hash is deterministic
+- ✅ VT-24.1: RLP encoding is deterministic (~6 VCs annotated)
+- ✅ VT-24.2: Transaction hash is deterministic (~4 VCs annotated)
 
 **Files**:
-- `crates/decoder-ethereum/src/lib.rs`
+- `crates/decoder-ethereum/src/types.rs` (implementation: lines 109, 202, 258, 300, 333-336, 621-627)
+- `crates/decoder-ethereum/src/verus_annotations.rs` (specifications)
 
-**Verification Conditions**: 0 / ~10 proven
-**Estimated Effort**: 2 weeks
-**Last Verified**: Never
+**Verification Conditions**: ~10 VCs specified (0 proven - awaiting Verus proofs)
+**Implementation Complete**: 2025-11-17
+**Test Coverage**: Implicit in canonicalization tests
+**Estimated Effort**: 2 weeks for full Verus proofs
+**Last Updated**: 2025-11-17
+
+**Design Decision**: Store original raw_bytes instead of re-encoding.
+Benefits:
+- Deterministic (original bytes preserved)
+- Efficient (no re-encoding overhead)
+- Correct (preserves exact signed data)
+
+**Hash Algorithm**: Keccak256 (Ethereum standard)
 
 ---
 
