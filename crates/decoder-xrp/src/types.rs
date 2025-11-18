@@ -153,7 +153,8 @@ impl<'a> Canonicalizer<'a> for XrpTransaction {
             r#"{{"transaction_type":"{}","sequence":{},"last_ledger_sequence":{}}}"#,
             tx_type_name,
             self.sequence.map_or("null".to_string(), |s| s.to_string()),
-            self.last_ledger_sequence.map_or("null".to_string(), |s| s.to_string())
+            self.last_ledger_sequence
+                .map_or("null".to_string(), |s| s.to_string())
         );
 
         let metadata = TxMetadata {

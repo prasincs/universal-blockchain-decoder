@@ -411,6 +411,55 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 
 ---
 
+### 3.4: SVM Family Decoder ✅ COMPLETE
+
+**Summary**: Single decoder for 11 SVM (Solana Virtual Machine) ecosystem chains
+
+**Priority**: MEDIUM (11 SVM chains, expanding ecosystem)
+**Decoder**: `decoder-svm` ✅ COMPLETE
+**Status**: Complete - 45 comprehensive tests passing (41 + 4 real mainnet tests)
+**Chains Supported**: Solana (Mainnet/Devnet/Testnet), Eclipse (Mainnet/Testnet), Pyth Network, Drift, Jito, Sonic SVM, Firedancer, Neon EVM
+
+**Completed Tasks**:
+- ✅ Create `decoder-svm` crate (271 LOC family wrapper)
+- ✅ Wrap existing `SolanaDecoder` (27 tests)
+- ✅ Hardcode SVM chain list (11 chains)
+- ✅ Add chain ID validation
+- ✅ Support for SVM-specific features per chain
+- ✅ Compile-time chain registry (no runtime I/O)
+- ✅ Real mainnet transaction tests (4 tests with actual Solana data)
+
+**Testing**:
+- ✅ 13 unit tests (registry validation, chain properties, format validation)
+- ✅ 16 integration tests (multi-chain decoding, registry lookups, chain filters)
+- ✅ 12 property-based tests (proptest - roundtrips, invariants, safety)
+- ✅ 4 real mainnet transaction tests (SOL transfer, canonicalization, multi-chain, hash)
+- ✅ Total: 45 tests passing
+
+**Real Mainnet Transaction Validation**:
+- ✅ Decodes real 215-byte Solana mainnet SOL transfer (10.1 SOL)
+- ✅ Parses 1 signature, 3 accounts, 1 instruction correctly
+- ✅ Extracts transfer amount: 10,100,000,000 lamports
+- ✅ Validates System Program instruction structure
+- ✅ Canonicalizes to TxIR with Operation::ContractCall
+- ✅ Works across Solana Mainnet/Devnet, Eclipse chains
+- ✅ Computes SHA-256 hash from canonical bytes
+
+**Delivered**:
+- ✅ Solana decoder already implemented (27 tests passing)
+- ✅ decoder-svm family wrapper (45 tests: 13 unit + 16 integration + 12 property + 4 real mainnet)
+- ✅ 11 SVM chains with compile-time registry
+- ✅ Chain metadata (RPCs, explorers, chain properties)
+- ✅ Single decoder for entire SVM ecosystem
+- ✅ Future-proof for SVM rollups
+- ✅ Pure Rust, zero production dependencies
+- ✅ Airgapped operation (no runtime network calls)
+- ✅ Proven with real Solana mainnet transactions
+
+**Why Important**: SVM is expanding beyond Solana mainnet with L2s and app-specific chains
+
+---
+
 ### 3.5: Cosmos SDK Family Decoder (Week 7-8) ✅ COMPLETE
 
 **Priority**: MEDIUM (228 Cosmos chains)
@@ -888,9 +937,10 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-11-17
-**Current Phase**: Phase 3 - Chain Family Decoders 🚧
-**Status**: Bitcoin/Ethereum/Solana/Cosmos/Arbitrum complete, OP Stack 90%, EVM blocked by fixtures
+**Last Updated**: 2025-11-18
+**Current Phase**: Phase 3 - Chain Family Decoders 🚧 (Phase 3.4 Complete ✅)
+**Status**: Bitcoin/Ethereum/Solana/Cosmos/Arbitrum/SVM complete, OP Stack 90%, EVM blocked by fixtures
+**Branch**: `claude/implement-phase-3-4-01KKvoggkHzpu1WQeSaxbdxB`
 **Next Action**: Complete EVM test fixtures (1-2 days) OR finish OP Stack (~4 hours)
 
 **Completed Milestones**:
@@ -903,11 +953,12 @@ See `CONTRIBUTING.md` for:
   - ✅ Phase 2.5: Common crates extraction (decoder-encodings, decoder-primitives)
   - ✅ Phase 3.0: Privacy-aware TxIR extensions
   - ✅ Phase 3.3: Arbitrum Orbit family (6 transaction types)
+  - ✅ Phase 3.4: SVM family decoder (11 chains: Solana, Eclipse, Pyth, Drift, Jito, Sonic, Firedancer, NeonEvm; 41 tests) 🎉 NEW!
   - ✅ Phase 3.5: Cosmos SDK family (228 chains)
   - ✅ Phase 3.6a: ZK Crypto Infrastructure (unlocks 300+ chains)
   - ✅ Phase 3.6b: Starknet family (230+ chains, 45 tests)
   - ✅ Phase 3.9: Mina Protocol foundation (22 tests)
-  - ✅ Phase 3.x: Polkadot decoder (SCALE encoding, 38 tests) - **NEW** ✨
+  - ✅ Phase 3.x: Polkadot decoder (SCALE encoding, 38 tests)
   - 🚧 Phase 1.5.2: Testing Infrastructure (75% complete, need 34 more property tests)
   - 🚧 Phase 3.2: OP Stack (90% complete, ~4 hours remaining)
 
@@ -933,7 +984,6 @@ See `CONTRIBUTING.md` for:
     - ✅ Completed with comprehensive coverage
   - Phase 3.3: Arbitrum Orbit family decoder (retryable tickets) - 1-2 days
   - Phase 1.5.2: More property tests (need 34 more, currently 16/50) - ongoing
-  - Phase 3.4: SVM family decoder - 1 week
   - Phase 3.6: Move VM family decoder - 1 week
   - Phase 3.7: Bitcoin forks family decoder - 3 days
   - Phase 3.8: Privacy chains family decoder (Zcash, Aleo, Monero) - 2 weeks
