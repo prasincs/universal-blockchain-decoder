@@ -309,6 +309,36 @@ fn build_operations(messages: &[CosmosMessage]) -> Result<Vec<Operation>> {
                     asset: AssetId::Custom("vote".to_string()),
                 }));
             }
+            CosmosMessage::SubmitProposal(proposal) => {
+                for coin in &proposal.initial_deposit {
+                    operations.push(Operation::Transfer(Transfer {
+                        from: create_address(proposal.proposer.clone()),
+                        to: create_address("gov:proposal_deposit".to_string()),
+                        amount: parse_amount(&coin.amount, &coin.denom)?,
+                        asset: AssetId::Custom(coin.denom.clone()),
+                    }));
+                }
+            }
+            CosmosMessage::Deposit(deposit) => {
+                for coin in &deposit.amount {
+                    operations.push(Operation::Transfer(Transfer {
+                        from: create_address(deposit.depositor.clone()),
+                        to: create_address(format!("gov:proposal:{}", deposit.proposal_id)),
+                        amount: parse_amount(&coin.amount, &coin.denom)?,
+                        asset: AssetId::Custom(coin.denom.clone()),
+                    }));
+                }
+            }
+
+            // === Distribution Messages ===
+            CosmosMessage::WithdrawDelegatorReward(withdraw) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(withdraw.validator_address.clone()),
+                    to: create_address(withdraw.delegator_address.clone()),
+                    amount: Amount::new(0, 0), // Amount unknown until execution
+                    asset: AssetId::Custom("reward".to_string()),
+                }));
+            }
 
             // === CosmWasm Messages ===
             CosmosMessage::StoreCode(store) => {
@@ -492,6 +522,35 @@ fn build_state_deltas(messages: &[CosmosMessage]) -> Result<StateDeltas> {
             // === Governance Messages ===
             CosmosMessage::Vote(_) => {
                 // Vote doesn't change account balances
+            }
+            CosmosMessage::SubmitProposal(proposal) => {
+                // Proposal submission locks deposit
+                account_changes.push(AccountChange {
+                    address: create_address(proposal.proposer.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
+            }
+            CosmosMessage::Deposit(deposit) => {
+                // Deposit locks tokens for proposal
+                account_changes.push(AccountChange {
+                    address: create_address(deposit.depositor.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
+            }
+
+            // === Distribution Messages ===
+            CosmosMessage::WithdrawDelegatorReward(withdraw) => {
+                // Reward withdrawal increases delegator balance
+                account_changes.push(AccountChange {
+                    address: create_address(withdraw.delegator_address.clone()),
+                    nonce: None,
+                    balance_change: 1,
+                    storage_changes: vec![],
+                });
             }
 
             // === CosmWasm Messages ===

@@ -164,4 +164,38 @@ $ ./scripts/ci-monitor.sh --fix
 
 ---
 
+## Autonomous Executor (Rust)
+
+Autonomous task execution system written in Rust that implements highest ROI tasks from the roadmap automatically.
+
+**Location**: `tools/autonomous-executor/`
+
+### Quick Start
+
+```bash
+# Build from repository root
+cargo build --release -p autonomous-executor
+
+# List tasks by ROI
+./target/release/autonomous-executor list-tasks
+
+# Execute highest ROI task
+export ANTHROPIC_API_KEY="sk-ant-..."
+./target/release/autonomous-executor execute
+
+# Dry run
+./target/release/autonomous-executor execute --dry-run
+```
+
+### Full Documentation
+
+See `tools/autonomous-executor/README.md` and `docs/AUTONOMOUS_EXECUTOR.md` for:
+- Complete usage guide
+- ROI scoring formula
+- Configuration options
+- GitHub Actions integration
+- Monitoring and troubleshooting
+
+---
+
 **See also**: `../CLAUDE.md` for overall project guidelines

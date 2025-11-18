@@ -1,0 +1,20 @@
+{
+  "description": "Moonbeam parachain - EVM contract call",
+  "chain": "Moonbeam",
+  "chain_id": 2004,
+  "parachain_type": "polkadot",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "immortal",
+  "nonce": 0,
+  "tip": 0,
+  "pallet_index": 38,
+  "pallet_name": "EVM",
+  "call_index": 0,
+  "call_name": "call",
+  "note": "Moonbeam is an Ethereum-compatible parachain on Polkadot",
+  "evm_target": "0x9876543210fedcba9876543210fedcba98765432",
+  "value_wei": "1000000000000000000",
+  "gas_limit": 100000
+}

@@ -257,3 +257,297 @@ fn test_proptest_setup() {
         prop_assert!(x < 100);
     });
 }
+
+proptest! {
+    /// Property: CosmWasm execute message parsing is consistent
+    #[test]
+    fn cosmwasm_execute_msg_consistent(
+        sender in "[a-z]{6,44}".prop_map(|s| format!("cosmos1{}", s)),
+        contract in "[a-z0-9]{58}".prop_map(|s| format!("cosmos{}", s)),
+        msg_len in 1usize..=1024,
+        funds_count in 0usize..=5
+    ) {
+        use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgExecuteContract;
+        use cosmos_sdk_proto::Any;
+        use prost::Message;
+
+        let funds: Vec<Coin> = (0..funds_count)
+            .map(|i| Coin {
+                denom: format!("token{}", i),
+                amount: "1000".to_string(),
+            })
+            .collect();
+
+        let msg_execute = MsgExecuteContract {
+            sender: sender.clone(),
+            contract: contract.clone(),
+            msg: vec![0u8; msg_len],
+            funds,
+        };
+
+        let mut msg_bytes = Vec::new();
+        msg_execute.encode(&mut msg_bytes).unwrap();
+
+        let any_msg = Any {
+            type_url: "/cosmwasm.wasm.v1.MsgExecuteContract".to_string(),
+            value: msg_bytes,
+        };
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages: vec![any_msg],
+                memo: String::new(),
+                timeout_height: 0,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        // Should decode without panicking
+        let result = CosmosDecoder::decode(&tx_bytes);
+        prop_assert!(result.is_ok());
+
+        if let Ok(decoded) = result {
+            let messages = decoded.messages().unwrap();
+            prop_assert_eq!(messages.len(), 1);
+        }
+    }
+
+    /// Property: Transaction with multiple message types decodes correctly
+    #[test]
+    fn multi_type_messages_decode(msg_count in 1usize..=5) {
+        use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
+        use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use cosmos_sdk_proto::Any;
+        use prost::Message;
+
+        let mut messages = Vec::new();
+        for i in 0..msg_count {
+            let msg_send = MsgSend {
+                from_address: format!("cosmos1sender{}", i),
+                to_address: format!("cosmos1receiver{}", i),
+                amount: vec![Coin {
+                    denom: "uatom".to_string(),
+                    amount: "1000".to_string(),
+                }],
+            };
+
+            let mut msg_bytes = Vec::new();
+            msg_send.encode(&mut msg_bytes).unwrap();
+
+            messages.push(Any {
+                type_url: "/cosmos.bank.v1beta1.MsgSend".to_string(),
+                value: msg_bytes,
+            });
+        }
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages,
+                memo: String::new(),
+                timeout_height: 0,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+        let parsed_messages = decoded.messages().unwrap();
+        prop_assert_eq!(parsed_messages.len(), msg_count);
+    }
+
+    /// Property: Gas limit is always preserved
+    #[test]
+    fn gas_limit_preserved(gas_limit in 1u64..=10_000_000u64) {
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use prost::Message;
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages: vec![],
+                memo: String::new(),
+                timeout_height: 0,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+        prop_assert_eq!(decoded.gas_limit(), gas_limit);
+    }
+
+    /// Property: Memo is preserved
+    #[test]
+    fn memo_preserved(memo in ".*") {
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use prost::Message;
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages: vec![],
+                memo: memo.clone(),
+                timeout_height: 0,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+        prop_assert_eq!(decoded.memo(), memo.as_str());
+    }
+
+    /// Property: Fee amounts are preserved
+    #[test]
+    fn fee_amounts_preserved(
+        denom in "[a-z]{3,10}",
+        amount in 1u128..=1_000_000_000u128
+    ) {
+        use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use prost::Message;
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages: vec![],
+                memo: String::new(),
+                timeout_height: 0,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![Coin {
+                            denom: denom.clone(),
+                            amount: amount.to_string(),
+                        }],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+        let fee = decoded.fee();
+        prop_assert_eq!(fee.amount.len(), 1);
+        prop_assert_eq!(&fee.amount[0].denom, &denom);
+        prop_assert_eq!(&fee.amount[0].amount, &amount.to_string());
+    }
+
+    /// Property: Timeout height is preserved
+    #[test]
+    fn timeout_height_preserved(timeout_height in 0u64..=10_000_000u64) {
+        use cosmos_sdk_proto::cosmos::tx::v1beta1::{Tx, TxBody, AuthInfo, Fee};
+        use prost::Message;
+
+        let tx = Tx {
+            body: Some(TxBody {
+                messages: vec![],
+                memo: String::new(),
+                timeout_height,
+                extension_options: vec![],
+                non_critical_extension_options: vec![],
+            }),
+            auth_info: {
+                #[allow(deprecated)]
+                Some(AuthInfo {
+                    signer_infos: vec![],
+                    fee: Some(Fee {
+                        amount: vec![],
+                        gas_limit: 200000,
+                        payer: String::new(),
+                        granter: String::new(),
+                    }),
+                    tip: None,
+                })
+            },
+            signatures: vec![],
+        };
+
+        let mut tx_bytes = Vec::new();
+        tx.encode(&mut tx_bytes).unwrap();
+
+        let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+        prop_assert_eq!(decoded.tx.body.timeout_height, timeout_height);
+    }
+}

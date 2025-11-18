@@ -12,7 +12,11 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+sha2 = "0.10"
+serde_json = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+decoder-test-utils = { path = "../decoder-test-utils" }
+sha2 = "0.10"

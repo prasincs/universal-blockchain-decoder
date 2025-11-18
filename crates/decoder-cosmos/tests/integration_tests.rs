@@ -830,3 +830,294 @@ fn create_test_tx(
         signatures: vec![vec![0u8; 64]],
     }
 }
+
+#[test]
+fn test_decode_cosmwasm_execute_no_funds() {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgExecuteContract;
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    // Create execute message without funds
+    let execute_msg = r#"{"query_balance":{"address":"cosmos1xyz"}}"#;
+
+    let msg_execute = MsgExecuteContract {
+        sender: "cosmos1querier".to_string(),
+        contract: "cosmos14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s4hmalr".to_string(),
+        msg: execute_msg.as_bytes().to_vec(),
+        funds: vec![], // No funds sent
+    };
+
+    // Encode as Any
+    let mut msg_bytes = Vec::new();
+    msg_execute.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmwasm.wasm.v1.MsgExecuteContract".to_string(),
+        value: msg_bytes,
+    };
+
+    // Create transaction
+    let tx = Tx {
+        body: Some(TxBody {
+            messages: vec![any_msg],
+            memo: String::new(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "500".to_string(),
+                    }],
+                    gas_limit: 150000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    };
+
+    // Encode and decode
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+
+    // Validate
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::ExecuteContract(exec) => {
+            assert_eq!(exec.sender, "cosmos1querier");
+            assert_eq!(exec.funds.len(), 0); // No funds
+        }
+        _ => panic!("Expected MsgExecuteContract"),
+    }
+}
+#[test]
+fn test_decode_withdraw_delegator_reward() {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let msg_withdraw = MsgWithdrawDelegatorReward {
+        delegator_address: "cosmos1delegator".to_string(),
+        validator_address: "cosmosvaloper1validator".to_string(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg_withdraw.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = Tx {
+        body: Some(TxBody {
+            messages: vec![any_msg],
+            memo: "withdraw rewards".to_string(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "500".to_string(),
+                    }],
+                    gas_limit: 100000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    };
+
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::WithdrawDelegatorReward(withdraw) => {
+            assert_eq!(withdraw.delegator_address, "cosmos1delegator");
+            assert_eq!(withdraw.validator_address, "cosmosvaloper1validator");
+        }
+        _ => panic!("Expected MsgWithdrawDelegatorReward"),
+    }
+
+    let tx_ir = decoded.canonicalize().unwrap();
+    assert_eq!(tx_ir.operations.len(), 1);
+}
+#[test]
+fn test_decode_submit_proposal() {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    // Create a text proposal content
+    let proposal_content = Any {
+        type_url: "/cosmos.gov.v1beta1.TextProposal".to_string(),
+        value: vec![10, 11, 84, 101, 115, 116, 32, 84, 105, 116, 108, 101], // "Test Title" in proto
+    };
+
+    let msg_submit = MsgSubmitProposal {
+        content: Some(proposal_content.clone()),
+        initial_deposit: vec![Coin {
+            denom: "uatom".to_string(),
+            amount: "10000000".to_string(),
+        }],
+        proposer: "cosmos1proposer".to_string(),
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg_submit.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmos.gov.v1beta1.MsgSubmitProposal".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = Tx {
+        body: Some(TxBody {
+            messages: vec![any_msg],
+            memo: "submit proposal".to_string(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "2000".to_string(),
+                    }],
+                    gas_limit: 300000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    };
+
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::SubmitProposal(submit) => {
+            assert_eq!(submit.proposer, "cosmos1proposer");
+            assert_eq!(submit.initial_deposit.len(), 1);
+            assert_eq!(submit.initial_deposit[0].denom, "uatom");
+            assert_eq!(submit.initial_deposit[0].amount, "10000000");
+            assert_eq!(submit.content_type_url, proposal_content.type_url);
+        }
+        _ => panic!("Expected MsgSubmitProposal"),
+    }
+
+    let tx_ir = decoded.canonicalize().unwrap();
+    assert_eq!(tx_ir.operations.len(), 1);
+}
+#[test]
+fn test_decode_deposit() {
+    use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+    use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgDeposit;
+    use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
+    use cosmos_sdk_proto::Any;
+    use prost::Message;
+
+    let msg_deposit = MsgDeposit {
+        proposal_id: 42,
+        depositor: "cosmos1depositor".to_string(),
+        amount: vec![Coin {
+            denom: "uatom".to_string(),
+            amount: "5000000".to_string(),
+        }],
+    };
+
+    let mut msg_bytes = Vec::new();
+    msg_deposit.encode(&mut msg_bytes).unwrap();
+
+    let any_msg = Any {
+        type_url: "/cosmos.gov.v1beta1.MsgDeposit".to_string(),
+        value: msg_bytes,
+    };
+
+    let tx = Tx {
+        body: Some(TxBody {
+            messages: vec![any_msg],
+            memo: "deposit to proposal".to_string(),
+            timeout_height: 0,
+            extension_options: vec![],
+            non_critical_extension_options: vec![],
+        }),
+        auth_info: {
+            #[allow(deprecated)]
+            Some(AuthInfo {
+                signer_infos: vec![],
+                fee: Some(Fee {
+                    amount: vec![Coin {
+                        denom: "uatom".to_string(),
+                        amount: "1000".to_string(),
+                    }],
+                    gas_limit: 150000,
+                    payer: String::new(),
+                    granter: String::new(),
+                }),
+                tip: None,
+            })
+        },
+        signatures: vec![vec![0u8; 64]],
+    };
+
+    let mut tx_bytes = Vec::new();
+    tx.encode(&mut tx_bytes).unwrap();
+
+    let decoded = CosmosDecoder::decode(&tx_bytes).unwrap();
+    let messages = decoded.messages().unwrap();
+    assert_eq!(messages.len(), 1);
+
+    match &messages[0] {
+        CosmosMessage::Deposit(deposit) => {
+            assert_eq!(deposit.proposal_id, 42);
+            assert_eq!(deposit.depositor, "cosmos1depositor");
+            assert_eq!(deposit.amount.len(), 1);
+            assert_eq!(deposit.amount[0].denom, "uatom");
+            assert_eq!(deposit.amount[0].amount, "5000000");
+        }
+        _ => panic!("Expected MsgDeposit"),
+    }
+
+    let tx_ir = decoded.canonicalize().unwrap();
+    assert_eq!(tx_ir.operations.len(), 1);
+}
