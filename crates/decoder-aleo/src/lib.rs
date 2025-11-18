@@ -53,8 +53,8 @@ pub mod types;
 // Re-exports
 pub use error::{AleoDecoderError, Result};
 pub use types::{
-    AleoTransaction, Deployment, Execution, Fee, Record, Transition, TransitionInput,
-    TransitionOutput, TransitionType,
+    AleoTransaction, Deployment, Execution, Fee, FinalizeOperation, TransactionType, Transition,
+    TransitionInput, TransitionOutput, VerifyingKey,
 };
 
 use decoder_primitives::prelude::*;

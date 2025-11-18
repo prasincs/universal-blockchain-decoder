@@ -220,9 +220,9 @@ proptest! {
             if let Ok(tx_ir) = tx.canonicalize() {
                 // If transaction has privacy components, observability should reflect it
                 if let Some(privacy) = &tx_ir.privacy {
-                    if privacy.hidden_sender || privacy.hidden_recipient || privacy.hidden_amount {
-                        prop_assert_ne!(privacy.observability_level, ObservabilityLevel::FullyObservable,
-                            "Hidden fields should not be fully observable");
+                    if !privacy.features.is_empty() {
+                        prop_assert_ne!(privacy.observability, ObservabilityLevel::FullyObservable,
+                            "Privacy features should not be fully observable");
                     }
                 }
             }
@@ -268,10 +268,9 @@ proptest! {
             if let Ok(tx_ir) = tx.canonicalize() {
                 // Public transactions should be observable
                 if let Some(privacy) = &tx_ir.privacy {
-                    if privacy.observability_level == ObservabilityLevel::FullyObservable {
-                        prop_assert!(!privacy.hidden_sender);
-                        prop_assert!(!privacy.hidden_recipient);
-                        prop_assert!(!privacy.hidden_amount);
+                    if privacy.observability == ObservabilityLevel::FullyObservable {
+                        prop_assert!(privacy.features.is_empty(),
+                            "Fully observable transactions should have no privacy features");
                     }
                 }
             }
@@ -334,8 +333,8 @@ proptest! {
 
         if let Ok(tx) = AleoDecoder::decode(&bytes) {
             if let Ok(tx_ir) = tx.canonicalize() {
-                prop_assert!(!tx_ir.state_deltas.is_empty(),
-                    "Finalize operations should generate state deltas");
+                prop_assert!(!tx_ir.state_deltas.account_changes.is_empty(),
+                    "Finalize operations should generate account changes");
             }
         }
     }
@@ -366,8 +365,8 @@ proptest! {
 
         if let Ok(tx) = AleoDecoder::decode(&bytes) {
             if let Ok(tx_ir) = tx.canonicalize() {
-                prop_assert!(tx_ir.state_deltas.is_empty(),
-                    "Deploy and Fee transactions should not have state deltas");
+                prop_assert!(tx_ir.state_deltas.account_changes.is_empty(),
+                    "Deploy and Fee transactions should not have account changes");
             }
         }
     }
@@ -529,7 +528,7 @@ proptest! {
                     // Even invalid transitions should parse function names
                     // (but may be empty if malformed)
                     if !transition.function_name.is_empty() {
-                        prop_assert!(transition.function_name.len() > 0);
+                        prop_assert!(!transition.function_name.is_empty());
                     }
                 }
             }

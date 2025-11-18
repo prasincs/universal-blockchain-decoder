@@ -3,16 +3,8 @@
 //! These tests use real (or realistic) Aleo mainnet transaction fixtures
 //! to ensure the decoder handles production data correctly.
 
-use decoder_aleo::{AleoDecoder, AleoTransaction, TransactionType};
-use decoder_test_utils::test_fixtures::create_test_fixture;
+use decoder_aleo::{AleoDecoder, TransactionType};
 use universal_decoder_core::prelude::*;
-
-/// Test fixture helper for creating Aleo test transactions
-fn create_aleo_test_fixture(name: &str, tx_type: u8, data: Vec<u8>) -> Vec<u8> {
-    let mut bytes = vec![tx_type]; // Transaction type
-    bytes.extend_from_slice(&data);
-    bytes
-}
 
 #[test]
 fn test_decode_aleo_fee_transaction_mainnet() {
@@ -275,11 +267,8 @@ fn test_decode_aleo_private_execution_mainnet() {
 
     assert!(tx_ir.privacy.is_some());
     let privacy = tx_ir.privacy.unwrap();
-    assert!(privacy.hidden_sender || privacy.hidden_recipient);
-    assert_eq!(
-        privacy.observability_level,
-        ObservabilityLevel::FullyPrivate
-    );
+    assert!(!privacy.features.is_empty());
+    assert_eq!(privacy.observability, ObservabilityLevel::FullyPrivate);
 }
 
 #[test]
@@ -354,12 +343,8 @@ fn test_decode_aleo_with_finalize_operations_mainnet() {
     let tx = result.unwrap();
     let tx_ir = tx.canonicalize().unwrap();
 
-    // Should have state deltas
-    assert!(!tx_ir.state_deltas.is_empty());
-    assert!(matches!(
-        tx_ir.state_deltas[0],
-        StateDelta::StorageWrite { .. }
-    ));
+    // Should have state deltas (account changes)
+    assert!(!tx_ir.state_deltas.account_changes.is_empty());
 }
 
 #[test]

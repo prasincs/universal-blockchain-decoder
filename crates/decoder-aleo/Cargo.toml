@@ -23,6 +23,9 @@ borsh = { workspace = true }
 # Base58 for Aleo addresses
 bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
 
+# Hashing for transaction IDs
+sha2 = { workspace = true }
+
 # Cryptographic dependencies for Aleo
 # BLS12-377 curve operations (used for reference, vendored in future)
 # For now, we keep the decoder pure Rust without external crypto libs

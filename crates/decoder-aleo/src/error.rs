@@ -58,7 +58,7 @@ impl From<AleoDecoderError> for decoder_primitives::DecoderError {
                 decoder_primitives::DecoderError::chain_specific(msg)
             }
             AleoDecoderError::ParsingError(msg) => {
-                decoder_primitives::DecoderError::parsing_failed(msg)
+                decoder_primitives::DecoderError::chain_decoding(msg)
             }
             AleoDecoderError::InvalidProgram(msg) => {
                 decoder_primitives::DecoderError::chain_specific(format!(
@@ -79,10 +79,10 @@ impl From<AleoDecoderError> for decoder_primitives::DecoderError {
                 decoder_primitives::DecoderError::chain_specific(format!("Invalid proof: {}", msg))
             }
             AleoDecoderError::InvalidAddress(msg) => {
-                decoder_primitives::DecoderError::invalid_signature(msg)
+                decoder_primitives::DecoderError::signature_verification(msg)
             }
             AleoDecoderError::Io(err) => {
-                decoder_primitives::DecoderError::parsing_failed(err.to_string())
+                decoder_primitives::DecoderError::chain_decoding(err.to_string())
             }
             AleoDecoderError::DecoderError(err) => err,
         }

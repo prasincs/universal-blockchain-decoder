@@ -1,11 +1,10 @@
 //! Aleo transaction type definitions
 
-use crate::error::{AleoDecoderError, Result};
+use crate::error::AleoDecoderError;
 use decoder_primitives::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use universal_decoder_core::ir::*;
-use universal_decoder_core::privacy::{ObservabilityLevel, PrivacyFeature, PrivacyMetadata};
+use universal_decoder_core::privacy::PrivacyMetadata;
 
 /// An Aleo transaction
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -207,7 +206,7 @@ impl fmt::Display for AleoTransaction {
 impl<'a> Canonicalizer<'a> for AleoTransaction {
     const VERSION: u8 = 1;
 
-    fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
+    fn canonicalize(&'a self) -> decoder_primitives::Result<TxIR<'a, 1>> {
         use universal_decoder_core::prelude::*;
 
         // Build metadata
@@ -241,20 +240,18 @@ impl<'a> Canonicalizer<'a> for AleoTransaction {
 
         // Create chain reference
         let chain = decoder_chains_common::chains::ALEO;
-        let chain_ref = ChainRef::from(&chain);
 
-        Ok(TxIR {
-            chain: chain_ref,
+        Ok(TxIR::with_privacy(
+            &chain,
             metadata,
             authorization,
             operations,
             state_deltas,
             privacy,
-            _phantom: std::marker::PhantomData,
-        })
+        ))
     }
 
-    fn validate(&self) -> Result<()> {
+    fn validate(&self) -> decoder_primitives::Result<()> {
         match &self.transaction_type {
             TransactionType::Deploy(deploy) => {
                 if deploy.program_id.is_empty() {
@@ -304,17 +301,24 @@ impl AleoTransaction {
                 operations.push(Operation::ContractDeploy(ContractDeploy {
                     bytecode: deploy.program.as_bytes().to_vec(),
                     constructor_args: vec![],
-                    value: Amount::zero(),
+                    value: Amount::new(0, 0),
                 }));
             }
             TransactionType::Execute(exec) => {
                 for transition in &exec.transitions {
                     operations.push(Operation::ContractCall(ContractCall {
-                        contract: Address::new(transition.program_id.as_bytes().to_vec()),
+                        contract: Address {
+                            bytes: transition.program_id.as_bytes().to_vec(),
+                            human_readable: Some(transition.program_id.clone()),
+                        },
                         method: transition.function_name.as_bytes().to_vec(),
                         data: vec![],
                         value: None,
-                        resource_limits: ResourceLimits::default(),
+                        resource_limits: ResourceLimits {
+                            max_units: 0,
+                            unit_price: 0,
+                            resource_type: ResourceType::Gas,
+                        },
                     }));
                 }
             }
@@ -324,7 +328,9 @@ impl AleoTransaction {
                     data: format!(
                         "{{\"amount\":{},\"priority\":{}}}",
                         fee.amount, fee.priority_fee
-                    ),
+                    )
+                    .into_bytes(),
+                    metadata: String::new(),
                 }));
             }
         }
@@ -333,52 +339,67 @@ impl AleoTransaction {
     }
 
     fn build_state_deltas(&self) -> StateDeltas {
-        let mut storage_changes = Vec::new();
+        let mut account_changes = Vec::new();
 
         if let TransactionType::Execute(exec) = &self.transaction_type {
             for transition in &exec.transitions {
-                for finalize_op in &transition.finalize {
-                    match finalize_op {
-                        FinalizeOperation::InsertMapping {
-                            name: _,
-                            key,
-                            value,
+                if !transition.finalize.is_empty() {
+                    let mut storage_changes = Vec::new();
+
+                    for finalize_op in &transition.finalize {
+                        match finalize_op {
+                            FinalizeOperation::InsertMapping {
+                                name: _,
+                                key,
+                                value,
+                            }
+                            | FinalizeOperation::UpdateMapping {
+                                name: _,
+                                key,
+                                value,
+                            } => {
+                                storage_changes.push(StorageChange {
+                                    key: key.clone(),
+                                    value: Some(value.clone()),
+                                });
+                            }
+                            FinalizeOperation::RemoveMapping { name: _, key } => {
+                                storage_changes.push(StorageChange {
+                                    key: key.clone(),
+                                    value: None,
+                                });
+                            }
+                            FinalizeOperation::InitializeMapping { name: _ } => {
+                                // No-op for initialization
+                            }
                         }
-                        | FinalizeOperation::UpdateMapping {
-                            name: _,
-                            key,
-                            value,
-                        } => {
-                            storage_changes.push(StorageChange {
-                                address: Address::new(transition.program_id.as_bytes().to_vec()),
-                                key: key.clone(),
-                                value: value.clone(),
-                            });
-                        }
-                        FinalizeOperation::RemoveMapping { name: _, key } => {
-                            storage_changes.push(StorageChange {
-                                address: Address::new(transition.program_id.as_bytes().to_vec()),
-                                key: key.clone(),
-                                value: vec![],
-                            });
-                        }
-                        FinalizeOperation::InitializeMapping { name: _ } => {
-                            // No-op for initialization
-                        }
+                    }
+
+                    if !storage_changes.is_empty() {
+                        account_changes.push(AccountChange {
+                            address: Address {
+                                bytes: transition.program_id.as_bytes().to_vec(),
+                                human_readable: Some(transition.program_id.clone()),
+                            },
+                            nonce: None,
+                            balance_change: 0,
+                            storage_changes,
+                        });
                     }
                 }
             }
         }
 
         StateDeltas {
-            utxo_consumed: vec![],
-            utxo_created: vec![],
-            balances: vec![],
-            storage: storage_changes,
+            inputs: vec![],
+            outputs: vec![],
+            account_changes,
         }
     }
 
     fn build_privacy_metadata(&self) -> Option<PrivacyMetadata> {
+        use universal_decoder_core::privacy::*;
+
         let has_private_data = match &self.transaction_type {
             TransactionType::Execute(exec) => exec
                 .transitions
@@ -390,12 +411,33 @@ impl AleoTransaction {
         if has_private_data {
             Some(PrivacyMetadata {
                 features: vec![
-                    PrivacyFeature::HiddenAmount,
-                    PrivacyFeature::HiddenSender,
-                    PrivacyFeature::HiddenRecipient,
+                    PrivacyFeature::HiddenAmount(ConfidentialAmount {
+                        commitment: vec![],
+                        range_proof: None,
+                        proof_system: RangeProofSystem::Bulletproofs,
+                    }),
+                    PrivacyFeature::HiddenSender(PrivateAddress {
+                        privacy_type: AddressPrivacyType::Custom {
+                            mechanism_name: "Aleo Records".to_string(),
+                            metadata: vec![],
+                        },
+                        public_address: vec![],
+                        viewing_hint: None,
+                    }),
+                    PrivacyFeature::HiddenRecipient(PrivateAddress {
+                        privacy_type: AddressPrivacyType::Custom {
+                            mechanism_name: "Aleo Records".to_string(),
+                            metadata: vec![],
+                        },
+                        public_address: vec![],
+                        viewing_hint: None,
+                    }),
                 ],
                 observability: ObservabilityLevel::FullyPrivate,
-                viewing_key: Some("Aleo viewing key".to_string()),
+                viewing_key: Some(ViewingKey {
+                    key_type: ViewingKeyType::Custom("Aleo".to_string()),
+                    key_data: vec![],
+                }),
             })
         } else {
             None
