@@ -40,3 +40,9 @@ name = "fuzz_bitcoin_txid"
 path = "fuzz_targets/fuzz_bitcoin_txid.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "fuzz_txir_roundtrip"
+path = "fuzz_targets/fuzz_txir_roundtrip.rs"
+test = false
+doc = false
