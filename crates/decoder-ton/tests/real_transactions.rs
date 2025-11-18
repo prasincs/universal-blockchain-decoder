@@ -130,7 +130,7 @@ fn test_boc_format_validation() {
 
         // Parse cells
         let cells = boc::parse_boc(&boc_bytes)
-            .unwrap_or_else(|_| panic!("Failed to parse {}", name));
+            .unwrap_or_else(|e| panic!("Failed to parse {}: {:?}", name, e));
 
         assert!(!cells.is_empty(), "{} should have cells", name);
         println!("  ✓ Parsed {} cells", cells.len());
