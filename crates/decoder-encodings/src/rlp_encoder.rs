@@ -202,7 +202,10 @@ impl<'a> ListEncoder<'a> {
 /// Encode a length as big-endian bytes (minimal representation)
 fn encode_length(len: usize) -> Vec<u8> {
     let bytes = len.to_be_bytes();
-    let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+    let start = bytes
+        .iter()
+        .position(|&b| b != 0)
+        .unwrap_or(bytes.len() - 1);
     bytes[start..].to_vec()
 }
 
@@ -276,7 +279,8 @@ mod tests {
             inner.append_u64(1)?;
             inner.append_u64(2)?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         list.append_u64(3).unwrap();
         list.finalize().unwrap();

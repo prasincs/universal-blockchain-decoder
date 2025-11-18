@@ -16,10 +16,7 @@ fn test_arbitrum_tx_txir_completeness() {
     println!("Nonce: {}", tx.nonce);
     println!("Gas Price: {:?}", tx.gas_price);
     println!("Gas Limit: {}", tx.gas_limit);
-    println!(
-        "To: {:?}",
-        tx.to.map(universal_decoder_core::hex::encode)
-    );
+    println!("To: {:?}", tx.to.map(universal_decoder_core::hex::encode));
     println!("Value: {}", tx.value);
     println!("Data length: {} bytes", tx.data.len());
     println!("Data: {}", universal_decoder_core::hex::encode(&tx.data));
@@ -110,10 +107,7 @@ fn test_eip1559_tx_txir_completeness() {
         tx.max_priority_fee_per_gas
     );
     println!("Gas Limit: {}", tx.gas_limit);
-    println!(
-        "To: {:?}",
-        tx.to.map(universal_decoder_core::hex::encode)
-    );
+    println!("To: {:?}", tx.to.map(universal_decoder_core::hex::encode));
     println!("Value: {}", tx.value);
     println!("Data length: {} bytes", tx.data.len());
     println!("Data: {}", universal_decoder_core::hex::encode(&tx.data));

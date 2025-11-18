@@ -253,11 +253,13 @@ mod tests {
                 expiry_height: 0,
                 is_segwit: false,
                 witnesses: None,
+                raw_bytes: Vec::new(),
             },
             spends: vec![], // No spends to verify
             outputs: vec![],
             value_balance: 0,
             binding_sig: [0x00; 64],
+            raw_bytes: Vec::new(),
         };
 
         // Should succeed (no signatures to verify)
@@ -281,11 +283,13 @@ mod tests {
                 expiry_height: 0,
                 is_segwit: false,
                 witnesses: None,
+                raw_bytes: Vec::new(),
             },
             spends: vec![],
             outputs: vec![],
             value_balance: 0,
             binding_sig: [0x00; 64],
+            raw_bytes: Vec::new(),
         };
 
         let result = verify_binding_signature(&tx, ConsensusBranchId::Sapling);

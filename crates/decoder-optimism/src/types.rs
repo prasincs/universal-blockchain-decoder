@@ -662,6 +662,7 @@ mod tests {
             21000,
             false,
             vec![1, 2, 3],
+            Vec::new(),
         );
 
         let serialized = borsh::to_vec(&deposit).expect("Failed to serialize");

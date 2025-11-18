@@ -16,14 +16,16 @@ fn test_injective_property_arbitrum_tx1() {
 
     // Step 3: Verify injective property
     assert_eq!(
-        original_bytes,
-        roundtrip_bytes,
+        original_bytes, roundtrip_bytes,
         "Injective property violated: encode(decode(x)) != x"
     );
 
     println!("✅ Injective property holds!");
     println!("Original:  {}", original_hex);
-    println!("Roundtrip: {}", universal_decoder_core::hex::encode(&roundtrip_bytes));
+    println!(
+        "Roundtrip: {}",
+        universal_decoder_core::hex::encode(&roundtrip_bytes)
+    );
 }
 
 #[test]
@@ -37,14 +39,16 @@ fn test_injective_property_arbitrum_tx2() {
     let roundtrip_bytes = tx.to_bytes().unwrap();
 
     assert_eq!(
-        original_bytes,
-        roundtrip_bytes,
+        original_bytes, roundtrip_bytes,
         "Injective property violated: encode(decode(x)) != x"
     );
 
     println!("✅ Injective property holds!");
     println!("Original:  {}", original_hex);
-    println!("Roundtrip: {}", universal_decoder_core::hex::encode(&roundtrip_bytes));
+    println!(
+        "Roundtrip: {}",
+        universal_decoder_core::hex::encode(&roundtrip_bytes)
+    );
 }
 
 #[test]
@@ -65,7 +69,7 @@ fn test_hardcoded_values_not_in_encoding_path() {
 
             // ResourceType::Gas is here (TxIR)
             assert_eq!(call.resource_limits.resource_type, ResourceType::Gas);
-        },
+        }
         _ => panic!("Expected ContractCall"),
     }
 

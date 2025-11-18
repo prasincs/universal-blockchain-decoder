@@ -371,6 +371,7 @@ mod tests {
             expiry_height: 0,
             is_segwit: false,
             witnesses: None,
+            raw_bytes: Vec::new(),
         };
 
         let hash = compute_hash_prevouts(&transparent).unwrap();

@@ -75,6 +75,7 @@ fn arb_deposit_tx() -> impl Strategy<Value = DepositTransaction> {
                     gas_limit,
                     is_creation,
                     data,
+                    raw_bytes: Vec::new(),
                 }
             },
         )
@@ -274,6 +275,7 @@ proptest! {
             gas_limit,
             is_creation,
             data,
+            raw_bytes: Vec::new(),
         };
 
         prop_assert!(deposit.validate().is_ok());
@@ -296,6 +298,7 @@ proptest! {
             gas_limit,
             is_creation: false,
             data: vec![],
+            raw_bytes: Vec::new(),
         };
 
         // Should validate successfully
