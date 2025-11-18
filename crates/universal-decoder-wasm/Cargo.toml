@@ -44,7 +44,7 @@ decoder-cardano = { path = "../decoder-cardano" }
 decoder-polkadot = { path = "../decoder-polkadot" }
 decoder-stellar = { path = "../decoder-stellar" }
 decoder-tron = { path = "../decoder-tron" }
-# decoder-starknet = { path = "../decoder-starknet" }  # TODO: Fix compilation errors
+decoder-starknet = { path = "../decoder-starknet" }
 decoder-xrp = { path = "../decoder-xrp" }
 
 # WASM infrastructure

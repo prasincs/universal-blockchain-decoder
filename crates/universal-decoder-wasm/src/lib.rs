@@ -25,7 +25,7 @@ use decoder_optimism::OptimismDecoder;
 use decoder_polkadot::PolkadotDecoder;
 use decoder_polygon::PolygonDecoder;
 use decoder_solana::SolanaDecoder;
-// use decoder_starknet::StarknetDecoder;  // TODO: Fix compilation errors
+use decoder_starknet::StarknetDecoder;
 use decoder_stellar::StellarDecoder;
 use decoder_sui::SuiDecoder;
 use decoder_tron::TronDecoder;
@@ -153,7 +153,7 @@ pub fn decode_transaction(chain: &str, hex: &str) -> Result<DecodeResult, JsValu
         "polkadot" | "dot" => decode_with::<PolkadotDecoder>(&bytes),
         "stellar" | "xlm" => decode_with::<StellarDecoder>(&bytes),
         "tron" | "trx" => decode_with::<TronDecoder>(&bytes),
-        // "starknet" => decode_with::<StarknetDecoder>(&bytes),  // TODO: Fix compilation errors
+        "starknet" => decode_with::<StarknetDecoder>(&bytes),
         "xrp" | "ripple" => decode_with::<XrpDecoder>(&bytes),
 
         _ => Err(JsValue::from_str(&format!("Unsupported chain: {}", chain))),
@@ -309,12 +309,12 @@ pub fn get_chains_metadata() -> JsValue {
             family: "Account".to_string(),
             has_privacy: false,
         },
-        // ChainMetadata {  // TODO: Fix compilation errors
-        //     id: "starknet".to_string(),
-        //     name: "StarkNet".to_string(),
-        //     family: "Account".to_string(),
-        //     has_privacy: false,
-        // },
+        ChainMetadata {
+            id: "starknet".to_string(),
+            name: "StarkNet".to_string(),
+            family: "Account".to_string(),
+            has_privacy: false,
+        },
         ChainMetadata {
             id: "xrp".to_string(),
             name: "XRP Ledger".to_string(),
@@ -405,9 +405,9 @@ pub fn auto_detect_chain(hex: &str) -> Result<String, JsValue> {
     if TronDecoder::decode(&bytes).is_ok() {
         return Ok("tron".to_string());
     }
-    // if StarknetDecoder::decode(&bytes).is_ok() {  // TODO: Fix compilation errors
-    //     return Ok("starknet".to_string());
-    // }
+    if StarknetDecoder::decode(&bytes).is_ok() {
+        return Ok("starknet".to_string());
+    }
     if XrpDecoder::decode(&bytes).is_ok() {
         return Ok("xrp".to_string());
     }
