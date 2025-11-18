@@ -60,7 +60,12 @@ fn create_payment_transaction(
         },
     };
 
-    rmp_serde::to_vec(&tx).expect("Failed to serialize transaction")
+    // Use struct_map mode to serialize with named fields (maps) instead of positional (arrays)
+    // This matches Algorand's actual MessagePack encoding
+    let mut buf = Vec::new();
+    tx.serialize(&mut rmp_serde::Serializer::new(&mut buf).with_struct_map())
+        .expect("Failed to serialize transaction");
+    buf
 }
 
 /// Helper to create an asset transfer transaction
@@ -107,7 +112,11 @@ fn create_asset_transfer(sender: &[u8], receiver: &[u8], asset_id: u64, amount: 
         },
     };
 
-    rmp_serde::to_vec(&tx).expect("Failed to serialize asset transfer")
+    // Use struct_map mode to serialize with named fields (maps) instead of positional (arrays)
+    let mut buf = Vec::new();
+    tx.serialize(&mut rmp_serde::Serializer::new(&mut buf).with_struct_map())
+        .expect("Failed to serialize asset transfer");
+    buf
 }
 
 /// Helper to create an application call transaction
@@ -151,7 +160,11 @@ fn create_app_call(sender: &[u8], app_id: u64, app_args: Vec<Vec<u8>>) -> Vec<u8
         },
     };
 
-    rmp_serde::to_vec(&tx).expect("Failed to serialize app call")
+    // Use struct_map mode to serialize with named fields (maps) instead of positional (arrays)
+    let mut buf = Vec::new();
+    tx.serialize(&mut rmp_serde::Serializer::new(&mut buf).with_struct_map())
+        .expect("Failed to serialize app call");
+    buf
 }
 
 #[test]
@@ -405,7 +418,12 @@ fn test_validation_invalid_sender_length() {
         },
     };
 
-    let tx_bytes = rmp_serde::to_vec(&bad_tx).unwrap();
+    // Use struct_map mode for consistent serialization
+    let mut buf = Vec::new();
+    bad_tx
+        .serialize(&mut rmp_serde::Serializer::new(&mut buf).with_struct_map())
+        .unwrap();
+    let tx_bytes = buf;
     let decoded = AlgorandDecoder::decode(&tx_bytes).unwrap();
 
     // Should fail validation
@@ -456,7 +474,12 @@ fn test_validation_invalid_round_range() {
         },
     };
 
-    let tx_bytes = rmp_serde::to_vec(&bad_tx).unwrap();
+    // Use struct_map mode for consistent serialization
+    let mut buf = Vec::new();
+    bad_tx
+        .serialize(&mut rmp_serde::Serializer::new(&mut buf).with_struct_map())
+        .unwrap();
+    let tx_bytes = buf;
     let decoded = AlgorandDecoder::decode(&tx_bytes).unwrap();
 
     // Should fail validation

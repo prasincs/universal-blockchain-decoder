@@ -1,0 +1,9 @@
+{
+  "description": "Bitcoin Cash simple P2PKH transaction",
+  "fork": "Bitcoin Cash (BCH)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Standard BCH transaction with same structure as Bitcoin. SIGHASH_FORKID (0x40) used in signatures but transaction structure is identical."
+}

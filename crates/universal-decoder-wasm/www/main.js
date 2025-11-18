@@ -242,7 +242,7 @@ decodeBtn.addEventListener('click', async () => {
         return;
     }
 
-    const hex = inputEditor.value.trim();
+    let hex = inputEditor.value.trim();
     if (!hex) {
         showError('Please enter transaction hex');
         return;
@@ -252,6 +252,12 @@ decodeBtn.addEventListener('click', async () => {
     if (!chain) {
         showError('Please select a blockchain');
         return;
+    }
+
+    // Strip 0x prefix if present (common when copying from Etherscan)
+    if (hex.startsWith('0x') || hex.startsWith('0X')) {
+        console.log('Stripping 0x prefix from transaction hex');
+        hex = hex.slice(2);
     }
 
     console.log(`Decoding ${hex.length} chars of hex for chain: ${chain}`);
@@ -280,10 +286,16 @@ autoDetectBtn.addEventListener('click', async () => {
         return;
     }
 
-    const hex = inputEditor.value.trim();
+    let hex = inputEditor.value.trim();
     if (!hex) {
         showError('Please enter transaction hex');
         return;
+    }
+
+    // Strip 0x prefix if present (common when copying from Etherscan)
+    if (hex.startsWith('0x') || hex.startsWith('0X')) {
+        console.log('Stripping 0x prefix from transaction hex for auto-detection');
+        hex = hex.slice(2);
     }
 
     autoDetectBtn.classList.add('loading');
@@ -359,7 +371,15 @@ function displayResult(result) {
 
         if (jsonData === null || jsonData === undefined) {
             console.error('JSON data is null or undefined!');
-            outputJson.value = 'Error: JSON data is null or undefined';
+            console.error('Full result object:', result);
+            console.error('Result properties:', Object.getOwnPropertyNames(result));
+
+            // Try to show something useful even if json is null
+            outputJson.value = 'Error: Decoder returned null JSON data.\n\n' +
+                               'Result properties: ' + Object.getOwnPropertyNames(result).join(', ') + '\n\n' +
+                               'This might be a decoder implementation issue. Please report this bug with:\n' +
+                               '- Chain: ' + chainSelect.value + '\n' +
+                               '- Transaction hex (first 100 chars): ' + inputEditor.value.substring(0, 100);
         } else {
             // Convert Map to plain object
             const jsonObject = mapToObject(jsonData);
@@ -373,7 +393,8 @@ function displayResult(result) {
         }
     } catch (e) {
         console.error('JSON display exception:', e);
-        outputJson.value = 'Error displaying JSON: ' + e.message + '\nStack: ' + e.stack;
+        console.error('Exception stack:', e.stack);
+        outputJson.value = 'Error displaying JSON: ' + e.message + '\n\nStack: ' + e.stack + '\n\nPlease check the browser console for more details.';
     }
 
     // Canonical Borsh output - INVERTED: Show fields first, then raw payload
@@ -389,6 +410,7 @@ function displayResult(result) {
         if (borshFields === null || borshFields === undefined) {
             console.error('Borsh fields are null or undefined!');
             borshOutput += 'Error: Borsh fields are null or undefined\n';
+            borshOutput += 'This might be a decoder implementation issue.\n';
         } else {
             // Convert Map to plain object
             const borshObject = mapToObject(borshFields);
@@ -401,14 +423,19 @@ function displayResult(result) {
 
         borshOutput += '\n\n';
         borshOutput += '// Raw Borsh Payload (Hex)\n';
-        borshOutput += formatHexWithLineBreaks(result.canonical_hex);
+        if (result.canonical_hex) {
+            borshOutput += formatHexWithLineBreaks(result.canonical_hex);
+        } else {
+            borshOutput += 'Error: No canonical hex available';
+        }
 
         console.log('Setting outputCanonical.value, total length:', borshOutput.length);
         outputCanonical.value = borshOutput;
         console.log('Set outputCanonical.value, new value length:', outputCanonical.value.length);
     } catch (e) {
         console.error('Borsh display exception:', e);
-        outputCanonical.value = 'Error displaying Borsh: ' + e.message + '\nStack: ' + e.stack;
+        console.error('Exception stack:', e.stack);
+        outputCanonical.value = 'Error displaying Borsh: ' + e.message + '\n\nStack: ' + e.stack + '\n\nPlease check the browser console for more details.';
     }
 
     // Privacy analysis

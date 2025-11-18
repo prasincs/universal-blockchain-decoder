@@ -11,8 +11,11 @@ description = "NEAR transaction decoder for universal-decoder"
 universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
-serde_json = { workspace = true }
 proptest = { workspace = true }
+# NEAR primitives for validation testing only (not production code)
+# near-primitives = "0.20"

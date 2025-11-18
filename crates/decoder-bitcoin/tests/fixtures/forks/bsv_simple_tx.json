@@ -1,0 +1,9 @@
+{
+  "description": "Bitcoin SV simple P2PKH transaction",
+  "fork": "Bitcoin SV (BSV)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Bitcoin SV forked from Bitcoin Cash. Uses same transaction structure as Bitcoin with SIGHASH_FORKID."
+}

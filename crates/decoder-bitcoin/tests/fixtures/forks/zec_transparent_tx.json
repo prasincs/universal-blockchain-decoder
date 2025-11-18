@@ -1,0 +1,9 @@
+{
+  "description": "Zcash transparent transaction",
+  "fork": "Zcash (ZEC)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Zcash v1-v2 transparent transactions use Bitcoin-compatible format. Shielded transactions (v4+) have completely different structure with zk-SNARK proofs."
+}

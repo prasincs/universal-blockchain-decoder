@@ -1,0 +1,9 @@
+{
+  "description": "Litecoin simple P2PKH transaction",
+  "fork": "Litecoin (LTC)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Litecoin uses identical transaction format to Bitcoin. Only difference is network parameters (addresses, block time)."
+}
