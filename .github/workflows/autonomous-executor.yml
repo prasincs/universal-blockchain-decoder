@@ -1,0 +1,212 @@
+name: Autonomous Task Executor
+
+# Run periodically to autonomously implement highest ROI tasks
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'Specific task ID to execute (e.g., phase-3.2)'
+        required: false
+        type: string
+      top_n:
+        description: 'Number of top ROI tasks to execute'
+        required: false
+        default: '1'
+        type: string
+      dry_run:
+        description: 'Dry run (no actual changes)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  autonomous-executor:
+    name: Autonomous Task Execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # 2 hours max per run
+
+    permissions:
+      contents: write  # For pushing branches
+      pull-requests: write  # For creating PRs
+      checks: read  # For checking CI status
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0  # Full history for rebasing
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install GitHub CLI
+        run: |
+          type -p gh >/dev/null || {
+            type -p wget >/dev/null || sudo apt update && sudo apt install wget
+            sudo mkdir -p -m 755 /etc/apt/keyrings
+            wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+            sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update
+            sudo apt install gh -y
+          }
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Claude Code Autonomous Bot"
+          git config --global user.email "claude-bot@anthropic.com"
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Rebase feature branches (daily maintenance)
+        if: github.event_name == 'schedule'
+        run: |
+          echo "Rebasing all claude/** branches..."
+
+          # Fetch all branches
+          git fetch origin
+
+          # Get all remote claude/** branches
+          branches=$(git branch -r | grep 'origin/claude/' | sed 's|origin/||' | grep -v HEAD || true)
+
+          if [ -z "$branches" ]; then
+            echo "No claude/** branches found to rebase"
+            exit 0
+          fi
+
+          echo "Found branches:"
+          echo "$branches"
+
+          # Rebase each branch onto main
+          for branch in $branches; do
+            echo ""
+            echo "Rebasing $branch..."
+
+            # Checkout branch
+            git checkout -B "$branch" "origin/$branch"
+
+            # Try to rebase
+            if git rebase origin/main; then
+              echo "✅ Rebase successful for $branch"
+              # Force push (with lease for safety)
+              git push origin "$branch" --force-with-lease || echo "⚠️  Failed to push $branch"
+            else
+              echo "❌ Rebase failed for $branch (conflicts or other issues)"
+              git rebase --abort || true
+            fi
+          done
+
+          # Return to main
+          git checkout main
+
+      - name: Run autonomous executor
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/autonomous_executor.py \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.task_id && format('--task-id {0}', github.event.inputs.task_id) || '' }} \
+            ${{ github.event.inputs.top_n && format('--top-n {0}', github.event.inputs.top_n) || '--top-n 1' }}
+
+      - name: Report execution status
+        if: always()
+        run: |
+          echo "Autonomous executor completed"
+          echo "Check the logs above for details on task execution"
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🤖 Autonomous Executor Failed',
+              body: `The autonomous executor workflow failed.
+
+            **Workflow Run**: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+            **Triggered by**: ${context.eventName}
+
+            Please review the logs and fix any issues.`,
+              labels: ['autonomous', 'bug']
+            });
+
+  # Monitor and auto-merge PRs created by autonomous executor
+  auto-merge:
+    name: Auto-Merge Autonomous PRs
+    runs-on: ubuntu-latest
+    needs: autonomous-executor
+    if: always() && github.event_name == 'schedule'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find autonomous PRs ready to merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Looking for autonomous PRs with passing checks..."
+
+          # Find PRs created by autonomous executor
+          prs=$(gh pr list --label "autonomous" --state open --json number,title,statusCheckRollup)
+
+          echo "Found PRs:"
+          echo "$prs" | jq '.'
+
+          # For each PR, check if all checks pass
+          for pr in $(echo "$prs" | jq -r '.[].number'); do
+            echo ""
+            echo "Checking PR #$pr..."
+
+            # Get check status
+            status=$(gh pr view $pr --json statusCheckRollup --jq '.statusCheckRollup[].conclusion')
+
+            # Check if all checks passed
+            if echo "$status" | grep -qv "SUCCESS"; then
+              echo "⏳ PR #$pr has pending or failed checks, skipping..."
+              continue
+            fi
+
+            echo "✅ All checks passed for PR #$pr"
+
+            # Enable auto-merge (squash)
+            if gh pr merge $pr --auto --squash; then
+              echo "✅ Auto-merge enabled for PR #$pr"
+            else
+              echo "⚠️  Failed to enable auto-merge for PR #$pr"
+            fi
+          done
