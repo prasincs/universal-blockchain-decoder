@@ -1,0 +1,88 @@
+# Evmos Decoder Specification
+# Multi-family chain: Cosmos SDK + EVM
+#
+# Usage:
+#   cargo run -p decoder-generator -- generate docs/templates/multi-family/evmos_example.toml
+
+[chain]
+name = "Evmos"
+chain_id = 9001
+family = "multi"  # Special: indicates multi-family chain
+families = ["cosmos", "evm"]  # List of supported families
+description = "Cosmos SDK chain with full EVM compatibility"
+
+[chain.metadata]
+bech32_prefix = "evmos"        # Cosmos SDK addresses
+evm_chain_id = 9001            # EVM network ID
+block_explorer = "https://www.mintscan.io/evmos"
+documentation = "https://docs.evmos.org/"
+
+# Primary encoding (Cosmos SDK)
+[encoding]
+endianness = "big"
+hash = "sha256"
+var_encoding = "protobuf"
+
+# EVM encoding (secondary)
+[encoding.evm]
+endianness = "big"
+hash = "keccak256"
+var_encoding = "rlp"
+
+# Transaction routing logic
+[routing]
+# How to detect transaction family from raw bytes
+detection_strategy = "format_based"
+
+# Detection rules (in order)
+[[routing.rules]]
+family = "evm"
+condition = "first_byte <= 0x7f OR first_byte >= 0xc0"
+description = "EVM transactions: EIP-2718 types (0x00-0x7f) or RLP lists (0xc0+)"
+
+[[routing.rules]]
+family = "cosmos"
+condition = "is_protobuf"
+description = "Cosmos SDK transactions: Protobuf-encoded"
+
+# Cosmos SDK transaction format
+[transaction.cosmos]
+type = "protobuf"
+schema = "cosmos.tx.v1beta1.Tx"
+supported_messages = [
+    "MsgSend",
+    "MsgDelegate",
+    "MsgVote",
+    "MsgExecuteContract",  # CosmWasm
+]
+
+# EVM transaction format
+[transaction.evm]
+type = "rlp"
+supported_types = [
+    "Legacy",    # Pre-EIP-155
+    "EIP155",    # With chain ID
+    "EIP2930",   # Access list
+    "EIP1559",   # Fee market
+    "EIP4844",   # Blob transactions
+]
+
+# Test fixtures
+[testing]
+cosmos_fixtures = [
+    { url = "https://www.mintscan.io/evmos/txs/...", type = "MsgSend" },
+    { url = "https://www.mintscan.io/evmos/txs/...", type = "MsgDelegate" },
+]
+evm_fixtures = [
+    { url = "https://evm.evmos.org/tx/...", type = "EIP1559" },
+    { url = "https://evm.evmos.org/tx/...", type = "Legacy" },
+]
+
+# Dependencies
+[dependencies]
+# Reuse existing decoders
+cosmos = { path = "../decoder-cosmos" }
+evm = { path = "../decoder-evm" }
+
+# Additional deps for Evmos-specific features
+evmutil = { optional = true }  # For EVM ↔ Cosmos bridge transactions
