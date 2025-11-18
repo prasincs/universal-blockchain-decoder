@@ -12,6 +12,8 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+blake2 = "0.10"  # Blake2b hashing for transaction IDs
+borsh = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
