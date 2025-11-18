@@ -108,6 +108,12 @@ impl ChainDecoder for CosmosDecoder {
     }
 }
 
+impl ChainEncoder for CosmosTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for CosmosTransaction {
     const VERSION: u8 = 1;
 

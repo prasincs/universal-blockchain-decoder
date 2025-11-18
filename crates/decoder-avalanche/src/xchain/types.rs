@@ -12,6 +12,9 @@ pub struct XChainTransaction {
 
     /// Transaction type
     pub tx_type: XChainTxType,
+
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 /// X-Chain transaction types

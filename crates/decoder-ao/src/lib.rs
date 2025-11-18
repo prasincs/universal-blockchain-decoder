@@ -125,6 +125,12 @@ impl ChainDecoder for AODecoder {
     }
 }
 
+impl ChainEncoder for AOTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for AOTransaction {
     const VERSION: u8 = 1;
 

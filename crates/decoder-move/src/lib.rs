@@ -166,6 +166,16 @@ impl MoveTransaction {
     }
 }
 
+impl ChainEncoder for MoveTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            MoveTransaction::Aptos { inner, .. } => inner.to_bytes(),
+            MoveTransaction::Sui { inner, .. } => inner.to_bytes(),
+            MoveTransaction::Movement { raw_bytes, .. } => Ok(raw_bytes.clone()),
+        }
+    }
+}
+
 impl<'a> Canonicalizer<'a> for MoveTransaction {
     const VERSION: u8 = 1;
 

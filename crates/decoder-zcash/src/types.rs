@@ -80,6 +80,9 @@ pub struct TransparentTransaction {
 
     /// Witness data (if SegWit)
     pub witnesses: Option<Vec<Vec<Vec<u8>>>>,
+
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 /// Sapling shielded transaction
@@ -119,6 +122,9 @@ pub struct SaplingTransaction {
     ///
     /// Ensures no value is created or destroyed.
     pub binding_sig: [u8; 64],
+
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 /// Orchard shielded transaction (Phase 4)
@@ -172,6 +178,31 @@ pub struct ActionDescription {
 
     /// Encrypted outgoing ciphertext (80 bytes)
     pub out_ciphertext: Vec<u8>,
+}
+
+impl ChainEncoder for ZcashTransaction {
+    /// Re-encode the Zcash transaction back to its original byte format
+    ///
+    /// Since we store the original raw bytes during decoding, this simply
+    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    ///
+    /// # Formal Properties
+    ///
+    /// This implementation trivially satisfies the injective property:
+    /// ```text
+    /// ∀ tx_bytes: ZcashDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
+    /// ```
+    ///
+    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            ZcashTransaction::Transparent(tx) => Ok(tx.raw_bytes.clone()),
+            ZcashTransaction::Sapling(tx) => Ok(tx.raw_bytes.clone()),
+            ZcashTransaction::Orchard(_) => Err(DecoderError::chain_specific(
+                "Orchard transaction re-encoding not yet implemented (Phase 4)".to_string(),
+            )),
+        }
+    }
 }
 
 impl<'a> Canonicalizer<'a> for ZcashTransaction {

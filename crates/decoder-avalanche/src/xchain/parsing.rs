@@ -39,7 +39,11 @@ pub fn parse_xchain_transaction(raw_bytes: &[u8]) -> Result<XChainTransaction> {
         }
     };
 
-    Ok(XChainTransaction { codec_id, tx_type })
+    Ok(XChainTransaction {
+        codec_id,
+        tx_type,
+        raw_bytes: raw_bytes.to_vec(),
+    })
 }
 
 /// Parse base transaction fields

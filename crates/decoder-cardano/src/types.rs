@@ -241,6 +241,12 @@ impl CardanoTransaction {
     }
 }
 
+impl ChainEncoder for CardanoTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for CardanoTransaction {
     const VERSION: u8 = 1;
 

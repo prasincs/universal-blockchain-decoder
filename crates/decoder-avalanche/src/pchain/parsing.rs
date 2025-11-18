@@ -60,7 +60,11 @@ pub fn parse_pchain_transaction(raw_bytes: &[u8]) -> Result<PChainTransaction> {
         }
     };
 
-    Ok(PChainTransaction { codec_id, tx_type })
+    Ok(PChainTransaction {
+        codec_id,
+        tx_type,
+        raw_bytes: raw_bytes.to_vec(),
+    })
 }
 
 /// Parse validator information

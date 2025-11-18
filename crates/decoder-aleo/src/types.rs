@@ -203,6 +203,12 @@ impl fmt::Display for AleoTransaction {
     }
 }
 
+impl ChainEncoder for AleoTransaction {
+    fn to_bytes(&self) -> decoder_primitives::Result<Vec<u8>> {
+        Ok(self.raw_bytes.clone())
+    }
+}
+
 impl<'a> Canonicalizer<'a> for AleoTransaction {
     const VERSION: u8 = 1;
 

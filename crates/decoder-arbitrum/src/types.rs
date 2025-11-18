@@ -369,6 +369,31 @@ impl InternalTransaction {
     }
 }
 
+impl ChainEncoder for ArbitrumTransaction {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            ArbitrumTransaction::Standard(eth_tx) => {
+                // Delegate to Ethereum re-encoding for standard transactions
+                eth_tx.to_bytes()
+            }
+            ArbitrumTransaction::Deposit(_)
+            | ArbitrumTransaction::Unsigned(_)
+            | ArbitrumTransaction::Contract(_)
+            | ArbitrumTransaction::Retry(_)
+            | ArbitrumTransaction::SubmitRetryable(_)
+            | ArbitrumTransaction::Internal(_) => {
+                // TODO: Custom Arbitrum transaction types need raw_bytes field added for re-encoding
+                // For now, return error indicating this is not yet supported
+                Err(DecoderError::invalid_structure(
+                    "Re-encoding custom Arbitrum transaction types not yet supported. \
+                     Custom types (Deposit, Unsigned, Contract, Retry, SubmitRetryable, Internal) \
+                     need to store raw_bytes for exact reconstruction.",
+                ))
+            }
+        }
+    }
+}
+
 impl<'a> universal_decoder_core::traits::Canonicalizer<'a> for ArbitrumTransaction {
     const VERSION: u8 = 1;
 

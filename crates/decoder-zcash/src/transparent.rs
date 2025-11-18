@@ -28,6 +28,7 @@ pub fn parse_transparent_transaction(
     cursor: &mut Cursor<&[u8]>,
     version: u32,
     version_group_id: u32,
+    raw_bytes: &[u8],
 ) -> Result<TransparentTransaction> {
     // Detect SegWit (marker 0x00, flag 0x01)
     let is_segwit = detect_segwit_zcash(cursor)?;
@@ -111,6 +112,7 @@ pub fn parse_transparent_transaction(
         expiry_height,
         is_segwit,
         witnesses,
+        raw_bytes: raw_bytes.to_vec(),
     })
 }
 

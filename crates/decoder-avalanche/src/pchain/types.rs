@@ -12,6 +12,9 @@ pub struct PChainTransaction {
 
     /// Transaction type
     pub tx_type: PChainTxType,
+
+    /// Raw transaction bytes (for re-encoding)
+    pub raw_bytes: Vec<u8>,
 }
 
 /// P-Chain transaction types

@@ -46,6 +46,7 @@ pub fn parse_zcash_v4_transaction(
     cursor: &mut Cursor<&[u8]>,
     version: u32,
     version_group_id: u32,
+    raw_bytes: &[u8],
 ) -> Result<ZcashTransaction> {
     // Validate version_group_id for Sapling
     match version_group_id {
@@ -68,7 +69,7 @@ pub fn parse_zcash_v4_transaction(
     }
 
     // Parse transparent component (reuses Bitcoin decoder logic)
-    let transparent = parse_transparent_transaction(cursor, version, version_group_id)?;
+    let transparent = parse_transparent_transaction(cursor, version, version_group_id, raw_bytes)?;
 
     // Phase 2: Parse Sapling components
     // - sapling_spends (varint count + spend descriptions)
@@ -121,6 +122,7 @@ pub fn parse_zcash_v4_transaction(
         outputs,
         value_balance,
         binding_sig,
+        raw_bytes: raw_bytes.to_vec(),
     }))
 }
 

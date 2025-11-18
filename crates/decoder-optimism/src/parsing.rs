@@ -31,7 +31,7 @@ pub fn parse_optimism_transaction(bytes: &[u8]) -> Result<OptimismTransaction> {
         }
         0x7E => {
             // Optimism deposit transaction
-            parse_deposit_transaction(&bytes[1..])
+            parse_deposit_transaction(&bytes[1..], bytes)
         }
         0x7F => {
             // Reserved for future use
@@ -71,7 +71,7 @@ pub fn parse_optimism_transaction(bytes: &[u8]) -> Result<OptimismTransaction> {
 /// - gas_limit: uint64
 /// - is_creation: bool (0x00 or 0x01)
 /// - data: bytes
-fn parse_deposit_transaction(rlp_bytes: &[u8]) -> Result<OptimismTransaction> {
+fn parse_deposit_transaction(rlp_bytes: &[u8], raw_bytes: &[u8]) -> Result<OptimismTransaction> {
     // Deposit transaction must be an RLP list
     let rlp = RlpItem::decode(rlp_bytes)?;
     let items = match rlp {
@@ -124,6 +124,7 @@ fn parse_deposit_transaction(rlp_bytes: &[u8]) -> Result<OptimismTransaction> {
         gas_limit,
         is_creation,
         data,
+        raw_bytes.to_vec(),
     );
 
     // Validate invariants
