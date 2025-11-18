@@ -1,0 +1,21 @@
+{
+  "name": "Unsigned System Remark V4",
+  "description": "Simple unsigned extrinsic calling system pallet remark function",
+  "extrinsic_type": "unsigned",
+  "version": 4,
+  "is_signed": false,
+  "call": {
+    "pallet_index": 0,
+    "pallet_name": "System",
+    "call_index": 0,
+    "call_name": "remark",
+    "parameters": {
+      "remark": ""
+    }
+  },
+  "metadata": {
+    "source": "Polkadot SDK test vector",
+    "chain": "Generic Substrate",
+    "note": "Minimal unsigned extrinsic"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "multi_signer_transaction",
+  "description": "Transaction requiring multiple signatures",
+  "type": "legacy",
+  "payer": "Alice",
+  "instructions": [
+    {
+      "program_id": "11111111111111111111111111111111",
+      "program_name": "System Program",
+      "instruction_type": "allocate",
+      "data_hex": "0900000000f01090000000000",
+      "accounts": [
+        {
+          "pubkey": "new_account",
+          "is_signer": true,
+          "is_writable": true
+        }
+      ]
+    },
+    {
+      "program_id": "11111111111111111111111111111111",
+      "program_name": "System Program",
+      "instruction_type": "assign",
+      "data_hex": "03000000",
+      "accounts": [
+        {
+          "pubkey": "new_account",
+          "is_signer": true,
+          "is_writable": true
+        },
+        {
+          "pubkey": "system_program",
+          "is_signer": false,
+          "is_writable": false
+        }
+      ]
+    },
+    {
+      "program_id": "11111111111111111111111111111111",
+      "program_name": "System Program",
+      "instruction_type": "transfer",
+      "data_hex": "02000000404b4c00000000",
+      "accounts": [
+        {
+          "pubkey": "source",
+          "is_signer": true,
+          "is_writable": true
+        },
+        {
+          "pubkey": "new_account",
+          "is_signer": true,
+          "is_writable": true
+        }
+      ]
+    }
+  ],
+  "signatures": 3,
+  "readonly_signed_accounts": 0,
+  "readonly_unsigned_accounts": 0,
+  "recent_blockhash": "11111111111111111111111111111111",
+  "format_notes": "Multiple signers required - 3 signatures in the transaction"
+}

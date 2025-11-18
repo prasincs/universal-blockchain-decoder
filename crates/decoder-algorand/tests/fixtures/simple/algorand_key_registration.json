@@ -1,0 +1,35 @@
+{
+  "description": "Algorand key registration transaction (stake participation)",
+  "synthetic": true,
+  "notes": "Hand-crafted test fixture for consensus key registration",
+  "format": "MessagePack (binary serialization)",
+  "network": "Testnet",
+  "transaction": {
+    "snd": "72f1991d4f6d643bbc69ee49fa7286926d7f002b5f113f88becc4baeb78f820e",
+    "snd_description": "Account registering participation keys",
+    "fee": 1000,
+    "fee_algo": 0.001,
+    "fee_description": "Transaction fee in microAlgos",
+    "fv": 1000,
+    "fv_description": "First valid round",
+    "lv": 2000,
+    "lv_description": "Last valid round",
+    "votekey": "e83a1d427a6fa8c4a06a722164a0b4a9d8a6e2f7c4b9a1d3e5f7a9b1c3d5e7",
+    "votekey_description": "VRF verification key for voting (32 bytes)",
+    "selkey": "9b2c4e6f8a1d3c5e7a9b1c3d5e7f9a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d",
+    "selkey_description": "VRF verification key for selection (32 bytes)",
+    "votefst": 1000,
+    "votefst_description": "First valid round for this participation key",
+    "votelst": 10000,
+    "votelst_description": "Last valid round for this participation key",
+    "votekd": 1000,
+    "votekd_description": "Voting key duration in rounds",
+    "type": "keyreg"
+  },
+  "expected_properties": {
+    "transaction_type": "key_registration",
+    "participation_enabled": true,
+    "validity_rounds": 1000,
+    "key_validity_duration": 1000
+  }
+}

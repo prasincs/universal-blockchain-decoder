@@ -1,0 +1,54 @@
+{
+  "name": "transfer_with_nonce",
+  "description": "SOL transfer using durable nonce for replay protection",
+  "type": "legacy",
+  "payer": "Alice (derived from keypair)",
+  "instructions": [
+    {
+      "program_id": "11111111111111111111111111111111",
+      "program_name": "System Program",
+      "instruction_type": "advance_nonce_account",
+      "data_hex": "",
+      "accounts": [
+        {
+          "pubkey": "nonce_account",
+          "is_signer": false,
+          "is_writable": true
+        },
+        {
+          "pubkey": "recent_blockhash_sysvar",
+          "is_signer": false,
+          "is_writable": false
+        },
+        {
+          "pubkey": "nonce_authority",
+          "is_signer": true,
+          "is_writable": false
+        }
+      ]
+    },
+    {
+      "program_id": "11111111111111111111111111111111",
+      "program_name": "System Program",
+      "instruction_type": "transfer",
+      "data_hex": "02000000404b4c00000000",
+      "accounts": [
+        {
+          "pubkey": "source",
+          "is_signer": true,
+          "is_writable": true
+        },
+        {
+          "pubkey": "destination",
+          "is_signer": false,
+          "is_writable": true
+        }
+      ]
+    }
+  ],
+  "signatures": 1,
+  "readonly_signed_accounts": 0,
+  "readonly_unsigned_accounts": 1,
+  "recent_blockhash": "11111111111111111111111111111111",
+  "format_notes": "Durable nonce prevents replay attacks - no blockhash check"
+}

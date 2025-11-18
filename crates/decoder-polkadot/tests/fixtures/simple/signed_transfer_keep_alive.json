@@ -1,0 +1,39 @@
+{
+  "name": "Signed Transfer Keep Alive",
+  "description": "Signed balance transfer using transfer_keep_alive variant",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "is_signed": true,
+  "from_address": {
+    "type": "AccountId32",
+    "address_hex": "0x7d0a7f1df9e6921f897db26f4ea5e4ab14881c7a9f8f8f8f8f8f8f8f8f8f8f"
+  },
+  "signature": {
+    "signature_type": "Sr25519",
+    "signature_bytes": 64
+  },
+  "signed_extensions": {
+    "era": "Immortal",
+    "nonce": 0,
+    "tip": 0
+  },
+  "call": {
+    "pallet_index": 4,
+    "pallet_name": "Balances",
+    "call_index": 3,
+    "call_name": "transfer_keep_alive",
+    "parameters": {
+      "dest": {
+        "type": "AccountId32",
+        "address": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "value": 100000000000
+    }
+  },
+  "metadata": {
+    "source": "Generated from Polkadot SDK extrinsic encoding specification",
+    "chain": "Polkadot Relay Chain",
+    "note": "Transfer that fails if recipient would be below existential deposit",
+    "difference_from_transfer": "transfer_keep_alive ensures recipient stays above minimum balance"
+  }
+}

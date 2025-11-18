@@ -1,0 +1,25 @@
+total 55
+drwxr-xr-x  2 root root  4096 Nov 18 02:52 .
+drwxr-xr-x 15 root root  4096 Nov 18 02:52 ..
+-rw-r--r--  1 root root   412 Nov 18 02:52 backup_oneshot.fixture
+-rw-r--r--  1 root root   284 Nov 18 02:52 forge-default-helm-values-after.fixture
+-rw-r--r--  1 root root   283 Nov 18 02:52 forge-default-helm-values-before.fixture
+-rw-r--r--  1 root root   152 Nov 18 02:52 forge-default-helm-values-preview.fixture
+-rw-r--r--  1 root root  2598 Nov 18 02:52 forge-test-runner-template.fixture
+-rw-r--r--  1 root root  2033 Nov 18 02:52 report.fixture
+-rw-r--r--  1 root root   270 Nov 18 02:52 testDashboardLinkAutoRefresh.fixture
+-rw-r--r--  1 root root   266 Nov 18 02:52 testDashboardLinkTimeInterval.fixture
+-rw-r--r--  1 root root  4055 Nov 18 02:52 testFormatComment.fixture
+-rw-r--r--  1 root root  3787 Nov 18 02:52 testFormatPreComment.fixture
+-rw-r--r--  1 root root   110 Nov 18 02:52 testFormatReport.fixture
+-rw-r--r--  1 root root  1024 Nov 18 02:52 testGetHumioForgeLinkAbsolute.fixture
+-rw-r--r--  1 root root  1024 Nov 18 02:52 testGetHumioForgeLinkRelative.fixture
+-rw-r--r--  1 root root  1726 Nov 18 02:52 testGetHumioLogsLinkAbsolute.fixture
+-rw-r--r--  1 root root  1697 Nov 18 02:52 testGetHumioLogsLinkRelative.fixture
+-rw-r--r--  1 root root  1263 Nov 18 02:52 testHumioLogLink.fixture
+-rw-r--r--  1 root root 12900 Nov 18 02:52 testMain.fixture
+-rw-r--r--  1 root root  4074 Nov 18 02:52 testMainComment.fixture
+-rw-r--r--  1 root root  3862 Nov 18 02:52 testMainPreComment.fixture
+-rw-r--r--  1 root root    69 Nov 18 02:52 testMainReport.fixture
+-rw-r--r--  1 root root   260 Nov 18 02:52 testPossibleAuthFailureMessage.fixture
+-rw-r--r--  1 root root   922 Nov 18 02:52 testValidatorLogsLink.fixture

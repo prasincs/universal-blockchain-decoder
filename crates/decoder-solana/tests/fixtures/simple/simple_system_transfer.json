@@ -1,0 +1,52 @@
+{
+  "type": "legacy_transaction",
+  "name": "simple_system_transfer",
+  "description": "Simple SOL transfer from Alice to Bob (5,000,000 lamports)",
+  "accounts": {
+    "0": {
+      "address": "Alice (derived from keypair)",
+      "is_signer": true,
+      "is_writable": true,
+      "public_key_b58": "[Alice's public key]"
+    },
+    "1": {
+      "address": "Bob (derived from keypair)",
+      "is_signer": false,
+      "is_writable": true,
+      "public_key_b58": "[Bob's public key]"
+    },
+    "2": {
+      "address": "System Program",
+      "is_signer": false,
+      "is_writable": false,
+      "public_key": "11111111111111111111111111111111"
+    }
+  },
+  "message": {
+    "header": {
+      "num_required_signatures": 1,
+      "num_readonly_signed_accounts": 0,
+      "num_readonly_unsigned_accounts": 0
+    },
+    "account_keys": [
+      "Alice",
+      "Bob",
+      "System Program"
+    ],
+    "recent_blockhash": "11111111111111111111111111111111",
+    "instructions": [
+      {
+        "program_id_index": 2,
+        "accounts": [
+          0,
+          1
+        ],
+        "instruction_type": "transfer",
+        "data_hex": "0200000040b4c000000000"
+      }
+    ]
+  },
+  "signatures": [
+    "[64-byte Ed25519 signature from Alice]"
+  ]
+}

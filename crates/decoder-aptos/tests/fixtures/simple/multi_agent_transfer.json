@@ -1,0 +1,35 @@
+{
+  "name": "multi_agent_transfer",
+  "description": "Multi-agent transaction with secondary signers",
+  "transaction_type": "raw_transaction",
+  "sender": "0x0000000000000000000000000000000000000000000000000000000000000006",
+  "sequence_number": 0,
+  "chain_id": 1,
+  "gas": {
+    "max_gas_amount": 10000,
+    "gas_unit_price": 1
+  },
+  "expiration_timestamp_secs": 9999999999,
+  "payload": {
+    "type": "entry_function",
+    "function": "0x1::aptos_coin::transfer",
+    "type_arguments": [],
+    "arguments": [
+      "0x0000000000000000000000000000000000000000000000000000000000000007",
+      "1000"
+    ]
+  },
+  "authenticator": {
+    "type": "multi_agent",
+    "sender_auth": {
+      "type": "single_key",
+      "public_key_type": "ed25519"
+    },
+    "secondary_signers": [
+      "0x0000000000000000000000000000000000000000000000000000000000000008",
+      "0x0000000000000000000000000000000000000000000000000000000000000009"
+    ]
+  },
+  "source": "based on aptos-core multi-agent test pattern",
+  "bcs_hex": "000000000000000000000000000000000000000000000000000000000000000600000000000000000100000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e087472616e736665720002200000000000000000000000000000000000000000000000000000000000000708e80300000000000010270000000000000100000000000000ffe0f5fa0200000001"
+}

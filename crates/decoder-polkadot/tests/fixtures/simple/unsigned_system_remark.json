@@ -1,0 +1,26 @@
+{
+  "name": "Unsigned System Remark",
+  "description": "Unsigned extrinsic calling system pallet remark function with data",
+  "extrinsic_type": "unsigned",
+  "version": 4,
+  "is_signed": false,
+  "call": {
+    "pallet_index": 0,
+    "pallet_name": "System",
+    "call_index": 0,
+    "call_name": "remark",
+    "parameters": {
+      "remark": {
+        "type": "Vec<u8>",
+        "length": 32,
+        "hex": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  },
+  "metadata": {
+    "source": "Generated from Polkadot SDK extrinsic encoding specification",
+    "chain": "Polkadot Relay Chain",
+    "note": "Unsigned remark with 32 bytes of data",
+    "use_case": "Blockchain remarks/notes that don't require signatures"
+  }
+}

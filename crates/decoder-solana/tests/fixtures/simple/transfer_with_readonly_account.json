@@ -1,0 +1,57 @@
+{
+  "type": "legacy_transaction",
+  "name": "transfer_with_readonly_account",
+  "description": "Transfer that includes a readonly account reference",
+  "accounts": {
+    "0": {
+      "address": "Alice (payer and signer)",
+      "is_signer": true,
+      "is_writable": true
+    },
+    "1": {
+      "address": "Bob (receiver)",
+      "is_signer": false,
+      "is_writable": true
+    },
+    "2": {
+      "address": "Observer (readonly)",
+      "is_signer": false,
+      "is_writable": false,
+      "note": "Readonly account - can observe transaction effects"
+    },
+    "3": {
+      "address": "System Program",
+      "is_signer": false,
+      "is_writable": false,
+      "public_key": "11111111111111111111111111111111"
+    }
+  },
+  "message": {
+    "header": {
+      "num_required_signatures": 1,
+      "num_readonly_signed_accounts": 0,
+      "num_readonly_unsigned_accounts": 1
+    },
+    "account_keys": [
+      "Alice",
+      "Bob",
+      "Observer",
+      "System Program"
+    ],
+    "recent_blockhash": "11111111111111111111111111111111",
+    "instructions": [
+      {
+        "program_id_index": 3,
+        "accounts": [
+          0,
+          1
+        ],
+        "instruction_type": "transfer",
+        "lamports": 2500000
+      }
+    ]
+  },
+  "signatures": [
+    "[Alice signature]"
+  ]
+}

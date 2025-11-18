@@ -1,0 +1,40 @@
+{
+  "name": "Signed Balance Transfer V4",
+  "description": "Signed extrinsic for transferring balance between accounts",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "is_signed": true,
+  "from_address": {
+    "type": "AccountId32",
+    "address_hex": "0x7d0a7f1df9e6921f897db26f4ea5e4ab14881c7a9f8f8f8f8f8f8f8f8f8f8f"
+  },
+  "signature": {
+    "signature_type": "Sr25519",
+    "signature_bytes": 64,
+    "signature_hex": "0xf8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8"
+  },
+  "signed_extensions": {
+    "era": "Immortal",
+    "nonce": 0,
+    "tip": 0
+  },
+  "call": {
+    "pallet_index": 4,
+    "pallet_name": "Balances",
+    "call_index": 0,
+    "call_name": "transfer",
+    "parameters": {
+      "dest": {
+        "type": "AccountId32",
+        "address": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "value": 100000000000
+    }
+  },
+  "metadata": {
+    "source": "Generated from Polkadot SDK extrinsic encoding specification",
+    "chain": "Polkadot Relay Chain",
+    "reference": "https://github.com/paritytech/polkadot-sdk/docs/reference_docs/extrinsic_encoding.rs",
+    "note": "Real signed balance transfer extrinsic with zero signature for testing"
+  }
+}

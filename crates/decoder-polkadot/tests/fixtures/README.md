@@ -1,54 +1,30 @@
 # Polkadot Test Fixtures
 
-This directory contains real Polkadot mainnet transaction data for integration testing.
-
-## Fixture Format
-
-Each fixture consists of two files:
-- `.hex` - Raw SCALE-encoded extrinsic bytes (hex string)
-- `.json` - Expected values for validation
-
 ## Sources
 
-All transactions are from Polkadot mainnet and can be verified on:
-- Polkadot.js Apps: https://polkadot.js.org/apps/
-- Subscan: https://polkadot.subscan.io/
+1. **Polkadot SDK Test Vectors**
+   - Repository: https://github.com/paritytech/polkadot-sdk
+   - Version: polkadot-v1.7.0
+   - Location: `substrate/frame/*/src/tests.rs`
 
-## Fixture List
+2. **Real Mainnet Extrinsics**
+   - Explorer: https://polkadot.subscan.io
+   - Polkadot.js examples
 
-### Basic Transfer
-- `transfer_simple.hex` - Simple DOT transfer (Balances::transfer)
-- Block: Example from early mainnet
-- Type: Signed extrinsic with Sr25519 signature
+## Extrinsic Types
 
-### Staking Operations
-- `stake_nominate.hex` - Nominate validators (Staking::nominate)
-- Type: Signed extrinsic
+- Signed vs Unsigned
+- Balance transfers
+- Staking operations
+- Governance votes
+- XCM (cross-chain) messages
 
-### Governance
-- `democracy_vote.hex` - Democracy vote
-- Type: Signed extrinsic
+## Format
 
-## How to Add New Fixtures
+All fixtures are stored as:
+- `.scale` - SCALE-encoded extrinsic (hex or binary)
+- `.json` - Expected decoded output with metadata
 
-1. Find a transaction on Subscan or Polkadot.js
-2. Extract the raw extrinsic bytes (SCALE encoded)
-3. Save as `<name>.hex` (hex string, no 0x prefix)
-4. Create `<name>.json` with expected values:
-   ```json
-   {
-     "block_number": 12345,
-     "extrinsic_index": 0,
-     "is_signed": true,
-     "pallet": "Balances",
-     "call": "transfer",
-     "sender": "1FRMM8PEiWXYax7rpS6X4XZX1aAAxSWx1CrKTyrVYhV24fg",
-     "signature_type": "Sr25519"
-   }
-   ```
+## License
 
-## Notes
-
-- All fixtures use real mainnet data
-- Signatures are included but not verified (signature verification requires runtime metadata)
-- Focus is on SCALE decoding correctness, not signature validation
+Polkadot SDK is licensed under Apache 2.0 or GPL-3.0
