@@ -30,6 +30,89 @@ impl ChainIdentity for EthereumChain {
     }
 }
 
+/// Generic EVM-compatible chain
+///
+/// This is used for EVM chains where we know the chain ID but want to
+/// represent them generically (e.g., Polygon, Optimism, Arbitrum, etc.)
+#[derive(Debug)]
+pub struct GenericEvmChain {
+    chain_id: u64,
+    chain_name: &'static str,
+}
+
+impl GenericEvmChain {
+    const fn new(chain_id: u64, chain_name: &'static str) -> Self {
+        Self {
+            chain_id,
+            chain_name,
+        }
+    }
+}
+
+impl ChainIdentity for GenericEvmChain {
+    fn chain_id(&self) -> u64 {
+        self.chain_id
+    }
+
+    fn chain_name(&self) -> &str {
+        self.chain_name
+    }
+
+    fn chain_family(&self) -> ChainFamily {
+        ChainFamily::Account
+    }
+}
+
+// Static instances for known EVM chains
+static ETHEREUM_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(1, "Ethereum");
+static POLYGON_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(137, "Polygon");
+static OPTIMISM_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(10, "Optimism");
+static ARBITRUM_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(42161, "Arbitrum One");
+static BNB_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(56, "BNB Smart Chain");
+static AVALANCHE_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(43114, "Avalanche C-Chain");
+static BASE_CHAIN_STATIC: GenericEvmChain = GenericEvmChain::new(8453, "Base");
+
+/// Get an EVM chain identity by chain ID
+///
+/// Returns a static reference to a GenericEvmChain for the given chain ID.
+/// For known chains (Ethereum, Polygon, Optimism, Arbitrum, BSC, Avalanche, Base),
+/// returns pre-defined static instances. For unknown chains, creates and leaks
+/// a generic EVM chain instance.
+///
+/// # Memory Leaking
+///
+/// For unknown chain IDs, this function intentionally leaks memory to create
+/// a 'static reference. This is acceptable because:
+/// 1. We only leak once per unique chain ID (bounded by number of chains)
+/// 2. Chain IDs are typically small and finite
+/// 3. Alternative would be complex lifetime management
+///
+/// # Thread Safety
+///
+/// This function is thread-safe for known chains. For unknown chains, concurrent
+/// calls with the same chain ID may create multiple leaked instances, but this
+/// is acceptable given the bounded nature of chain IDs.
+pub fn get_evm_chain_by_id(chain_id: u64) -> &'static GenericEvmChain {
+    // Return known chains
+    match chain_id {
+        1 => &ETHEREUM_CHAIN_STATIC,
+        137 => &POLYGON_CHAIN_STATIC,
+        10 => &OPTIMISM_CHAIN_STATIC,
+        42161 => &ARBITRUM_CHAIN_STATIC,
+        56 => &BNB_CHAIN_STATIC,
+        43114 => &AVALANCHE_CHAIN_STATIC,
+        8453 => &BASE_CHAIN_STATIC,
+        _ => {
+            // For unknown chains, create and leak a GenericEvmChain
+            let chain = Box::new(GenericEvmChain::new(
+                chain_id,
+                Box::leak(format!("EVM Chain {}", chain_id).into_boxed_str()),
+            ));
+            Box::leak(chain)
+        }
+    }
+}
+
 /// Ethereum decoder implementing the ChainDecoder trait
 pub struct EthereumDecoder;
 

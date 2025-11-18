@@ -45,10 +45,12 @@
 pub mod bcs;
 pub mod compact_u16;
 pub mod rlp;
+pub mod rlp_encoder;
 pub mod varint;
 
 // Re-export commonly used types
 pub use bcs::{read_bytes as read_bcs_bytes, read_uleb128};
 pub use compact_u16::read_compact_u16;
 pub use rlp::RlpItem;
+pub use rlp_encoder::RlpEncoder;
 pub use varint::encode_varint;

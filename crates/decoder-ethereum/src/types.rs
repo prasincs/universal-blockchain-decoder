@@ -3,11 +3,14 @@
 //! Pure Rust implementation using custom RLP decoder.
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
-use crate::EthereumChain;
 use borsh::{BorshDeserialize, BorshSerialize};
 use decoder_encodings::rlp::RlpItem;
 use serde::{Deserialize, Serialize};
 use universal_decoder_core::prelude::*;
+
+// ECDSA signature recovery
+use k256::ecdsa::{RecoveryId, Signature as K256Signature, VerifyingKey};
+use sha3::{Digest, Keccak256};
 
 /// Ethereum transaction type indicator (EIP-2718)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -340,15 +343,184 @@ impl EthereumTransaction {
         self.gas_price.or(self.max_fee_per_gas).unwrap_or_default()
     }
 
-    /// Get the sender address
+    /// Get the sender address by recovering from the ECDSA signature
     ///
-    /// Note: This currently returns a placeholder address.
-    /// Full implementation would recover the sender from the signature (ECDSA recovery).
-    /// TODO: Implement proper ECDSA public key recovery (requires secp256k1 crate)
+    /// This performs ECDSA public key recovery using the (v, r, s) signature
+    /// components and the transaction's signing hash.
+    ///
+    /// Returns zero address if recovery fails (for compatibility).
     pub fn get_from(&self) -> [u8; 20] {
-        // TODO: Implement ECDSA recovery from (v, r, s) signature
-        // For now, return zero address as placeholder
-        [0u8; 20]
+        self.recover_sender().unwrap_or([0u8; 20])
+    }
+
+    /// Recover the sender address from the signature
+    ///
+    /// This is the full ECDSA recovery implementation that:
+    /// 1. Computes the signing hash
+    /// 2. Recovers the public key from (signature, recovery_id, hash)
+    /// 3. Derives the Ethereum address from the public key
+    ///
+    /// # Returns
+    ///
+    /// The 20-byte Ethereum address, or an error if recovery fails
+    pub fn recover_sender(&self) -> Result<[u8; 20]> {
+        // Step 1: Compute the signing hash
+        let signing_hash = self.signing_hash()?;
+
+        // Step 2: Extract recovery ID from v
+        let recovery_id = self.get_recovery_id()?;
+
+        // Step 3: Construct signature from r and s
+        let mut sig_bytes = [0u8; 64];
+        sig_bytes[0..32].copy_from_slice(&self.r);
+        sig_bytes[32..64].copy_from_slice(&self.s);
+
+        let signature = K256Signature::from_bytes(&sig_bytes.into()).map_err(|e| {
+            DecoderError::signature_verification(format!("Invalid signature: {}", e))
+        })?;
+
+        // Step 4: Recover public key
+        let verifying_key =
+            VerifyingKey::recover_from_prehash(&signing_hash, &signature, recovery_id).map_err(
+                |e| DecoderError::signature_verification(format!("Recovery failed: {}", e)),
+            )?;
+
+        // Step 5: Derive Ethereum address from public key
+        // Address = keccak256(uncompressed_pubkey)[12..32]
+        let pubkey_bytes = verifying_key.to_encoded_point(false); // Uncompressed format
+        let pubkey = &pubkey_bytes.as_bytes()[1..]; // Remove 0x04 prefix
+
+        let hash = Keccak256::digest(pubkey);
+        let mut address = [0u8; 20];
+        address.copy_from_slice(&hash[12..32]);
+
+        Ok(address)
+    }
+
+    /// Compute the signing hash for this transaction
+    ///
+    /// This is the hash that was actually signed by the sender.
+    fn signing_hash(&self) -> Result<[u8; 32]> {
+        match self.tx_type {
+            TxType::Legacy => self.legacy_signing_hash(),
+            TxType::Eip2930 => self.typed_signing_hash(0x01),
+            TxType::Eip1559 | TxType::Eip4844 => self.typed_signing_hash(0x02),
+        }
+    }
+
+    /// Legacy transaction signing hash
+    ///
+    /// For EIP-155: hash(rlp([nonce, gasPrice, gas, to, value, data, chainId, 0, 0]))
+    /// For pre-EIP-155: hash(rlp([nonce, gasPrice, gas, to, value, data]))
+    fn legacy_signing_hash(&self) -> Result<[u8; 32]> {
+        use decoder_encodings::rlp_encoder::RlpEncoder;
+        use sha3::{Digest, Keccak256};
+
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        list.append_u64(self.nonce)?;
+        list.append_optional_u128(self.gas_price)?;
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+
+        // EIP-155: append chain_id, 0, 0
+        if let Some(chain_id) = self.chain_id {
+            list.append_u64(chain_id)?;
+            list.append_u64(0)?;
+            list.append_u64(0)?;
+        }
+
+        list.finalize()?;
+        let rlp_bytes = encoder.finalize();
+
+        Ok(Keccak256::digest(&rlp_bytes).into())
+    }
+
+    /// Typed transaction signing hash (EIP-2930, EIP-1559, EIP-4844)
+    ///
+    /// hash(type_byte || rlp([...transaction_fields...]))
+    fn typed_signing_hash(&self, type_byte: u8) -> Result<[u8; 32]> {
+        use decoder_encodings::rlp_encoder::RlpEncoder;
+        use sha3::{Digest, Keccak256};
+
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        // All typed transactions include chain_id first
+        list.append_u64(self.chain_id.unwrap_or(1))?;
+        list.append_u64(self.nonce)?;
+
+        // EIP-1559/4844 use max fees, EIP-2930 uses gas_price
+        if type_byte == 0x02 {
+            list.append_optional_u128(self.max_priority_fee_per_gas)?;
+            list.append_optional_u128(self.max_fee_per_gas)?;
+        } else {
+            list.append_optional_u128(self.gas_price)?;
+        }
+
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+
+        // Access list (for EIP-2930 and EIP-1559)
+        list.append_list(|access_list| {
+            for item in &self.access_list {
+                access_list.append_list(|entry| {
+                    entry.append_bytes(&item.address)?;
+                    entry.append_list(|keys| {
+                        for key in &item.storage_keys {
+                            keys.append_bytes(key)?;
+                        }
+                        Ok(())
+                    })?;
+                    Ok(())
+                })?;
+            }
+            Ok(())
+        })?;
+
+        list.finalize()?;
+        let rlp_bytes = encoder.finalize();
+
+        // Prepend type byte and hash
+        let mut payload = vec![type_byte];
+        payload.extend_from_slice(&rlp_bytes);
+
+        Ok(Keccak256::digest(&payload).into())
+    }
+
+    /// Extract ECDSA recovery ID from v
+    ///
+    /// For legacy: v = chain_id * 2 + 35 + recovery_id (EIP-155)
+    ///          or v = 27 + recovery_id (pre-EIP-155)
+    /// For typed: v = recovery_id (0 or 1)
+    fn get_recovery_id(&self) -> Result<RecoveryId> {
+        let recovery_id = match self.tx_type {
+            TxType::Legacy => {
+                if self.chain_id.is_some() {
+                    // EIP-155: v = chain_id * 2 + 35 + recovery_id
+                    ((self.v - 35) % 2) as u8
+                } else {
+                    // Pre-EIP-155: v = 27 + recovery_id
+                    (self.v - 27) as u8
+                }
+            }
+            _ => {
+                // EIP-2930/EIP-1559: v is recovery_id directly (0 or 1)
+                self.v as u8
+            }
+        };
+
+        RecoveryId::try_from(recovery_id).map_err(|e| {
+            DecoderError::signature_verification(format!(
+                "Invalid recovery ID {}: {}",
+                recovery_id, e
+            ))
+        })
     }
 
     /// Get transaction type as u8
@@ -467,9 +639,34 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
     const VERSION: u8 = 1;
 
     fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
-        // Build metadata
+        // Recover sender address from ECDSA signature
+        let sender_address = self.recover_sender()?;
+
+        // Build metadata with access list information
+        let access_list_json = if self.access_list.is_empty() {
+            "[]".to_string()
+        } else {
+            let items: Vec<String> = self
+                .access_list
+                .iter()
+                .map(|item| {
+                    let storage_keys: Vec<String> = item
+                        .storage_keys
+                        .iter()
+                        .map(|key| format!("\"0x{}\"", universal_decoder_core::hex::encode(key)))
+                        .collect();
+                    format!(
+                        r#"{{"address":"0x{}","storage_keys":[{}]}}"#,
+                        universal_decoder_core::hex::encode(item.address),
+                        storage_keys.join(",")
+                    )
+                })
+                .collect();
+            format!("[{}]", items.join(","))
+        };
+
         let extra = format!(
-            r#"{{"tx_type":{:?},"nonce":{},"gas_limit":{},"gas_price":{},"max_fee_per_gas":{},"max_priority_fee_per_gas":{},"chain_id":{}}}"#,
+            r#"{{"tx_type":{:?},"nonce":{},"gas_limit":{},"gas_price":{},"max_fee_per_gas":{},"max_priority_fee_per_gas":{},"chain_id":{},"access_list":{}}}"#,
             self.tx_type,
             self.nonce,
             self.gas_limit,
@@ -484,7 +681,8 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                 .unwrap_or_else(|| "null".to_string()),
             self.chain_id
                 .map(|c| c.to_string())
-                .unwrap_or_else(|| "null".to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            access_list_json
         );
 
         let metadata = TxMetadata {
@@ -555,8 +753,11 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         } else {
             operations.push(Operation::Transfer(Transfer {
                 from: Address {
-                    bytes: vec![],
-                    human_readable: None,
+                    bytes: sender_address.to_vec(),
+                    human_readable: Some(format!(
+                        "0x{}",
+                        universal_decoder_core::hex::encode(sender_address)
+                    )),
                 },
                 to: Address {
                     bytes: self.to.map(|a| a.to_vec()).unwrap_or_default(),
@@ -575,8 +776,11 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         // Build state deltas
         let mut account_changes = vec![AccountChange {
             address: Address {
-                bytes: vec![],
-                human_readable: None,
+                bytes: sender_address.to_vec(),
+                human_readable: Some(format!(
+                    "0x{}",
+                    universal_decoder_core::hex::encode(sender_address)
+                )),
             },
             nonce: Some(self.nonce),
             balance_change: -(self.value as i128),
@@ -604,8 +808,12 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             account_changes,
         };
 
+        // Use the actual chain ID from the transaction, not hardcoded EthereumChain
+        // This fixes the bug where Polygon (chain_id=137) was incorrectly showing as Ethereum (chain_id=1)
+        let chain = crate::get_evm_chain_by_id(self.chain_id.unwrap_or(1));
+
         Ok(TxIR::new(
-            &EthereumChain,
+            chain,
             metadata,
             authorization,
             operations,
