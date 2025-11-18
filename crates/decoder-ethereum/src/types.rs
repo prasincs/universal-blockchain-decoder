@@ -3,7 +3,6 @@
 //! Pure Rust implementation using custom RLP decoder.
 //! Supports Legacy, EIP-2930, EIP-1559, and EIP-4844 transactions.
 
-use crate::EthereumChain;
 use borsh::{BorshDeserialize, BorshSerialize};
 use decoder_encodings::rlp::RlpItem;
 use serde::{Deserialize, Serialize};
@@ -604,8 +603,12 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             account_changes,
         };
 
+        // Use the actual chain ID from the transaction, not hardcoded EthereumChain
+        // This fixes the bug where Polygon (chain_id=137) was incorrectly showing as Ethereum (chain_id=1)
+        let chain = crate::get_evm_chain_by_id(self.chain_id.unwrap_or(1));
+
         Ok(TxIR::new(
-            &EthereumChain,
+            chain,
             metadata,
             authorization,
             operations,
