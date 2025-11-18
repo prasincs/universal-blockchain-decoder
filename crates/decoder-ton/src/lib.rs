@@ -162,8 +162,7 @@ impl ChainDecoder for TonDecoder {
 
         let out_msgs = if let Some(msgs_idx) = tx.out_msgs_cell {
             if msgs_idx < cells.len() {
-                // For now, return empty vec - full hashmap parsing TODO
-                vec![]
+                types::parse_hashmap_messages(&cells, msgs_idx).unwrap_or_default()
             } else {
                 vec![]
             }

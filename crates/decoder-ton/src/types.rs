@@ -404,6 +404,77 @@ fn parse_common_msg_info(reader: &mut BitReader) -> Result<CommonMsgInfo> {
     }
 }
 
+/// Parse Hashmap of messages (simplified)
+///
+/// TL-B schema:
+/// ```text
+/// HashmapE n X = Maybe (Hashmap n X)
+/// Hashmap n X = HashmapNode n X
+///
+/// hm_edge#_ {n:#} {X:Type} label:HmLabel {m:#} {n = m + len(label)}
+///   node:(HashmapNode m X) = Hashmap n X;
+///
+/// hmn_leaf#_ {X:Type} value:X = HashmapNode 0 X;
+/// hmn_fork#_ {n:#} {X:Type} left:^(Hashmap n X) right:^(Hashmap n X) = HashmapNode (n+1) X;
+/// ```
+///
+/// For now, this is a simplified implementation that attempts to extract
+/// all message cells from the hashmap structure.
+pub(crate) fn parse_hashmap_messages(
+    cells: &[Cell],
+    hashmap_cell_idx: usize,
+) -> Result<Vec<Message>> {
+    if hashmap_cell_idx >= cells.len() {
+        return Ok(vec![]);
+    }
+
+    let cell = &cells[hashmap_cell_idx];
+    let mut reader = BitReader::new(&cell.data, cell.bit_len as usize);
+
+    // Check if hashmap is present (Maybe)
+    if reader.remaining() == 0 || !reader.read_bit()? {
+        // No hashmap
+        return Ok(vec![]);
+    }
+
+    let mut messages = Vec::new();
+
+    // Simple approach: recursively follow all cell references
+    // and try to parse each as a message
+    fn collect_messages(
+        cells: &[Cell],
+        cell_idx: usize,
+        messages: &mut Vec<Message>,
+        visited: &mut std::collections::HashSet<usize>,
+        depth: usize,
+    ) -> Result<()> {
+        // Prevent infinite loops and excessive depth
+        if depth > 100 || visited.contains(&cell_idx) || cell_idx >= cells.len() {
+            return Ok(());
+        }
+        visited.insert(cell_idx);
+
+        let cell = &cells[cell_idx];
+
+        // Try to parse this cell as a message
+        if let Ok(msg) = parse_message(cells, cell_idx) {
+            messages.push(msg);
+        }
+
+        // Recursively check all referenced cells
+        for &ref_idx in &cell.refs {
+            collect_messages(cells, ref_idx, messages, visited, depth + 1)?;
+        }
+
+        Ok(())
+    }
+
+    let mut visited = std::collections::HashSet::new();
+    collect_messages(cells, hashmap_cell_idx, &mut messages, &mut visited, 0)?;
+
+    Ok(messages)
+}
+
 /// Parse message from a cell
 ///
 /// TL-B schema:
