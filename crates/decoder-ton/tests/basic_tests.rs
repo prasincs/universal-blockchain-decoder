@@ -107,6 +107,8 @@ fn test_transaction_validation() {
     use decoder_ton::types::TonTransaction;
 
     // Create a transaction with valid structure
+    use decoder_ton::types::{AccountStatus, CurrencyCollection};
+
     let tx = TonTransaction {
         raw_bytes: vec![0u8; 100],
         cells: vec![],
@@ -116,6 +118,14 @@ fn test_transaction_validation() {
         prev_trans_lt: 12344,
         now: 1700000000,
         outmsg_cnt: 5,
+        orig_status: AccountStatus::Active,
+        end_status: AccountStatus::Active,
+        total_fees: CurrencyCollection {
+            grams: 1000,
+            extra: vec![],
+        },
+        in_msg: None,
+        out_msgs: vec![],
     };
 
     let result = tx.canonicalize();
@@ -133,6 +143,8 @@ fn test_transaction_validation_invalid_account_addr() {
     use decoder_ton::types::TonTransaction;
 
     // Create a transaction with invalid account address (wrong size)
+    use decoder_ton::types::{AccountStatus, CurrencyCollection};
+
     let tx = TonTransaction {
         raw_bytes: vec![0u8; 100],
         cells: vec![],
@@ -142,6 +154,14 @@ fn test_transaction_validation_invalid_account_addr() {
         prev_trans_lt: 12344,
         now: 1700000000,
         outmsg_cnt: 5,
+        orig_status: AccountStatus::Active,
+        end_status: AccountStatus::Active,
+        total_fees: CurrencyCollection {
+            grams: 1000,
+            extra: vec![],
+        },
+        in_msg: None,
+        out_msgs: vec![],
     };
 
     let result = tx.validate();
@@ -153,6 +173,8 @@ fn test_transaction_validation_invalid_prev_hash() {
     use decoder_ton::types::TonTransaction;
 
     // Create a transaction with invalid prev_trans_hash (wrong size)
+    use decoder_ton::types::{AccountStatus, CurrencyCollection};
+
     let tx = TonTransaction {
         raw_bytes: vec![0u8; 100],
         cells: vec![],
@@ -162,6 +184,14 @@ fn test_transaction_validation_invalid_prev_hash() {
         prev_trans_lt: 12344,
         now: 1700000000,
         outmsg_cnt: 5,
+        orig_status: AccountStatus::Active,
+        end_status: AccountStatus::Active,
+        total_fees: CurrencyCollection {
+            grams: 1000,
+            extra: vec![],
+        },
+        in_msg: None,
+        out_msgs: vec![],
     };
 
     let result = tx.validate();

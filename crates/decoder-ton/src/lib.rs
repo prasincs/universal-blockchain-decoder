@@ -79,10 +79,11 @@
 
 use decoder_primitives::prelude::*;
 
+mod bitreader;
 pub mod boc;
 pub mod types;
 
-pub use types::TonTransaction;
+pub use types::{AccountStatus, CurrencyCollection, Message, TonTransaction};
 
 /// TON chain identity
 ///
@@ -146,6 +147,28 @@ impl ChainDecoder for TonDecoder {
         // Parse transaction from cell
         let tx = types::parse_transaction(tx_cell)?;
 
+        // Parse messages from cell references
+        let in_msg = if let Some(msg_idx) = tx.in_msg_cell {
+            if msg_idx < cells.len() {
+                types::parse_message(&cells, msg_idx).ok()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let out_msgs = if let Some(msgs_idx) = tx.out_msgs_cell {
+            if msgs_idx < cells.len() {
+                // For now, return empty vec - full hashmap parsing TODO
+                vec![]
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        };
+
         Ok(TonTransaction {
             raw_bytes: raw_bytes.to_vec(),
             cells,
@@ -155,6 +178,11 @@ impl ChainDecoder for TonDecoder {
             prev_trans_lt: tx.prev_trans_lt,
             now: tx.now,
             outmsg_cnt: tx.outmsg_cnt,
+            orig_status: tx.orig_status,
+            end_status: tx.end_status,
+            total_fees: tx.total_fees,
+            in_msg,
+            out_msgs,
         })
     }
 
