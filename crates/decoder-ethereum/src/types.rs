@@ -466,9 +466,31 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
     const VERSION: u8 = 1;
 
     fn canonicalize(&'a self) -> Result<TxIR<'a, 1>> {
-        // Build metadata
+        // Build metadata with access list information
+        let access_list_json = if self.access_list.is_empty() {
+            "[]".to_string()
+        } else {
+            let items: Vec<String> = self
+                .access_list
+                .iter()
+                .map(|item| {
+                    let storage_keys: Vec<String> = item
+                        .storage_keys
+                        .iter()
+                        .map(|key| format!("\"0x{}\"", universal_decoder_core::hex::encode(key)))
+                        .collect();
+                    format!(
+                        r#"{{"address":"0x{}","storage_keys":[{}]}}"#,
+                        universal_decoder_core::hex::encode(item.address),
+                        storage_keys.join(",")
+                    )
+                })
+                .collect();
+            format!("[{}]", items.join(","))
+        };
+
         let extra = format!(
-            r#"{{"tx_type":{:?},"nonce":{},"gas_limit":{},"gas_price":{},"max_fee_per_gas":{},"max_priority_fee_per_gas":{},"chain_id":{}}}"#,
+            r#"{{"tx_type":{:?},"nonce":{},"gas_limit":{},"gas_price":{},"max_fee_per_gas":{},"max_priority_fee_per_gas":{},"chain_id":{},"access_list":{}}}"#,
             self.tx_type,
             self.nonce,
             self.gas_limit,
@@ -483,7 +505,8 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
                 .unwrap_or_else(|| "null".to_string()),
             self.chain_id
                 .map(|c| c.to_string())
-                .unwrap_or_else(|| "null".to_string())
+                .unwrap_or_else(|| "null".to_string()),
+            access_list_json
         );
 
         let metadata = TxMetadata {
