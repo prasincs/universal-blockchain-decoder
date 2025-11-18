@@ -1,441 +1,418 @@
-# Using Universal Blockchain Decoder as a Library
+# Library Usage Guide
 
-This guide shows how to use the universal blockchain decoder in your Rust projects.
+How to use Universal Blockchain Decoder in your application.
+
+---
 
 ## Installation
 
-Add to your `Cargo.toml`:
-
 ```toml
 [dependencies]
-# Core library - always required
-universal-decoder-core = { git = "https://github.com/prasincs/universal-blockchain-decoder", branch = "main" }
-
-# Add specific decoders you need
-decoder-bitcoin = { git = "https://github.com/prasincs/universal-blockchain-decoder", branch = "main" }
-decoder-ethereum = { git = "https://github.com/prasincs/universal-blockchain-decoder", branch = "main" }
+universal-decoder-core = { git = "https://github.com/prasincs/universal-blockchain-decoder" }
+decoder-bitcoin = { git = "https://github.com/prasincs/universal-blockchain-decoder" }
+decoder-ethereum = { git = "https://github.com/prasincs/universal-blockchain-decoder" }
 ```
 
-Or use a specific version once published:
+---
 
-```toml
-[dependencies]
-universal-decoder-core = "0.1"
-decoder-bitcoin = "0.1"
-decoder-ethereum = "0.1"
-```
+## Basic Usage
 
-## Quick Start
-
-### Decoding a Bitcoin Transaction
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn main() -> Result<()> {
-    // Raw transaction bytes (hex decoded)
-    let tx_hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000";
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex)?;
-
-    // Decode the transaction
-    let tx: BitcoinTransaction = BitcoinDecoder::decode(&tx_bytes)?;
-
-    // Access transaction data
-    println!("TXID: {}", universal_decoder_core::hex::encode(&tx.txid()));
-    println!("Version: {}", tx.version);
-    println!("Inputs: {}", tx.inputs.len());
-    println!("Outputs: {}", tx.outputs.len());
-    println!("Is coinbase: {}", tx.is_coinbase());
-    println!("Is SegWit: {}", tx.is_segwit());
-
-    // Inspect outputs
-    for (i, output) in tx.outputs.iter().enumerate() {
-        let btc = output.value as f64 / 100_000_000.0;
-        println!("Output {}: {:.8} BTC", i, btc);
-    }
-
-    Ok(())
-}
-```
-
-### Converting to Universal IR (Canonical Representation)
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn decode_and_canonicalize(tx_bytes: &[u8]) -> Result<()> {
-    // Decode chain-specific transaction
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-
-    // Convert to universal intermediate representation
-    let tx_ir = tx.canonicalize()?;
-
-    // Access canonical data (works the same for all chains)
-    println!("Chain: {}", tx_ir.chain.chain_name);
-    println!("Version: {}", tx_ir.version());
-    println!("Operations: {}", tx_ir.operations.len());
-
-    // Get canonical hash (deterministic across all implementations)
-    let canonical_hash = tx_ir.canonical_hash()?;
-    println!("Canonical Hash: {}", universal_decoder_core::hex::encode(&canonical_hash));
-
-    // Serialize to canonical bytes (for hashing/storage)
-    let canonical_bytes = tx_ir.to_canonical_bytes()?;
-    println!("Canonical Size: {} bytes", canonical_bytes.len());
-
-    Ok(())
-}
-```
-
-### Working with Multiple Chains
+### Decode a Bitcoin Transaction
 
 ```rust
 use universal_decoder_core::prelude::*;
 use decoder_bitcoin::BitcoinDecoder;
-use decoder_ethereum::EthereumDecoder;
-
-enum Chain {
-    Bitcoin,
-    Ethereum,
-}
-
-fn decode_transaction(chain: Chain, tx_bytes: &[u8]) -> Result<TxIR<'_, 1>> {
-    match chain {
-        Chain::Bitcoin => {
-            let tx = BitcoinDecoder::decode(tx_bytes)?;
-            tx.canonicalize()
-        }
-        Chain::Ethereum => {
-            let tx = EthereumDecoder::decode(tx_bytes)?;
-            tx.canonicalize()
-        }
-    }
-}
 
 fn main() -> Result<()> {
-    // Bitcoin transaction
-    let btc_bytes = universal_decoder_core::hex::decode("0100000001...")?;
-    let btc_ir = decode_transaction(Chain::Bitcoin, &btc_bytes)?;
-    println!("Bitcoin TX: {}", btc_ir.chain.chain_name);
+    let tx_bytes = hex::decode("01000000...")?;
 
-    // Ethereum transaction
-    let eth_bytes = universal_decoder_core::hex::decode("f86c...")?;
-    let eth_ir = decode_transaction(Chain::Ethereum, &eth_bytes)?;
-    println!("Ethereum TX: {}", eth_ir.chain.chain_name);
+    // Decode to Bitcoin-specific type
+    let btc_tx = BitcoinDecoder::decode(&tx_bytes)?;
 
-    Ok(())
-}
-```
+    // Convert to universal TxIR
+    let tx_ir = btc_tx.canonicalize()?;
 
-## Common Use Cases
-
-### 1. Transaction Indexer
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-struct TransactionIndex {
-    txid: Vec<u8>,
-    block_height: u64,
-    inputs: usize,
-    outputs: usize,
-    total_value: u64,
-}
-
-fn index_transaction(tx_bytes: &[u8], block_height: u64) -> Result<TransactionIndex> {
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-
-    Ok(TransactionIndex {
-        txid: tx.txid(),
-        block_height,
-        inputs: tx.inputs.len(),
-        outputs: tx.outputs.len(),
-        total_value: tx.total_output_value()?,
-    })
-}
-```
-
-### 2. Fee Calculator
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn calculate_fee(
-    tx_bytes: &[u8],
-    input_values: &[u64]  // Values of previous outputs being spent
-) -> Result<u64> {
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-
-    // Sum input values (from previous outputs)
-    let total_input: u64 = input_values.iter().sum();
-
-    // Sum output values
-    let total_output = tx.total_output_value()?;
-
-    // Fee = inputs - outputs
-    Ok(total_input.saturating_sub(total_output))
-}
-```
-
-### 3. Address Extraction
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn extract_addresses(tx_bytes: &[u8]) -> Result<Vec<String>> {
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-    let mut addresses = Vec::new();
-
-    // Extract from outputs (simplified - real implementation needs script parsing)
-    for output in &tx.outputs {
-        // Parse scriptPubKey to extract address
-        // This is simplified - you'd need proper script parsing
-        let script_type = guess_script_type(&output.script_pubkey);
-        addresses.push(format!("{} script", script_type));
-    }
-
-    Ok(addresses)
-}
-
-fn guess_script_type(script: &[u8]) -> &'static str {
-    match script.len() {
-        25 if script.get(0..3) == Some(&[0x76, 0xa9, 0x14]) => "P2PKH",
-        23 if script.get(0..2) == Some(&[0xa9, 0x14]) => "P2SH",
-        22 if script.get(0..2) == Some(&[0x00, 0x14]) => "P2WPKH",
-        34 if script.get(0..2) == Some(&[0x00, 0x20]) => "P2WSH",
-        34 if script.get(0..2) == Some(&[0x51, 0x20]) => "P2TR",
-        _ => "Unknown",
-    }
-}
-```
-
-### 4. Transaction Validator
-
-```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn validate_transaction(tx_bytes: &[u8]) -> Result<bool> {
-    // Decode
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-
-    // Basic validation
-    if tx.inputs.is_empty() {
-        return Ok(false); // No inputs
-    }
-
-    if tx.outputs.is_empty() {
-        return Ok(false); // No outputs
-    }
-
-    // Check for overflow
-    let _total = tx.total_output_value()?;
-
-    // More validation...
-    // - Check coinbase rules
-    // - Verify signatures (requires additional implementation)
-    // - Check script validity
-
-    Ok(true)
-}
-```
-
-## Advanced Usage
-
-### Generic Decoder Pattern
-
-```rust
-use universal_decoder_core::prelude::*;
-
-fn process_transaction<D: ChainDecoder>(tx_bytes: &[u8]) -> Result<()>
-where
-    D::TxSpecific: Canonicalizer,
-{
-    // Decode using any decoder
-    let tx = D::decode(tx_bytes)?;
-
-    // Convert to canonical IR
-    let tx_ir = tx.canonicalize()?;
-
-    // Process using universal format
-    println!("Chain: {}", tx_ir.chain.chain_name);
+    // Access normalized data
+    println!("Chain: {}", tx_ir.chain.name);
     println!("Operations: {}", tx_ir.operations.len());
 
     Ok(())
 }
-
-// Use with any chain
-fn main() -> Result<()> {
-    let btc_bytes = vec![/* ... */];
-    process_transaction::<BitcoinDecoder>(&btc_bytes)?;
-
-    let eth_bytes = vec![/* ... */];
-    process_transaction::<EthereumDecoder>(&eth_bytes)?;
-
-    Ok(())
-}
 ```
 
-### Custom Error Handling
+### Decode Any Chain
 
 ```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn safe_decode(tx_bytes: &[u8]) -> std::result::Result<BitcoinTransaction, String> {
-    BitcoinDecoder::decode(tx_bytes)
-        .map_err(|e| format!("Decode failed: {:?}", e))
-}
-
-fn main() {
-    let tx_hex = "0100000001...";
-    let tx_bytes = universal_decoder_core::hex::decode(tx_hex).unwrap();
-
-    match safe_decode(&tx_bytes) {
-        Ok(tx) => println!("Successfully decoded: {:?}", tx.txid()),
-        Err(e) => eprintln!("Failed: {}", e),
+fn decode_any_chain(chain_id: u64, raw_bytes: &[u8]) -> Result<TxIR<'_, 1>> {
+    match chain_id {
+        1 => decoder_bitcoin::BitcoinDecoder::decode(raw_bytes)?.canonicalize(),
+        2 => decoder_ethereum::EthereumDecoder::decode(raw_bytes)?.canonicalize(),
+        _ => Err(DecoderError::unsupported_chain("Unknown chain")),
     }
 }
 ```
 
-## Performance Considerations
+---
 
-### Zero-Copy Where Possible
+## Common Patterns
+
+### Pattern 1: Simple Indexer
 
 ```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
+use sqlx::PgPool;
 
-// Avoid unnecessary cloning
-fn process_efficiently(tx_bytes: &[u8]) -> Result<()> {
+async fn index_transaction(
+    db: &PgPool,
+    tx_bytes: &[u8],
+    block_height: u64,
+) -> Result<()> {
+    // Decode
     let tx = BitcoinDecoder::decode(tx_bytes)?;
+    let tx_ir = tx.canonicalize()?;
 
-    // Reference the data instead of cloning
-    for input in &tx.inputs {
-        // Process without copying
-        let _ = &input.prev_hash;
-    }
+    // Store
+    let tx_hash = hex::encode(&tx_ir.metadata.tx_hash);
+    sqlx::query!(
+        "INSERT INTO transactions (tx_hash, block_height, data) VALUES ($1, $2, $3)",
+        tx_hash,
+        block_height as i64,
+        serde_json::to_value(&tx_ir)?,
+    )
+    .execute(db)
+    .await?;
 
     Ok(())
 }
 ```
 
-### Batch Processing
+### Pattern 2: Extract Transfers
 
 ```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-
-fn decode_block(transactions: &[Vec<u8>]) -> Result<Vec<BitcoinTransaction>> {
-    transactions
+fn extract_transfers(tx_ir: &TxIR) -> Vec<(String, String, u128)> {
+    tx_ir.operations
         .iter()
-        .map(|tx_bytes| BitcoinDecoder::decode(tx_bytes))
+        .filter_map(|op| {
+            if let Operation::Transfer(t) = op {
+                Some((
+                    hex::encode(&t.from.bytes),
+                    hex::encode(&t.to.bytes),
+                    t.amount.value,
+                ))
+            } else {
+                None
+            }
+        })
         .collect()
 }
 ```
 
-## Integration Examples
-
-### With Tokio (Async)
+### Pattern 3: Batch Processing
 
 ```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
+async fn process_block(block: Block, db: &PgPool) -> Result<()> {
+    for tx_bytes in block.transactions {
+        let tx_ir = decode_any_chain(block.chain_id, &tx_bytes)?;
+
+        // Process each transaction
+        for op in tx_ir.operations {
+            match op {
+                Operation::Transfer(t) => handle_transfer(db, &t).await?,
+                Operation::ContractCall(c) => handle_contract_call(db, &c).await?,
+                _ => {}
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+### Pattern 4: Using Hooks
+
+```rust
 use universal_decoder_core::prelude::*;
+
+// Create hook registry
+let registry = HookRegistryBuilder::new()
+    .with_size_limit(1_000_000)  // 1MB max
+    .with_logging("my-indexer".to_string(), vec![HookStage::PreDecode])
+    .build();
+
+// Decode with hooks
+let tx = decoder_bitcoin::decode_with_hooks(&tx_bytes, &registry)?;
+```
+
+---
+
+## Database Schema
+
+Simple PostgreSQL schema for indexing:
+
+```sql
+-- Transactions
+CREATE TABLE transactions (
+    tx_hash VARCHAR(66) PRIMARY KEY,
+    chain_id BIGINT NOT NULL,
+    block_height BIGINT NOT NULL,
+    timestamp BIGINT,
+    data JSONB NOT NULL
+);
+
+CREATE INDEX idx_tx_block ON transactions(chain_id, block_height DESC);
+
+-- Operations (for searching)
+CREATE TABLE operations (
+    id BIGSERIAL PRIMARY KEY,
+    tx_hash VARCHAR(66) NOT NULL REFERENCES transactions(tx_hash),
+    op_type VARCHAR(50) NOT NULL,
+    from_address VARCHAR(66),
+    to_address VARCHAR(66),
+    amount NUMERIC(78, 0)
+);
+
+CREATE INDEX idx_op_from ON operations(from_address);
+CREATE INDEX idx_op_to ON operations(to_address);
+```
+
+---
+
+## Working with TxIR
+
+### Access Transaction Data
+
+```rust
+let tx_ir: TxIR = /* ... */;
+
+// Metadata
+println!("Hash: {}", hex::encode(&tx_ir.metadata.tx_hash));
+println!("Block: {:?}", tx_ir.metadata.block_height);
+println!("Size: {}", tx_ir.metadata.size);
+
+// Chain info
+println!("Chain: {} (ID: {})", tx_ir.chain.name, tx_ir.chain.id);
+
+// Operations
+for op in &tx_ir.operations {
+    match op {
+        Operation::Transfer(t) => {
+            println!("Transfer: {} -> {}, amount: {}",
+                hex::encode(&t.from.bytes[..8]),
+                hex::encode(&t.to.bytes[..8]),
+                t.amount.value
+            );
+        }
+        Operation::ContractCall(c) => {
+            println!("Contract call: {}", hex::encode(&c.contract_address.bytes[..8]));
+        }
+        _ => {}
+    }
+}
+
+// State changes (UTXO chains)
+println!("Inputs: {}", tx_ir.state_deltas.inputs.len());
+println!("Outputs: {}", tx_ir.state_deltas.outputs.len());
+```
+
+### Canonical Serialization
+
+```rust
+// Serialize to deterministic bytes (for hashing)
+let canonical_bytes = borsh::to_vec(&tx_ir)?;
+let hash = sha2::Sha256::digest(&canonical_bytes);
+
+// Note: Don't use JSON for hashing (not deterministic)
+// JSON is only for display/storage
+```
+
+---
+
+## Async Processing
+
+```rust
 use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let tx_bytes = fetch_transaction_async().await?;
+    // Decoding is sync, wrap if needed
+    let tx_bytes = fetch_from_rpc().await?;
 
-    // Decoding is sync, but can be wrapped
-    let tx = tokio::task::spawn_blocking(move || {
-        BitcoinDecoder::decode(&tx_bytes)
-    }).await??;
+    let tx_ir = tokio::task::spawn_blocking(move || {
+        BitcoinDecoder::decode(&tx_bytes)?.canonicalize()
+    })
+    .await??;
 
-    println!("Decoded: {:?}", tx.txid());
+    // Store async
+    store_in_db(&tx_ir).await?;
+
     Ok(())
 }
-
-async fn fetch_transaction_async() -> Result<Vec<u8>> {
-    // Your async code here
-    Ok(vec![])
-}
 ```
 
-### With Serde (JSON Export)
+---
 
-Note: `serde_json` is in dev-dependencies only. For production JSON export, add it to your dependencies:
+## Error Handling
 
 ```rust
-use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-use universal_decoder_core::prelude::*;
-use serde_json;
-
-fn export_to_json(tx_bytes: &[u8]) -> Result<String> {
-    let tx = BitcoinDecoder::decode(tx_bytes)?;
-    let tx_ir = tx.canonicalize()?;
-
-    // TxIR implements Serialize
-    let json = serde_json::to_string_pretty(&tx_ir)?;
-    Ok(json)
+match BitcoinDecoder::decode(&tx_bytes) {
+    Ok(tx) => {
+        // Process transaction
+        let tx_ir = tx.canonicalize()?;
+    }
+    Err(DecoderError::InvalidStructure(msg)) => {
+        eprintln!("Invalid transaction format: {}", msg);
+    }
+    Err(e) => {
+        eprintln!("Decode error: {:?}", e);
+    }
 }
 ```
 
-## Testing Your Integration
+---
+
+## Multi-Chain Support
+
+### Supported Chains
+
+- **UTXO**: Bitcoin, Litecoin, Dogecoin
+- **Account**: Ethereum (legacy + EIP-1559), 500+ EVM chains
+- **Cosmos SDK**: 100+ Cosmos chains
+- **OP Stack**: Optimism, Base, etc.
+- **Others**: TON, Starknet (230+ chains)
+
+See ROADMAP.md for upcoming chains.
+
+### Example: Multi-Chain Explorer
+
+```rust
+async fn handle_transaction(
+    chain_family: ChainFamily,
+    tx_bytes: &[u8],
+    db: &PgPool,
+) -> Result<String> {
+    let tx_ir = match chain_family {
+        ChainFamily::Utxo => {
+            decoder_bitcoin::BitcoinDecoder::decode(tx_bytes)?.canonicalize()?
+        }
+        ChainFamily::Account => {
+            decoder_ethereum::EthereumDecoder::decode(tx_bytes)?.canonicalize()?
+        }
+        _ => return Err(DecoderError::unsupported_chain("Not supported")),
+    };
+
+    let tx_hash = hex::encode(&tx_ir.metadata.tx_hash);
+
+    // Store in database
+    store_transaction(db, &tx_ir).await?;
+
+    Ok(tx_hash)
+}
+```
+
+---
+
+## Performance Tips
+
+1. **Use connection pooling**:
+```rust
+let pool = PgPoolOptions::new()
+    .max_connections(20)
+    .connect(&database_url)
+    .await?;
+```
+
+2. **Batch inserts**:
+```rust
+// Use sqlx::QueryBuilder for bulk inserts
+let mut query_builder = sqlx::QueryBuilder::new(
+    "INSERT INTO operations (tx_hash, op_type) "
+);
+query_builder.push_values(operations, |mut b, op| {
+    b.push_bind(op.tx_hash).push_bind(op.op_type);
+});
+```
+
+3. **Process in parallel**:
+```rust
+use futures::stream::{self, StreamExt};
+
+stream::iter(blocks)
+    .map(|block| process_block(block))
+    .buffer_unordered(10)  // Process 10 blocks concurrently
+    .collect::<Vec<_>>()
+    .await;
+```
+
+---
+
+## Custom Hooks
+
+```rust
+use universal_decoder_core::prelude::*;
+
+struct MySizeChecker;
+
+impl Hook for MySizeChecker {
+    fn name(&self) -> &str {
+        "size_checker"
+    }
+
+    fn stages(&self) -> Vec<HookStage> {
+        vec![HookStage::PreDecode]
+    }
+
+    fn execute(&self, context: &HookContext) -> Result<HookResult> {
+        if context.raw_bytes.len() > 500_000 {
+            return Ok(HookResult::Abort("Too large".to_string()));
+        }
+        Ok(HookResult::Continue)
+    }
+}
+
+// Use it
+let mut registry = HookRegistry::new();
+registry.register(MySizeChecker);
+```
+
+---
+
+## Testing
 
 ```rust
 #[cfg(test)]
 mod tests {
     use super::*;
-    use decoder_bitcoin::{BitcoinDecoder, BitcoinTransaction};
-    use universal_decoder_core::prelude::*;
 
     #[test]
-    fn test_decode_genesis_coinbase() {
-        let tx_hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000";
-        let tx_bytes = universal_decoder_core::hex::decode(tx_hex).unwrap();
+    fn test_decode_bitcoin() {
+        let tx_hex = "01000000...";
+        let tx_bytes = hex::decode(tx_hex).unwrap();
 
         let tx = BitcoinDecoder::decode(&tx_bytes).unwrap();
-
         assert_eq!(tx.version, 1);
-        assert!(tx.is_coinbase());
-        assert_eq!(tx.outputs.len(), 1);
-        assert_eq!(tx.outputs[0].value, 5_000_000_000);
+
+        let tx_ir = tx.canonicalize().unwrap();
+        assert!(!tx_ir.operations.is_empty());
     }
 }
 ```
 
-## Feature Flags
+---
 
-None currently, but future versions may support:
+## Examples
 
-```toml
-[dependencies]
-decoder-bitcoin = { version = "0.1", features = ["async", "serde_json"] }
-```
+See:
+- `examples/simple-decoder/` - Basic usage
+- Live demo: https://trustless-txir.netlify.app
 
-## Minimum Supported Rust Version (MSRV)
+---
 
-Rust 1.70 or later
+## Resources
 
-## Dependencies
+- **API Docs**: See code comments in `universal-decoder-core/src/`
+- **More chains**: See `ROADMAP.md` for upcoming support
+- **Architecture**: See `CLAUDE.md` for design philosophy
+- **Comparison**: See `INDEXER_COMPARISON.md` vs other tools
 
-The library has minimal dependencies:
-- **Core**: `serde`, `borsh`, `thiserror`, `sha2`, `sha3`
-- **Decoders**: Only depend on `universal-decoder-core` (no external blockchain libraries in production)
+---
 
-## Support
-
-- **Documentation**: https://docs.rs/universal-decoder-core
-- **Examples**: See `examples/` directory
-- **Issues**: https://github.com/prasincs/universal-blockchain-decoder/issues
-- **Discussions**: https://github.com/prasincs/universal-blockchain-decoder/discussions
-
-## License
-
-MIT OR Apache-2.0
+**Version**: 1.0.0
+**Last Updated**: 2025-11-18
