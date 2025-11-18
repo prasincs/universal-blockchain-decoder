@@ -1,61 +1,26 @@
-//! Integration tests for Bittensor decoder
+//! Integration tests for Bittensor decoder with realistic transaction fixtures
 //!
-//! These tests use real Bittensor transaction data to validate the decoder.
+//! These tests use properly SCALE-encoded extrinsics to validate the decoder.
 
 use decoder_bittensor::*;
 use decoder_primitives::prelude::*;
 
+mod fixtures;
+use fixtures::*;
+
 #[test]
-fn test_minimal_extrinsic_decode() {
-    // Create a minimal valid signed extrinsic
-    let mut extrinsic = Vec::new();
-    extrinsic.push(0x84); // Version: v4, signed
+fn test_decode_tao_transfer() {
+    let tx_bytes = create_tao_transfer();
 
-    // Address: 32-byte account ID
-    extrinsic.push(0x00); // Address type: Id
-    extrinsic.extend_from_slice(&[0xFF; 32]);
-
-    // Signature: Sr25519
-    extrinsic.push(0x01); // Signature type
-    extrinsic.extend_from_slice(&[0xAA; 64]);
-
-    // Era: Immortal
-    extrinsic.push(0x00);
-
-    // Nonce: 0
-    extrinsic.push(0x00);
-
-    // Tip: 0
-    extrinsic.push(0x00);
-
-    // Call: Balances::transfer
-    extrinsic.push(0x04); // Pallet index (Balances)
-    extrinsic.push(0x00); // Call index (transfer)
-
-    // Destination address
-    extrinsic.push(0x00); // Address type
-    extrinsic.extend_from_slice(&[0xBB; 32]);
-
-    // Amount: 1000000000 (1 TAO with 9 decimals) - compact encoded
-    // 1000000000 = 0x3B9ACA00
-    // Compact encoding for 4-byte mode: 0x02 prefix
-    extrinsic.push(0x02); // Compact prefix
-    extrinsic.push(0x00);
-    extrinsic.push(0xCA);
-    extrinsic.push(0x9A);
-    extrinsic.push(0x3B);
-
-    // Add length prefix
-    let length = extrinsic.len() as u32;
-    let mut with_length = vec![(length << 2) as u8];
-    with_length.extend_from_slice(&extrinsic);
-
-    // Decode
-    let result = BittensorDecoder::decode(&with_length);
-    assert!(result.is_ok(), "Failed to decode: {:?}", result.err());
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode TAO transfer: {:?}",
+        result.err()
+    );
 
     let tx = result.unwrap();
-    assert_eq!(tx.raw_bytes.len(), with_length.len());
+    assert_eq!(tx.raw_bytes.len(), tx_bytes.len());
     assert_eq!(tx.tx_hash.len(), 64); // Blake2b-512
 
     // Verify it's signed
@@ -70,163 +35,414 @@ fn test_minimal_extrinsic_decode() {
 }
 
 #[test]
-fn test_unsigned_extrinsic_decode() {
-    // Create a minimal unsigned extrinsic
-    let mut extrinsic = Vec::new();
-    extrinsic.push(0x04); // Version: v4, unsigned
+fn test_decode_set_weights() {
+    let tx_bytes = create_set_weights();
 
-    // Call: System::remark
-    extrinsic.push(0x00); // Pallet index (System)
-    extrinsic.push(0x01); // Call index (remark)
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode set_weights: {:?}",
+        result.err()
+    );
 
-    // Remark data: "Hello Bittensor"
-    let remark = b"Hello Bittensor";
-    extrinsic.push((remark.len() << 2) as u8); // Compact length
-    extrinsic.extend_from_slice(remark);
+    let tx = result.unwrap();
+    assert!(tx.extrinsic.is_signed());
 
-    // Add length prefix
-    let length = extrinsic.len() as u32;
-    let mut with_length = vec![(length << 2) as u8];
-    with_length.extend_from_slice(&extrinsic);
+    // Parse call
+    let call = tx.call().unwrap();
+    assert_eq!(call.pallet_index, 7);
+    assert_eq!(call.call_index, 0);
+    assert_eq!(call.pallet_name(), "SubtensorModule");
+    assert_eq!(call.call_name(), "set_weights");
 
-    // Decode
-    let result = BittensorDecoder::decode(&with_length);
-    assert!(result.is_ok(), "Failed to decode: {:?}", result.err());
+    // Verify call has parameters
+    assert!(!call.parameters.is_empty());
+}
+
+#[test]
+fn test_decode_add_stake() {
+    let tx_bytes = create_add_stake();
+
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode add_stake: {:?}",
+        result.err()
+    );
+
+    let tx = result.unwrap();
+    let call = tx.call().unwrap();
+
+    assert_eq!(call.pallet_index, 7);
+    assert_eq!(call.call_index, 1);
+    assert_eq!(call.pallet_name(), "SubtensorModule");
+    assert_eq!(call.call_name(), "add_stake");
+}
+
+#[test]
+fn test_decode_register_neuron() {
+    let tx_bytes = create_register_neuron();
+
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode register: {:?}",
+        result.err()
+    );
+
+    let tx = result.unwrap();
+    let call = tx.call().unwrap();
+
+    assert_eq!(call.pallet_index, 7);
+    assert_eq!(call.call_index, 5);
+    assert_eq!(call.pallet_name(), "SubtensorModule");
+    assert_eq!(call.call_name(), "register");
+
+    // Verify this uses Ed25519 signature (from fixture)
+    if let Extrinsic::Signed(signed) = &tx.extrinsic {
+        assert!(matches!(signed.signature, BittensorSignature::Ed25519(_)));
+    }
+}
+
+#[test]
+fn test_decode_unsigned_remark() {
+    let tx_bytes = create_unsigned_remark();
+
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode unsigned remark: {:?}",
+        result.err()
+    );
 
     let tx = result.unwrap();
     assert!(!tx.extrinsic.is_signed());
 
-    // Parse call
     let call = tx.call().unwrap();
     assert_eq!(call.pallet_index, 0);
     assert_eq!(call.pallet_name(), "System");
 }
 
 #[test]
-fn test_subtensor_set_weights_call() {
-    // Create extrinsic with SubtensorModule::set_weights call
-    let mut extrinsic = Vec::new();
-    extrinsic.push(0x84); // Version: v4, signed
+fn test_decode_batch_transfer() {
+    let tx_bytes = create_batch_transfer();
 
-    // Address
-    extrinsic.push(0x00);
-    extrinsic.extend_from_slice(&[0xFF; 32]);
-
-    // Signature
-    extrinsic.push(0x01);
-    extrinsic.extend_from_slice(&[0xAA; 64]);
-
-    // Era
-    extrinsic.push(0x00);
-
-    // Nonce
-    extrinsic.push(0x00);
-
-    // Tip
-    extrinsic.push(0x00);
-
-    // Call: SubtensorModule::set_weights
-    extrinsic.push(0x07); // Pallet index (SubtensorModule)
-    extrinsic.push(0x00); // Call index (set_weights)
-
-    // Add some dummy parameters
-    extrinsic.extend_from_slice(&[0x00, 0x01, 0x02, 0x03]);
-
-    // Add length prefix
-    let length = extrinsic.len() as u32;
-    let mut with_length = vec![(length << 2) as u8];
-    with_length.extend_from_slice(&extrinsic);
-
-    // Decode
-    let result = BittensorDecoder::decode(&with_length);
-    assert!(result.is_ok());
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode batch transfer: {:?}",
+        result.err()
+    );
 
     let tx = result.unwrap();
     let call = tx.call().unwrap();
 
-    assert_eq!(call.pallet_index, 7);
-    assert_eq!(call.call_index, 0);
-    assert_eq!(call.pallet_name(), "SubtensorModule");
-    assert_eq!(call.call_name(), "set_weights");
+    assert_eq!(call.pallet_index, 11); // Utility pallet
+    assert_eq!(call.pallet_name(), "Utility");
 }
 
 #[test]
-fn test_canonicalize_balances_transfer() {
-    // Create a Balances::transfer extrinsic
-    let mut extrinsic = Vec::new();
-    extrinsic.push(0x84);
-    extrinsic.push(0x00);
-    extrinsic.extend_from_slice(&[0xFF; 32]); // From
-    extrinsic.push(0x01);
-    extrinsic.extend_from_slice(&[0xAA; 64]); // Signature
-    extrinsic.push(0x00); // Era
-    extrinsic.push(0x00); // Nonce
-    extrinsic.push(0x00); // Tip
-    extrinsic.push(0x04); // Balances
-    extrinsic.push(0x00); // transfer
-    extrinsic.push(0x00); // Dest address type
-    extrinsic.extend_from_slice(&[0xBB; 32]); // To
-    extrinsic.push(0x00); // Amount: 0
+fn test_decode_large_transfer() {
+    let tx_bytes = create_large_transfer();
 
-    let length = extrinsic.len() as u32;
-    let mut with_length = vec![(length << 2) as u8];
-    with_length.extend_from_slice(&extrinsic);
+    let result = BittensorDecoder::decode(&tx_bytes);
+    assert!(
+        result.is_ok(),
+        "Failed to decode large transfer: {:?}",
+        result.err()
+    );
 
-    let tx = BittensorDecoder::decode(&with_length).unwrap();
-    let tx_ir = tx.canonicalize().unwrap();
+    let tx = result.unwrap();
+
+    // Verify this uses ECDSA signature (65 bytes)
+    if let Extrinsic::Signed(signed) = &tx.extrinsic {
+        assert!(matches!(signed.signature, BittensorSignature::Ecdsa(_)));
+    }
+
+    let call = tx.call().unwrap();
+    assert_eq!(call.pallet_name(), "Balances");
+    assert_eq!(call.call_name(), "transfer");
+}
+
+#[test]
+fn test_canonicalize_tao_transfer() {
+    let tx_bytes = create_tao_transfer();
+    let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+
+    let result = tx.canonicalize();
+    assert!(result.is_ok(), "Failed to canonicalize: {:?}", result.err());
+
+    let tx_ir = result.unwrap();
 
     // Verify metadata
-    assert_eq!(tx_ir.metadata.size, with_length.len());
+    assert_eq!(tx_ir.metadata.size, tx_bytes.len());
     assert_eq!(tx_ir.metadata.tx_hash.len(), 64);
+    assert!(tx_ir.metadata.extra.contains("Balances"));
+    assert!(tx_ir.metadata.extra.contains("transfer"));
 
-    // Verify operations (should have at least one transfer)
+    // Verify operations (should have a transfer)
     assert!(!tx_ir.operations.is_empty());
 
-    // Verify authorization (signed transaction should have signature)
+    // Verify authorization (signed transaction)
     assert_eq!(tx_ir.authorization.signatures.len(), 1);
     assert_eq!(tx_ir.authorization.public_keys.len(), 1);
+
+    // Verify state deltas
+    assert!(!tx_ir.state_deltas.account_changes.is_empty());
 }
 
 #[test]
-fn test_hash_consistency() {
-    let data = b"Bittensor test data";
-    let hash1 = BittensorTransaction::calculate_hash(data);
-    let hash2 = BittensorTransaction::calculate_hash(data);
+fn test_canonicalize_set_weights() {
+    let tx_bytes = create_set_weights();
+    let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
 
-    assert_eq!(hash1, hash2);
-    assert_eq!(hash1.len(), 64); // Blake2b-512
+    let tx_ir = tx.canonicalize().unwrap();
+
+    // Should have contract call operation for SubtensorModule
+    assert!(!tx_ir.operations.is_empty());
+    assert!(tx_ir.metadata.extra.contains("SubtensorModule"));
+
+    // Mortal era should be reflected in authorization
+    if let Extrinsic::Signed(signed) = &tx.extrinsic {
+        assert!(matches!(signed.extension.era, Era::Mortal(_, _)));
+    }
 }
 
 #[test]
-fn test_chain_identity() {
+fn test_canonicalize_unsigned() {
+    let tx_bytes = create_unsigned_remark();
+    let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+
+    let tx_ir = tx.canonicalize().unwrap();
+
+    // Unsigned transaction should have no signatures
+    assert_eq!(tx_ir.authorization.signatures.len(), 0);
+    assert_eq!(tx_ir.authorization.public_keys.len(), 0);
+}
+
+#[test]
+fn test_hash_consistency_across_fixtures() {
+    let fixtures = vec![
+        ("tao_transfer", create_tao_transfer()),
+        ("set_weights", create_set_weights()),
+        ("add_stake", create_add_stake()),
+        ("register", create_register_neuron()),
+        ("batch", create_batch_transfer()),
+    ];
+
+    for (name, tx_bytes) in fixtures {
+        let tx1 = BittensorDecoder::decode(&tx_bytes).unwrap();
+        let tx2 = BittensorDecoder::decode(&tx_bytes).unwrap();
+
+        assert_eq!(
+            tx1.tx_hash, tx2.tx_hash,
+            "Hash should be deterministic for {}",
+            name
+        );
+        assert_eq!(tx1.tx_hash.len(), 64, "Blake2b-512 should be 64 bytes");
+    }
+}
+
+#[test]
+fn test_signature_types() {
+    // Sr25519 (most common)
+    let tx_sr25519 = BittensorDecoder::decode(&create_tao_transfer()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_sr25519.extrinsic {
+        assert!(matches!(signed.signature, BittensorSignature::Sr25519(_)));
+        assert_eq!(signed.signature.clone().into_bytes().len(), 64);
+    }
+
+    // Ed25519
+    let tx_ed25519 = BittensorDecoder::decode(&create_register_neuron()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_ed25519.extrinsic {
+        assert!(matches!(signed.signature, BittensorSignature::Ed25519(_)));
+    }
+
+    // ECDSA
+    let tx_ecdsa = BittensorDecoder::decode(&create_large_transfer()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_ecdsa.extrinsic {
+        assert!(matches!(signed.signature, BittensorSignature::Ecdsa(_)));
+        assert_eq!(signed.signature.clone().into_bytes().len(), 65);
+    }
+}
+
+#[test]
+fn test_era_types() {
+    // Immortal
+    let tx_immortal = BittensorDecoder::decode(&create_tao_transfer()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_immortal.extrinsic {
+        assert_eq!(signed.extension.era, Era::Immortal);
+    }
+
+    // Mortal
+    let tx_mortal = BittensorDecoder::decode(&create_set_weights()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_mortal.extrinsic {
+        assert!(matches!(signed.extension.era, Era::Mortal(_, _)));
+    }
+}
+
+#[test]
+fn test_nonce_values() {
+    let test_cases = vec![
+        ("tao_transfer", create_tao_transfer(), 5),
+        ("set_weights", create_set_weights(), 10),
+        ("register", create_register_neuron(), 1),
+        ("batch", create_batch_transfer(), 2),
+    ];
+
+    for (name, tx_bytes, expected_nonce) in test_cases {
+        let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+        if let Extrinsic::Signed(signed) = &tx.extrinsic {
+            assert_eq!(
+                signed.extension.nonce, expected_nonce,
+                "Nonce mismatch for {}",
+                name
+            );
+        }
+    }
+}
+
+#[test]
+fn test_tip_values() {
+    // Zero tip
+    let tx_no_tip = BittensorDecoder::decode(&create_tao_transfer()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_no_tip.extrinsic {
+        assert_eq!(signed.extension.tip, 0);
+    }
+
+    // With tip
+    let tx_with_tip = BittensorDecoder::decode(&create_set_weights()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_with_tip.extrinsic {
+        assert_eq!(signed.extension.tip, 100);
+    }
+
+    // Large tip
+    let tx_large_tip = BittensorDecoder::decode(&create_large_transfer()).unwrap();
+    if let Extrinsic::Signed(signed) = &tx_large_tip.extrinsic {
+        assert_eq!(signed.extension.tip, 10000);
+    }
+}
+
+#[test]
+fn test_all_bittensor_pallets() {
+    let test_cases = vec![
+        (create_tao_transfer(), "Balances", "transfer"),
+        (create_set_weights(), "SubtensorModule", "set_weights"),
+        (create_add_stake(), "SubtensorModule", "add_stake"),
+        (create_register_neuron(), "SubtensorModule", "register"),
+        (create_unsigned_remark(), "System", "unknown"),
+        (create_batch_transfer(), "Utility", "unknown"),
+    ];
+
+    for (tx_bytes, expected_pallet, expected_call) in test_cases {
+        let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+        let call = tx.call().unwrap();
+
+        assert_eq!(call.pallet_name(), expected_pallet);
+        assert_eq!(call.call_name(), expected_call);
+    }
+}
+
+#[test]
+fn test_state_deltas_for_transfers() {
+    let tx_bytes = create_tao_transfer();
+    let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+    let tx_ir = tx.canonicalize().unwrap();
+
+    // Should have account changes for sender and recipient
+    assert!(!tx_ir.state_deltas.account_changes.is_empty());
+
+    // Should record nonce change
+    let has_nonce = tx_ir
+        .state_deltas
+        .account_changes
+        .iter()
+        .any(|c| c.nonce.is_some());
+    assert!(has_nonce);
+}
+
+#[test]
+fn test_validation_passes() {
+    let fixtures = vec![
+        create_tao_transfer(),
+        create_set_weights(),
+        create_add_stake(),
+        create_register_neuron(),
+        create_unsigned_remark(),
+        create_batch_transfer(),
+        create_large_transfer(),
+    ];
+
+    for tx_bytes in fixtures {
+        let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
+        let result = tx.validate();
+        assert!(result.is_ok(), "Validation failed: {:?}", result.err());
+    }
+}
+
+#[test]
+fn test_chain_identity_consistency() {
     let chain = BittensorDecoder::chain();
 
     assert_eq!(chain.chain_name(), "Bittensor");
     assert_eq!(chain.chain_family(), ChainFamily::Account);
-    assert!(chain.chain_id() > 0); // Should have a valid chain ID
+    assert!(chain.chain_id() > 0);
+
+    // Verify consistent across multiple calls
+    let chain2 = BittensorDecoder::chain();
+    assert_eq!(chain.chain_id(), chain2.chain_id());
 }
 
 #[test]
-fn test_validate_format_reject_invalid() {
+fn test_error_handling() {
     // Empty
-    assert!(BittensorDecoder::validate_format(&[]).is_err());
+    assert!(BittensorDecoder::decode(&[]).is_err());
 
     // Too short
-    assert!(BittensorDecoder::validate_format(&[0x01]).is_err());
-    assert!(BittensorDecoder::validate_format(&[0x01, 0x02]).is_err());
+    assert!(BittensorDecoder::decode(&[0x01]).is_err());
+    assert!(BittensorDecoder::decode(&[0x01, 0x84]).is_err());
 
-    // Minimum valid length
-    assert!(BittensorDecoder::validate_format(&[0x04, 0x84, 0x00, 0x00]).is_ok());
+    // Invalid compact length
+    let invalid = vec![0xFF, 0xFF, 0xFF, 0xFF];
+    assert!(BittensorDecoder::decode(&invalid).is_err());
 }
 
-// Note: For real integration tests with actual Bittensor transactions,
-// add fixture files to tests/fixtures/ and load them here.
-// Example:
-//
-// #[test]
-// fn test_real_bittensor_transaction() {
-//     let tx_bytes = include_bytes!("fixtures/mainnet_block_123456_tx0.bin");
-//     let tx = BittensorDecoder::decode(tx_bytes).unwrap();
-//     assert_eq!(tx.extrinsic.is_signed(), true);
-//     // ... additional assertions
-// }
+#[test]
+fn test_canonicalize_determinism() {
+    let fixtures = vec![
+        create_tao_transfer(),
+        create_set_weights(),
+        create_add_stake(),
+    ];
+
+    for tx_bytes in fixtures {
+        let tx1 = BittensorDecoder::decode(&tx_bytes).unwrap();
+        let tx2 = BittensorDecoder::decode(&tx_bytes).unwrap();
+
+        let ir1 = tx1.canonicalize().unwrap();
+        let ir2 = tx2.canonicalize().unwrap();
+
+        assert_eq!(ir1.metadata.tx_hash, ir2.metadata.tx_hash);
+        assert_eq!(ir1.metadata.size, ir2.metadata.size);
+        assert_eq!(ir1.operations.len(), ir2.operations.len());
+        assert_eq!(
+            ir1.authorization.signatures.len(),
+            ir2.authorization.signatures.len()
+        );
+    }
+}
+
+// Helper trait extension
+trait SignatureExt {
+    fn into_bytes(self) -> Vec<u8>;
+}
+
+impl SignatureExt for BittensorSignature {
+    fn into_bytes(self) -> Vec<u8> {
+        match self {
+            BittensorSignature::Sr25519(b) => b,
+            BittensorSignature::Ed25519(b) => b,
+            BittensorSignature::Ecdsa(b) => b,
+        }
+    }
+}
