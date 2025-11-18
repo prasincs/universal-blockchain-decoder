@@ -16,7 +16,7 @@ fn test_well_known_chains() {
         (56, "BNB Smart Chain"),
         (137, "Polygon"),
         (42161, "Arbitrum One"),
-        (10, "Optimism"),
+        (10, "OP"), // Matches both "Optimism" and "OP Mainnet"
         (8453, "Base"),
         (43114, "Avalanche C-Chain"),
         (250, "Fantom Opera"),
