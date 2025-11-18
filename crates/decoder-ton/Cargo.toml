@@ -1,0 +1,22 @@
+[package]
+name = "decoder-ton"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "TON (The Open Network) transaction decoder for universal-decoder"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
+base64 = "0.22"
+hex = "0.4"
+# TON library for validation testing only
+tonlib-core = "0.26"
