@@ -1,24 +1,11 @@
 {
-  "description": "Legacy contract creation transaction - Simple storage contract deployment",
-  "type": 0,
-  "hash": "0x5555555555555555555555555555555555555555555555555555555555555555",
-  "from": "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
-  "to": null,
-  "value": "0x00",
+  "description": "Legacy contract deployment transaction",
+  "nonce": 10,
+  "gasPrice": "21000000000",
   "gas": 157264,
-  "gasPrice": "0x04e3b29200",
-  "nonce": 0,
-  "data": "0x608060405234801561001057600080fd5b506101358061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80632e64cec11460375780636057361d146051575b600080fd5b603d6069565b6040516048919060c2565b60405180910390f35b6067600480360381019060639190608f565b6072565b005b60008054905090565b8060008190555050565b60008135905060898160e8565b92915050565b60006020828403121560a057600080fd5b600060ac84828501607c565b91505092915050565b60bc8160db565b82525050565b600060208201905060d5600083018460b5565b92915050565b6000819050919050565b60ef8160db565b811460f957600080fd5b5056fea26469706673582212209a0c3a7b6d7f8c3c7f7e7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f64736f6c63430008040033",
-  "v": 27,
-  "r": "0xf3c5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5c3e5",
-  "s": "0x5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d",
-  "block_number": 10000000,
-  "notes": [
-    "Legacy (Type 0) contract creation transaction",
-    "Empty 'to' field indicates contract creation",
-    "Data field contains contract bytecode (Solidity simple storage contract)",
-    "Contract implements store() and retrieve() functions",
-    "RLP format: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])",
-    "After deployment, contract can be interacted with at the created address"
-  ]
+  "to": null,
+  "value": "0",
+  "chainId": 1,
+  "type": "legacy",
+  "notes": "Simple counter contract deployment"
 }
