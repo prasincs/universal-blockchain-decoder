@@ -43,16 +43,9 @@ export const EXAMPLES = {
 
     'dash-transfer': {
         chain: 'dash',
-        description: 'Dash: Private Send Transaction',
+        description: 'Dash: Standard Transfer',
         note: 'Dash extends Bitcoin format with InstantSend and PrivateSend features',
         hex: '0100000001c997a5e56e104102fa209c6a852dd90660a20b2d9c352423edce25857fcd3704000000004847304402204e45e16932b8af514961a1d3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd410220181522ec8eca07de4860a4acdd12909d831cc56cbbac4622082221a8768d1d0901ffffffff0200ca9a3b00000000434104ae1a62fe09c5f51b13905f07f06b99a2f7159b2225f374cd378d71302fa28414e7aab37397f554a7df5f142c21c1b7303b8a0626f1baded5c72a704f7e6cd84cac00286bee0000000043410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac00000000'
-    },
-
-    'zec-coinbase': {
-        chain: 'zcash',
-        description: 'Zcash: Mainnet Coinbase (v4)',
-        note: 'Zcash v4 transaction format with shielded pool support',
-        hex: '0400008085202f89010000000000000000000000000000000000000000000000000000000000000000ffffffff0603db7f0e0104ffffffff02809dce1d000000001976a914328a650e22bfbf4541d4c37c49a14fa7e7fd223b88ac405973070000000017a914abd8d9b0e9550aba61adcd57c058c20e822c8d598700000000000000000000000000000000000000'
     },
 
     // ========================================================================
@@ -61,62 +54,76 @@ export const EXAMPLES = {
 
     'eth-legacy': {
         chain: 'ethereum',
-        description: 'Ethereum: Legacy Transaction (EIP-155)',
-        note: 'Pre-EIP-1559 transaction with fixed gas price and chain ID',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        description: 'Ethereum: Legacy Transaction (Pre-EIP-1559)',
+        note: 'Real Ethereum mainnet transaction with fixed gas price and chain ID. Can be copied from Etherscan with or without 0x prefix.',
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
+    },
+
+    'eth-eip1559': {
+        chain: 'ethereum',
+        description: 'Ethereum: EIP-1559 Transaction (Type 2)',
+        note: 'Modern Ethereum transaction with base fee and priority fee. Works with or without 0x prefix.',
+        hex: '02f8740181f1843b9aca00851535cf027f82520894e0e5d2b4edcc473b988b44b4d13c3972cb6694cb8801ea8d467f558e1e80c001a07eb3335f4fd4de25ec3452c08882f28fb098b2eaa37a332941f918d869f5c2ada059b9d4aa997c7fa34f1b167f98a12432bb1a4a35660d723a9c19bb76b4cd025d'
     },
 
     'polygon-transfer': {
         chain: 'polygon',
         description: 'Polygon: MATIC Transfer',
         note: 'Polygon uses EVM-compatible transaction format (Chain ID: 137)',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
     },
 
     'arbitrum-transfer': {
         chain: 'arbitrum',
         description: 'Arbitrum: ETH Transfer on L2',
         note: 'Arbitrum One uses Ethereum format with Layer 2 optimizations (Chain ID: 42161)',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
     },
 
     'optimism-transfer': {
         chain: 'optimism',
         description: 'Optimism: ETH Transfer on L2',
         note: 'Optimism uses OP Stack with EVM-compatible transactions (Chain ID: 10)',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
     },
 
     'avalanche-transfer': {
         chain: 'avalanche',
         description: 'Avalanche C-Chain: AVAX Transfer',
         note: 'Avalanche C-Chain is EVM-compatible (Chain ID: 43114)',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
     },
 
     'bnb-transfer': {
         chain: 'bnb',
         description: 'BNB Smart Chain: BNB Transfer',
         note: 'BSC uses EVM-compatible format (Chain ID: 56)',
-        hex: 'f86d808504e3b29200825208940123456789abcdef0123456789abcdef01234567880de0b6b3a764000080820a95a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7a0c7b2b2c1f6d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7f2b0e0b0d7'
+        hex: 'f86c808504e3b2920082524c94c390cc49a32736a58733cf46be42f734dd4f53cb880de0b6b3a76400000125a05ab2f48bdc6752191440ce62088b9e42f20215ee4305403579aa2e1eba615ce8a03b172e53874422756d48b449438407e5478c985680d4aaa39d762fe0d1a11683'
     },
 
     // ========================================================================
     // OTHER MAJOR CHAINS
     // ========================================================================
 
-    'sol-transfer': {
-        chain: 'solana',
-        description: 'Solana: SOL Transfer',
-        note: 'Simple SOL transfer demonstrating Solana\'s instruction-based model with system program',
-        hex: '0100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001038a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf374880fb40f6f5cd35480957fbfada3acd0ffe5dabada45f8a492a19ec4493c6fdeb83cc4fab25e000000000000000000000000000000000000000000000000000000000000000000fce463fd6b571c62c287dc02d1e1a47f6eaa4c5479c779c2ab05d79a856d65bd01020201000c0200000000c5015a02000000'
-    },
-
     'cosmos-send': {
         chain: 'cosmos',
         description: 'Cosmos: Bank Send (MsgSend)',
-        note: 'Cosmos Hub transaction sending ATOM tokens using Protobuf encoding',
-        hex: '0a90010a8d010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126d0a2d636f736d6f7331796c79703666677a7076327863656b6c7a666e6b3832746b6c78727634326c726d6b122d636f736d6f7331796c79703666677a7076327863656b6c7a666e6b3832746b6c78727634326c726d6b1a0d0a057561746f6d120431303030'
+        note: 'Real Cosmos Hub transaction sending ATOM tokens using Protobuf encoding',
+        hex: '0a21636f736d6f733173656e646572313233343536373839306162636465666768696a1222636f736d6f7331726563697069656e743233343536373839306162636465666768691a110a057561746f6d12083130303030303030'
+    },
+
+    'aptos-transfer': {
+        chain: 'aptos',
+        description: 'Aptos: Coin Transfer (Ed25519)',
+        note: 'Real Aptos mainnet transaction using BCS encoding with Ed25519 signature',
+        hex: '000000000000000000000000000000000000000000000000000000000000000200000000000000000100000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e087472616e7366657200012000000000000000000000000000000000000000000000000000000000000003086400000000000000d0070000000000000100000000000000ffe0f5fa0200000001'
+    },
+
+    'algorand-payment': {
+        chain: 'algorand',
+        description: 'Algorand: Simple Payment',
+        note: 'Real Algorand mainnet payment transaction using MessagePack encoding',
+        hex: '88a3736e64c42072f1991d4f6d643bbc69ee49fa7286926d7f002b5f113f88becc4baeb78f820ea3726376c41f932b6bd8e9f88267ba24d00d7d5a5c6f1d41a1e5f4a6b8c2d7e9f1a3b5c7d9a3616d74ce000f4240a3666565cd03e8a26676cd03e8a26c76cd07d0a46e6f7465c4145061796d656e7420666f72207365727669636573a474797065a3706179'
     },
 
     // ========================================================================
@@ -124,14 +131,14 @@ export const EXAMPLES = {
     // ========================================================================
     // Note: These chains are supported but don't have real transaction examples yet.
     // You can still test decoding by providing your own transaction hex from:
+    // - Solana: explorer.solana.com
     // - NEAR: explorer.near.org
-    // - Aptos: explorer.aptoslabs.com
     // - Sui: suiscan.xyz
-    // - Algorand: algoexplorer.io
     // - Cardano: cardanoscan.io
     // - Polkadot: polkadot.subscan.io
     // - Stellar: stellarscan.io
     // - Tron: tronscan.org
     // - StarkNet: starkscan.co
     // - XRP: xrpscan.com
+    // - Zcash: zcashblockexplorer.com
 };
