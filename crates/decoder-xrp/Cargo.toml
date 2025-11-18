@@ -12,9 +12,10 @@ universal-decoder-core = { path = "../universal-decoder-core" }
 decoder-primitives = { path = "../decoder-primitives" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
 # No standard Rust library for XRP binary codec
-# Will need custom validation implementation
+# Custom pure Rust implementation used for production
 serde_json = { workspace = true }
 proptest = { workspace = true }
