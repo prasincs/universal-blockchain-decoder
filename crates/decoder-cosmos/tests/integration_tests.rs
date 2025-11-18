@@ -831,6 +831,7 @@ fn create_test_tx(
     }
 }
 
+#[test]
 fn test_decode_cosmwasm_execute_no_funds() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::tx::v1beta1::{AuthInfo, Fee, Tx, TxBody};
@@ -902,6 +903,7 @@ fn test_decode_cosmwasm_execute_no_funds() {
         _ => panic!("Expected MsgExecuteContract"),
     }
 }
+#[test]
 fn test_decode_withdraw_delegator_reward() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward;
@@ -967,6 +969,7 @@ fn test_decode_withdraw_delegator_reward() {
     let tx_ir = decoded.canonicalize().unwrap();
     assert_eq!(tx_ir.operations.len(), 1);
 }
+#[test]
 fn test_decode_submit_proposal() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
@@ -1045,6 +1048,7 @@ fn test_decode_submit_proposal() {
     let tx_ir = decoded.canonicalize().unwrap();
     assert_eq!(tx_ir.operations.len(), 1);
 }
+#[test]
 fn test_decode_deposit() {
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
     use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgDeposit;
