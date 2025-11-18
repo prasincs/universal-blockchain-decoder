@@ -34,7 +34,7 @@
 **See**:
   - **NEW**: `crates/decoder-mina/tests/o1js_test_vectors.rs` - Mina o1js compatibility tests (22 tests) ✨
   - **NEW**: `crates/decoder-mina/tests/README.md` - o1js test vector documentation & extraction guide ✨
-  - **PLANNED**: `docs/ACTOR_MODEL_CHAINS.md` - Actor Model chain semantics (ICP, AO) 📋
+  - **NEW**: `docs/ACTOR_MODEL_CHAINS.md` - Actor Model chain semantics (ICP, AO) - Implementation-ready ✅
   - `CLAUDE_PROPOSED.md` - Streamlined CLAUDE.md (400 lines, action-first structure)
   - `docs/CLAUDE_MD_IMPROVEMENT_SUMMARY.md` - Full analysis & migration plan (6x faster workflows)
   - `docs/DECODER_GENERATOR_IMPROVEMENTS.md` - Automation roadmap (8 PRs, 4-week plan)
@@ -658,33 +658,42 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 **3.11.2: Internet Computer (ICP) Decoder** (Week 1)
 - [ ] Create `crates/decoder-icp/` crate
 - [ ] Implement ingress message parsing (Candid serialization)
-- [ ] Parse update calls (caller, canister_id, method_name, args)
-- [ ] Handle cross-canister calls (async semantics)
+  - Parse: sender, nonce, ingress_expiry, canister_id, method_name, arg
+  - Compute request_id (SHA-256 hash of all fields)
+- [ ] Support message types: Ingress, Inter-canister, Callback
+- [ ] Parent/child message linkage in `metadata.extra`
 - [ ] Cycles tracking (ICP's computational resource model)
 - [ ] Chain registry (Mainnet, testnets, custom subnets)
-- [ ] 20+ unit tests
+- [ ] 20+ unit tests (including message linkage tests)
 
 **3.11.3: Arweave AO Decoder** (Week 2)
-- [ ] Create `crates/decoder-ao/` crate (or extend decoder-icp)
-- [ ] Parse AO process messages (immutable message history)
-- [ ] Message ordering and consensus tracking
-- [ ] Event sourcing state derivation
-- [ ] 15+ unit tests
+- [ ] Create `crates/decoder-ao/` crate
+- [ ] Parse ANS-104 data-items (message structure)
+  - Parse: Data, Target, Tags, Signature, Nonce, Epoch
+  - Extract action from tags
+- [ ] Message ordering via Epoch + Nonce
+- [ ] Event sourcing metadata (message height, state transitions)
+- [ ] 15+ unit tests (including message ordering tests)
 
 **3.11.4: StateDeltas Mapping** (Week 2-3)
-- [ ] Map actor semantics to TxIR:
-  - `inputs`: Caller principal + cycles sent
-  - `outputs`: Response data + cycles returned
-  - `account_changes`: Canister/actor state mutations
-  - `metadata.extra`: Cross-canister call graph, async depth
-- [ ] Privacy considerations (canister state visibility)
-- [ ] Integration tests with real ICP transactions
+- [ ] Map actor semantics to TxIR (per-message):
+  - Ingress: `inputs` = caller + cycles, `account_changes` = canister pre-await state
+  - Inter-canister: Separate TxIR with parent linkage
+  - Callback: `outputs` = response + cycles returned, `account_changes` = final state
+  - `metadata.extra`: message_type, parent_message, spawned_calls
+- [ ] Observability levels (PartiallyObservable for opaque canister state)
+- [ ] Integration tests with real ICP/AO message sequences
 
 **3.11.5: Property Tests & Integration** (Week 3)
-- [ ] Property tests: Message ordering preserved, cycles conservation
-- [ ] Integration tests: Real ICP NNS canister calls, AO process messages
-- [ ] Fuzz testing: Random message payloads
-- [ ] Documentation: Actor model semantics, ICP/AO specifics
+- [ ] Property tests:
+  - Message linkage (parent/child relationships preserved)
+  - Cycles conservation (ingress + callback = net consumption)
+  - Message ordering (AO Epoch + Nonce deterministic)
+- [ ] Integration tests:
+  - Real ICP NNS governance votes (multi-step canister calls)
+  - Real AO process spawns and message chains
+- [ ] Fuzz testing: Random Candid arguments, malformed ANS-104
+- [ ] Documentation: Complete `docs/ACTOR_MODEL_CHAINS.md` with examples
 
 **Special Features**:
 - ✅ Async message-based transaction model
@@ -693,11 +702,18 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 - ✅ Event sourcing state representation (AO)
 - ✅ Observable vs opaque actor state
 
-**Challenges**:
-- **Async Semantics**: TxIR is synchronous - need to represent `await` points in metadata
-- **Message Chains**: Single user action may create multiple transactions
-- **Observability**: Canister state might be private - use `ObservabilityLevel` from Privacy extensions
-- **Scope Boundary**: Decode ingress message only, or entire cross-canister call tree?
+**Design Decisions** (based on block explorer research):
+- ✅ **Per-Message Decoding**: One TxIR per message (not per continuation chain)
+  - Matches how ICP and AO expose data (each message has separate ID)
+  - Simpler decoding (no multi-message reconstruction)
+  - Linkage via parent/child message IDs in `metadata.extra`
+- ✅ **Async as Sequential Messages**: Continuations are linked TxIRs (like Git commits)
+  - Ingress message → TxIR #1 (spawns inter-canister call)
+  - Inter-canister call → TxIR #2 (parent: TxIR #1)
+  - Callback → TxIR #3 (parent: TxIR #1, triggered_by: TxIR #2)
+- ⚠️ **Observability**: Canister/process state might be private
+  - Use `ObservabilityLevel` from Phase 3.0 privacy extensions
+  - Most canisters: `PartiallyObservable` (method visible, state opaque)
 
 **Dependencies**:
 - ✅ Phase 1.5 complete (testing infrastructure)
@@ -718,8 +734,15 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 - **Chains Unlocked**: 2 (ICP, AO) + future actor-based chains
 - **Ecosystem Impact**: Medium (novel architecture, educational value)
 - **Technical Innovation**: High (demonstrates TxIR flexibility)
+- **Conference/Paper Value**: HIGH (novel concurrency model, continuation representation)
 
-**Documentation**: `docs/ACTOR_MODEL_CHAINS.md` (to be created)
+**Documentation**: `docs/ACTOR_MODEL_CHAINS.md` ✅ **COMPLETE** - Implementation-ready guide with:
+- Block explorer research findings (ICP Dashboard, AO explorers)
+- Message structure specifications (Ingress, ANS-104)
+- Per-message decoding strategy
+- StateDeltas mapping for each message type
+- Code examples and test patterns
+- Use cases for conferences & papers
 
 ---
 
