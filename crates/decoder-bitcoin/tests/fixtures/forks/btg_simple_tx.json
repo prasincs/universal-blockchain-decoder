@@ -1,0 +1,9 @@
+{
+  "description": "Bitcoin Gold simple P2PKH transaction",
+  "fork": "Bitcoin Gold (BTG)",
+  "version": 1,
+  "inputs": 1,
+  "outputs": 2,
+  "locktime": 0,
+  "notes": "Bitcoin Gold uses identical transaction format to Bitcoin. Differences are in mining algorithm (Equihash) and SIGHASH_FORK_BTG flag."
+}
