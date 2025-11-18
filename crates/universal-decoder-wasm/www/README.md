@@ -71,6 +71,44 @@ Netlify automatically:
 - **Auto-clear input**: Prevents decode errors when switching chains
 - **TX ID + Canonical hash**: Shows both original txid and Borsh hash
 - **Enhanced Borsh fields**: Full input/output transaction details
+- **Safari/iOS compatibility**: WebAssembly polyfill for older Safari versions
+- **Better error handling**: Detailed error messages with browser-specific hints
+- **Loading indicator**: Visual feedback during WASM initialization
+
+## Browser Compatibility
+
+| Browser | Version | Status | Notes |
+|---------|---------|--------|-------|
+| Chrome  | 89+     | ✅ Full support | Recommended |
+| Firefox | 89+     | ✅ Full support | Recommended |
+| Safari  | 15+     | ✅ Full support | Includes iOS Safari |
+| Edge    | 89+     | ✅ Full support | Chromium-based |
+| Mobile  | iOS 15+, Android 89+ | ✅ Responsive | Touch-optimized |
+
+### Safari/iOS Compatibility Notes
+
+The WASM demo now includes specific fixes for Safari and iOS:
+
+1. **WebAssembly.instantiateStreaming polyfill**: Older iOS versions (< 15) don't support this API natively
+2. **Proper MIME types**: WASM files are served with `application/wasm` content type
+3. **Enhanced error messages**: Safari-specific troubleshooting hints
+4. **Loading indicator**: Visual feedback prevents confusion on slower connections
+
+If you encounter issues on Safari/iOS:
+- Update to the latest Safari/iOS version
+- Check the browser console for detailed error messages
+- Try Chrome or Firefox as an alternative
+- Report issues at https://github.com/prasincs/universal-blockchain-decoder/issues
+
+### Server Configuration
+
+The following files ensure proper WASM MIME types on different hosting platforms:
+
+- `_headers` - For GitHub Pages
+- `netlify.toml` - For Netlify deployment (already configured at repository root)
+
+Note: Netlify uses `netlify.toml` for configuration, GitHub Pages uses `_headers`.
+Both platforms serve WASM files with the correct `application/wasm` MIME type.
 
 ## Documentation
 

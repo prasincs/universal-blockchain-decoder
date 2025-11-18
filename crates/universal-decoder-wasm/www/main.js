@@ -12,9 +12,70 @@ let supported_chains = null;
 let get_chains_metadata = null;
 let auto_detect_chain = null;
 
+// Check for WebAssembly support
+if (typeof WebAssembly === 'undefined') {
+    console.error('❌ WebAssembly is not supported in this browser');
+    // Show error immediately - don't try to load WASM
+    window.addEventListener('DOMContentLoaded', () => {
+        const loadingOverlay = document.getElementById('wasm-loading');
+        if (loadingOverlay) {
+            loadingOverlay.innerHTML = `
+                <div style="text-align: center; color: white; max-width: 600px; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                    <div style="font-size: 24px; margin-bottom: 20px;">WebAssembly Not Supported</div>
+                    <div style="font-size: 16px; line-height: 1.6; color: #ccc;">
+                        Your browser doesn't support WebAssembly, which is required for this demo.
+                        <br><br>
+                        <strong>Please use one of these browsers:</strong><br>
+                        • Chrome 89+ (recommended)<br>
+                        • Firefox 89+ (recommended)<br>
+                        • Safari 15+<br>
+                        • Edge 89+<br>
+                        <br>
+                        If you're on an older device, try updating to the latest version.
+                    </div>
+                </div>
+            `;
+        }
+        const errorToast = document.getElementById('error-toast');
+        if (errorToast) {
+            errorToast.textContent = 'WebAssembly is not supported in this browser. Please use Chrome, Firefox, Safari 15+, or Edge 89+.';
+            errorToast.classList.add('show');
+        }
+    });
+} else {
+    // Safari/iOS WebAssembly polyfill
+    // Safari on iOS (especially older versions) doesn't support WebAssembly.instantiateStreaming
+    // This polyfill provides a fallback implementation
+    if (!WebAssembly.instantiateStreaming) {
+        console.log('🔧 Adding WebAssembly.instantiateStreaming polyfill for Safari/iOS');
+        WebAssembly.instantiateStreaming = async (response, importObject) => {
+            try {
+                const resp = await response;
+                const buffer = await resp.arrayBuffer();
+                return await WebAssembly.instantiate(buffer, importObject);
+            } catch (error) {
+                console.error('WebAssembly.instantiate error:', error);
+                throw error;
+            }
+        };
+    }
+}
+
 // Initialize WASM module on page load
 async function initWasm() {
+    // Early exit if WebAssembly is not supported
+    if (typeof WebAssembly === 'undefined') {
+        console.error('❌ Cannot initialize WASM: WebAssembly not supported');
+        return;
+    }
+
     try {
+        console.log('🔄 Initializing WASM module...');
+        console.log('Browser:', navigator.userAgent);
+        console.log('WebAssembly support:', typeof WebAssembly !== 'undefined');
+        console.log('WebAssembly.instantiateStreaming support:', typeof WebAssembly.instantiateStreaming !== 'undefined');
+
         // Store and temporarily remove window.ethereum to avoid conflicts with MetaMask
         const originalEthereum = window.ethereum;
         const ethereumDescriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
@@ -29,6 +90,7 @@ async function initWasm() {
         }
 
         // Dynamic import to avoid conflicts
+        console.log('📦 Loading WASM module...');
         wasmModule = await import('./pkg/universal_decoder_wasm.js');
 
         // Restore window.ethereum
@@ -75,9 +137,42 @@ async function initWasm() {
                 inputEditor.value = savedInput;
             }
         }
+
+        console.log('✅ WASM initialization complete');
     } catch (error) {
         console.error('❌ Failed to load WASM module:', error);
-        showError('Failed to initialize decoder. Please refresh the page.');
+        console.error('Error type:', error.constructor.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+
+        // Show detailed error message for debugging
+        let errorMessage = 'Failed to initialize decoder. ';
+
+        if (error.message) {
+            errorMessage += `Error: ${error.message}. `;
+        }
+
+        // Add browser-specific hints
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('safari') && !ua.includes('chrome')) {
+            errorMessage += 'Try updating Safari to the latest version or use Chrome/Firefox. ';
+        }
+
+        errorMessage += 'Please check the browser console for details.';
+
+        showError(errorMessage);
+
+        // Also show error in the UI
+        const chainSelect = document.getElementById('chain-select');
+        if (chainSelect) {
+            chainSelect.innerHTML = '<option>Error loading WASM - check console</option>';
+        }
+    } finally {
+        // Hide loading overlay
+        const loadingOverlay = document.getElementById('wasm-loading');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
     }
 }
 
