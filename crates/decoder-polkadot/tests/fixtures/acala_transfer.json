@@ -1,0 +1,19 @@
+{
+  "description": "Acala parachain - ACA token transfer",
+  "chain": "Acala",
+  "chain_id": 2000,
+  "parachain_type": "polkadot",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "immortal",
+  "nonce": 0,
+  "tip": 0,
+  "pallet_index": 4,
+  "pallet_name": "Balances",
+  "call_index": 3,
+  "call_name": "transfer",
+  "amount_planck": "100000000000000",
+  "amount_aca": "100.0",
+  "note": "Acala is a Polkadot parachain with DeFi capabilities"
+}

@@ -1,0 +1,18 @@
+{
+  "description": "Kusama mainnet - Democracy vote on referendum",
+  "chain": "Kusama",
+  "chain_id": 2,
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "mortal",
+  "nonce": 2,
+  "tip": 0,
+  "pallet_index": 20,
+  "pallet_name": "Democracy",
+  "call_index": 0,
+  "call_name": "vote",
+  "referendum_index": 21,
+  "vote": "aye",
+  "conviction": "Locked1x"
+}

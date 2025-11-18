@@ -1,0 +1,20 @@
+{
+  "description": "Polkadot mainnet - Basic DOT transfer",
+  "chain": "Polkadot",
+  "chain_id": 0,
+  "source": "Real SCALE-encoded Polkadot transaction from Polkadot Developer Docs",
+  "url": "https://docs.polkadot.com/develop/toolkit/integrations/transaction-construction/",
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "mortal",
+  "nonce": 0,
+  "tip": 0,
+  "pallet_index": 5,
+  "pallet_name": "Balances",
+  "call_index": 3,
+  "call_name": "transfer_keep_alive",
+  "amount_planck": "10000000000",
+  "amount_dot": "1.0",
+  "note": "Polkadot uses 10 decimals for DOT token. This is a real mainnet transaction example."
+}
