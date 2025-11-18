@@ -1,0 +1,46 @@
+[package]
+name = "autonomous-executor"
+version = "0.1.0"
+edition = "2021"
+authors = ["Universal Blockchain Decoder Contributors"]
+description = "Autonomous task executor with ROI-based prioritization"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "autonomous-executor"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+
+# HTTP client (for Anthropic API)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Regex for parsing
+regex = "1.11"
+lazy_static = "1.5"
+
+# Process execution
+subprocess = "0.2"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.14"

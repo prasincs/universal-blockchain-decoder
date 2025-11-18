@@ -46,11 +46,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0  # Full history for rebasing
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -125,12 +120,16 @@ jobs:
           # Return to main
           git checkout main
 
+      - name: Build autonomous executor
+        run: cargo build --release -p autonomous-executor
+
       - name: Run autonomous executor
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUST_LOG: info
         run: |
-          python3 scripts/autonomous_executor.py \
+          ./target/release/autonomous-executor execute \
             ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
             ${{ github.event.inputs.task_id && format('--task-id {0}', github.event.inputs.task_id) || '' }} \
             ${{ github.event.inputs.top_n && format('--top-n {0}', github.event.inputs.top_n) || '--top-n 1' }}
