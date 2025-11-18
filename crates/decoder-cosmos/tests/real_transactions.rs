@@ -85,8 +85,14 @@ fn test_real_cosmoshub_msgsend() {
 
     match &messages[0] {
         CosmosMessage::Send(send) => {
-            assert_eq!(send.from_address, "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh");
-            assert_eq!(send.to_address, "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r");
+            assert_eq!(
+                send.from_address,
+                "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"
+            );
+            assert_eq!(
+                send.to_address,
+                "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"
+            );
             assert_eq!(send.amount.len(), 1);
             assert_eq!(send.amount[0].denom, "uatom");
             assert_eq!(send.amount[0].amount, "10000000");
@@ -373,8 +379,8 @@ fn test_real_governance_submit_proposal() {
     let proposal_content = Any {
         type_url: "/cosmos.gov.v1beta1.TextProposal".to_string(),
         value: vec![
-            10, 45, 67, 111, 109, 109, 117, 110, 105, 116, 121, 32, 80, 111, 111, 108, 32, 83,
-            112, 101, 110, 100, 32, 80, 114, 111, 112, 111, 115, 97, 108,
+            10, 45, 67, 111, 109, 109, 117, 110, 105, 116, 121, 32, 80, 111, 111, 108, 32, 83, 112,
+            101, 110, 100, 32, 80, 114, 111, 112, 111, 115, 97, 108,
         ], // "Community Pool Spend Proposal" encoded
     };
 
