@@ -1,0 +1,27 @@
+# Headers for GitHub Pages and other static hosts
+# This ensures WASM files are served with the correct MIME type
+
+# WASM files MUST be served as application/wasm for Safari/iOS compatibility
+/*.wasm
+  Content-Type: application/wasm
+  Access-Control-Allow-Origin: *
+
+/pkg/*.wasm
+  Content-Type: application/wasm
+  Access-Control-Allow-Origin: *
+
+# JavaScript modules
+/*.js
+  Content-Type: application/javascript
+  Access-Control-Allow-Origin: *
+
+/pkg/*.js
+  Content-Type: application/javascript
+  Access-Control-Allow-Origin: *
+
+# General security headers
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  Access-Control-Allow-Origin: *
