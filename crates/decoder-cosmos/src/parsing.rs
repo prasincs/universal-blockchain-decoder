@@ -173,15 +173,32 @@ fn parse_coin(coin: cosmos_sdk_proto::cosmos::base::v1beta1::Coin) -> Coin {
 /// Parse a specific message type from Any
 pub fn parse_message(msg: &Any) -> Result<CosmosMessage> {
     match msg.type_url.as_str() {
+        // Bank messages
         type_urls::MSG_SEND => parse_msg_send(&msg.value),
         type_urls::MSG_MULTI_SEND => parse_msg_multi_send(&msg.value),
+
+        // Staking messages
         type_urls::MSG_DELEGATE => parse_msg_delegate(&msg.value),
         type_urls::MSG_UNDELEGATE => parse_msg_undelegate(&msg.value),
         type_urls::MSG_BEGIN_REDELEGATE => parse_msg_begin_redelegate(&msg.value),
+
+        // IBC messages
         type_urls::MSG_IBC_TRANSFER => parse_msg_ibc_transfer(&msg.value),
+        type_urls::MSG_IBC_RECV_PACKET => parse_msg_ibc_recv_packet(&msg.value),
+        type_urls::MSG_IBC_ACKNOWLEDGEMENT => parse_msg_ibc_acknowledgement(&msg.value),
+        type_urls::MSG_IBC_TIMEOUT => parse_msg_ibc_timeout(&msg.value),
+        type_urls::MSG_IBC_CREATE_CLIENT => parse_msg_ibc_create_client(&msg.value),
+        type_urls::MSG_IBC_UPDATE_CLIENT => parse_msg_ibc_update_client(&msg.value),
+
+        // Governance messages
         type_urls::MSG_VOTE => parse_msg_vote(&msg.value),
-        // TODO: Requires cosmwasm feature flags
-        // type_urls::MSG_EXECUTE_CONTRACT => parse_msg_execute_contract(&msg.value),
+
+        // CosmWasm messages
+        type_urls::MSG_STORE_CODE => parse_msg_store_code(&msg.value),
+        type_urls::MSG_INSTANTIATE_CONTRACT => parse_msg_instantiate_contract(&msg.value),
+        type_urls::MSG_EXECUTE_CONTRACT => parse_msg_execute_contract(&msg.value),
+        type_urls::MSG_MIGRATE_CONTRACT => parse_msg_migrate_contract(&msg.value),
+
         _ => Ok(CosmosMessage::Unknown {
             type_url: msg.type_url.clone(),
             value: msg.value.clone(),
@@ -326,13 +343,211 @@ fn parse_msg_vote(data: &[u8]) -> Result<CosmosMessage> {
     }))
 }
 
-/// Parse MsgExecuteContract (CosmWasm)
-/// TODO: Requires CosmWasm feature flags in cosmos-sdk-proto
-#[allow(dead_code)]
-fn parse_msg_execute_contract(_data: &[u8]) -> Result<CosmosMessage> {
-    Err(DecoderError::invalid_structure(
-        "CosmWasm parsing requires additional dependencies",
-    ))
+// === IBC Parsing Functions ===
+
+/// Helper function to parse IBC packet
+fn parse_ibc_packet(packet: ibc_proto::ibc::core::channel::v1::Packet) -> IbcPacket {
+    IbcPacket {
+        sequence: packet.sequence,
+        source_port: packet.source_port,
+        source_channel: packet.source_channel,
+        destination_port: packet.destination_port,
+        destination_channel: packet.destination_channel,
+        data: packet.data,
+        timeout_height: packet.timeout_height.map(|h| IbcHeight {
+            revision_number: h.revision_number,
+            revision_height: h.revision_height,
+        }),
+        timeout_timestamp: packet.timeout_timestamp,
+    }
+}
+
+/// Parse MsgRecvPacket
+fn parse_msg_ibc_recv_packet(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = ibc_proto::ibc::core::channel::v1::MsgRecvPacket::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgRecvPacket: {}", e))
+    })?;
+
+    let packet = msg
+        .packet
+        .ok_or_else(|| DecoderError::invalid_structure("Missing packet in MsgRecvPacket"))?;
+
+    let proof_height = msg
+        .proof_height
+        .ok_or_else(|| DecoderError::invalid_structure("Missing proof_height in MsgRecvPacket"))?;
+
+    Ok(CosmosMessage::IbcRecvPacket(MsgIbcRecvPacket {
+        packet: parse_ibc_packet(packet),
+        proof_commitment: msg.proof_commitment,
+        proof_height: IbcHeight {
+            revision_number: proof_height.revision_number,
+            revision_height: proof_height.revision_height,
+        },
+        signer: msg.signer,
+    }))
+}
+
+/// Parse MsgAcknowledgement
+fn parse_msg_ibc_acknowledgement(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = ibc_proto::ibc::core::channel::v1::MsgAcknowledgement::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgAcknowledgement: {}", e))
+    })?;
+
+    let packet = msg
+        .packet
+        .ok_or_else(|| DecoderError::invalid_structure("Missing packet in MsgAcknowledgement"))?;
+
+    let proof_height = msg.proof_height.ok_or_else(|| {
+        DecoderError::invalid_structure("Missing proof_height in MsgAcknowledgement")
+    })?;
+
+    Ok(CosmosMessage::IbcAcknowledgement(MsgIbcAcknowledgement {
+        packet: parse_ibc_packet(packet),
+        acknowledgement: msg.acknowledgement,
+        proof_acked: msg.proof_acked,
+        proof_height: IbcHeight {
+            revision_number: proof_height.revision_number,
+            revision_height: proof_height.revision_height,
+        },
+        signer: msg.signer,
+    }))
+}
+
+/// Parse MsgTimeout
+fn parse_msg_ibc_timeout(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = ibc_proto::ibc::core::channel::v1::MsgTimeout::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgTimeout: {}", e))
+    })?;
+
+    let packet = msg
+        .packet
+        .ok_or_else(|| DecoderError::invalid_structure("Missing packet in MsgTimeout"))?;
+
+    let proof_height = msg
+        .proof_height
+        .ok_or_else(|| DecoderError::invalid_structure("Missing proof_height in MsgTimeout"))?;
+
+    Ok(CosmosMessage::IbcTimeout(MsgIbcTimeout {
+        packet: parse_ibc_packet(packet),
+        proof_unreceived: msg.proof_unreceived,
+        proof_height: IbcHeight {
+            revision_number: proof_height.revision_number,
+            revision_height: proof_height.revision_height,
+        },
+        next_sequence_recv: msg.next_sequence_recv,
+        signer: msg.signer,
+    }))
+}
+
+/// Parse MsgCreateClient
+fn parse_msg_ibc_create_client(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = ibc_proto::ibc::core::client::v1::MsgCreateClient::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgCreateClient: {}", e))
+    })?;
+
+    let client_state = msg.client_state.ok_or_else(|| {
+        DecoderError::invalid_structure("Missing client_state in MsgCreateClient")
+    })?;
+
+    let consensus_state = msg.consensus_state.ok_or_else(|| {
+        DecoderError::invalid_structure("Missing consensus_state in MsgCreateClient")
+    })?;
+
+    Ok(CosmosMessage::IbcCreateClient(MsgIbcCreateClient {
+        client_state: client_state.value,
+        consensus_state: consensus_state.value,
+        signer: msg.signer,
+    }))
+}
+
+/// Parse MsgUpdateClient
+fn parse_msg_ibc_update_client(data: &[u8]) -> Result<CosmosMessage> {
+    let msg = ibc_proto::ibc::core::client::v1::MsgUpdateClient::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgUpdateClient: {}", e))
+    })?;
+
+    let client_message = msg.client_message.ok_or_else(|| {
+        DecoderError::invalid_structure("Missing client_message in MsgUpdateClient")
+    })?;
+
+    Ok(CosmosMessage::IbcUpdateClient(MsgIbcUpdateClient {
+        client_id: msg.client_id,
+        client_message: client_message.value,
+        signer: msg.signer,
+    }))
+}
+
+// === CosmWasm Parsing Functions ===
+
+/// Parse MsgStoreCode
+fn parse_msg_store_code(data: &[u8]) -> Result<CosmosMessage> {
+    // Note: CosmWasm protos are in cosmos_sdk_proto under cosmwasm module
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgStoreCode as ProtoMsgStoreCode;
+
+    let msg = ProtoMsgStoreCode::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgStoreCode: {}", e))
+    })?;
+
+    let instantiate_permission = msg.instantiate_permission.map(|perm| AccessConfig {
+        permission: perm.permission,
+        addresses: perm.addresses,
+    });
+
+    Ok(CosmosMessage::StoreCode(MsgStoreCode {
+        sender: msg.sender,
+        wasm_byte_code: msg.wasm_byte_code,
+        instantiate_permission,
+    }))
+}
+
+/// Parse MsgInstantiateContract
+fn parse_msg_instantiate_contract(data: &[u8]) -> Result<CosmosMessage> {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgInstantiateContract as ProtoMsgInstantiateContract;
+
+    let msg = ProtoMsgInstantiateContract::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgInstantiateContract: {}", e))
+    })?;
+
+    Ok(CosmosMessage::InstantiateContract(MsgInstantiateContract {
+        sender: msg.sender,
+        admin: msg.admin,
+        code_id: msg.code_id,
+        label: msg.label,
+        msg: msg.msg,
+        funds: msg.funds.into_iter().map(parse_coin).collect(),
+    }))
+}
+
+/// Parse MsgExecuteContract
+fn parse_msg_execute_contract(data: &[u8]) -> Result<CosmosMessage> {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgExecuteContract as ProtoMsgExecuteContract;
+
+    let msg = ProtoMsgExecuteContract::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgExecuteContract: {}", e))
+    })?;
+
+    Ok(CosmosMessage::ExecuteContract(MsgExecuteContract {
+        sender: msg.sender,
+        contract: msg.contract,
+        msg: msg.msg,
+        funds: msg.funds.into_iter().map(parse_coin).collect(),
+    }))
+}
+
+/// Parse MsgMigrateContract
+fn parse_msg_migrate_contract(data: &[u8]) -> Result<CosmosMessage> {
+    use cosmos_sdk_proto::cosmwasm::wasm::v1::MsgMigrateContract as ProtoMsgMigrateContract;
+
+    let msg = ProtoMsgMigrateContract::decode(data).map_err(|e| {
+        DecoderError::invalid_structure(format!("Failed to parse MsgMigrateContract: {}", e))
+    })?;
+
+    Ok(CosmosMessage::MigrateContract(MsgMigrateContract {
+        sender: msg.sender,
+        contract: msg.contract,
+        code_id: msg.code_id,
+        msg: msg.msg,
+    }))
 }
 
 #[cfg(test)]

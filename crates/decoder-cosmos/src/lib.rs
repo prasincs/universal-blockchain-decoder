@@ -184,6 +184,7 @@ fn build_operations(messages: &[CosmosMessage]) -> Result<Vec<Operation>> {
 
     for msg in messages {
         match msg {
+            // === Bank Messages ===
             CosmosMessage::Send(send) => {
                 for coin in &send.amount {
                     operations.push(Operation::Transfer(Transfer {
@@ -194,6 +195,47 @@ fn build_operations(messages: &[CosmosMessage]) -> Result<Vec<Operation>> {
                     }));
                 }
             }
+            CosmosMessage::MultiSend(multi) => {
+                // Track multi-send as multiple transfers
+                for output in &multi.outputs {
+                    for coin in &output.coins {
+                        operations.push(Operation::Transfer(Transfer {
+                            from: create_address("multi".to_string()), // Aggregated source
+                            to: create_address(output.address.clone()),
+                            amount: parse_amount(&coin.amount, &coin.denom)?,
+                            asset: AssetId::Custom(coin.denom.clone()),
+                        }));
+                    }
+                }
+            }
+
+            // === Staking Messages ===
+            CosmosMessage::Delegate(delegate) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(delegate.delegator_address.clone()),
+                    to: create_address(delegate.validator_address.clone()),
+                    amount: parse_amount(&delegate.amount.amount, &delegate.amount.denom)?,
+                    asset: AssetId::Custom(format!("stake:{}", delegate.amount.denom)),
+                }));
+            }
+            CosmosMessage::Undelegate(undelegate) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(undelegate.validator_address.clone()),
+                    to: create_address(undelegate.delegator_address.clone()),
+                    amount: parse_amount(&undelegate.amount.amount, &undelegate.amount.denom)?,
+                    asset: AssetId::Custom(format!("unstake:{}", undelegate.amount.denom)),
+                }));
+            }
+            CosmosMessage::BeginRedelegate(redelegate) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(redelegate.validator_src_address.clone()),
+                    to: create_address(redelegate.validator_dst_address.clone()),
+                    amount: parse_amount(&redelegate.amount.amount, &redelegate.amount.denom)?,
+                    asset: AssetId::Custom(format!("redelegate:{}", redelegate.amount.denom)),
+                }));
+            }
+
+            // === IBC Messages ===
             CosmosMessage::IbcTransfer(ibc) => {
                 // IBC transfer: cross-chain token transfer
                 operations.push(Operation::Transfer(Transfer {
@@ -206,13 +248,109 @@ fn build_operations(messages: &[CosmosMessage]) -> Result<Vec<Operation>> {
                     )),
                 }));
             }
-            _ => {
-                // Other message types marked as placeholder
+            CosmosMessage::IbcRecvPacket(recv) => {
+                // Receiving an IBC packet (cross-chain incoming)
                 operations.push(Operation::Transfer(Transfer {
-                    from: create_address("cosmos".to_string()),
-                    to: create_address("cosmos".to_string()),
+                    from: create_address(format!(
+                        "ibc:{}/{}",
+                        recv.packet.source_port, recv.packet.source_channel
+                    )),
+                    to: create_address(format!(
+                        "ibc:{}/{}",
+                        recv.packet.destination_port, recv.packet.destination_channel
+                    )),
+                    amount: Amount::new(recv.packet.sequence as u128, 0),
+                    asset: AssetId::Custom(format!("ibc:packet:{}", recv.packet.sequence)),
+                }));
+            }
+            CosmosMessage::IbcAcknowledgement(_ack) => {
+                // IBC acknowledgement (confirming receipt)
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address("ibc:ack".to_string()),
+                    to: create_address("ibc:ack".to_string()),
                     amount: Amount::new(0, 0),
-                    asset: AssetId::Native,
+                    asset: AssetId::Custom("ibc:acknowledgement".to_string()),
+                }));
+            }
+            CosmosMessage::IbcTimeout(_timeout) => {
+                // IBC timeout (packet expired)
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address("ibc:timeout".to_string()),
+                    to: create_address("ibc:timeout".to_string()),
+                    amount: Amount::new(0, 0),
+                    asset: AssetId::Custom("ibc:timeout".to_string()),
+                }));
+            }
+            CosmosMessage::IbcCreateClient(_create) => {
+                // Creating IBC light client
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address("ibc:client".to_string()),
+                    to: create_address("ibc:client".to_string()),
+                    amount: Amount::new(0, 0),
+                    asset: AssetId::Custom("ibc:create_client".to_string()),
+                }));
+            }
+            CosmosMessage::IbcUpdateClient(update) => {
+                // Updating IBC light client
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(format!("ibc:client:{}", update.client_id)),
+                    to: create_address(format!("ibc:client:{}", update.client_id)),
+                    amount: Amount::new(0, 0),
+                    asset: AssetId::Custom("ibc:update_client".to_string()),
+                }));
+            }
+
+            // === Governance Messages ===
+            CosmosMessage::Vote(vote) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(vote.voter.clone()),
+                    to: create_address(format!("gov:proposal:{}", vote.proposal_id)),
+                    amount: Amount::new(vote.option as u128, 0),
+                    asset: AssetId::Custom("vote".to_string()),
+                }));
+            }
+
+            // === CosmWasm Messages ===
+            CosmosMessage::StoreCode(store) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(store.sender.clone()),
+                    to: create_address("wasm:code_storage".to_string()),
+                    amount: Amount::new(store.wasm_byte_code.len() as u128, 0),
+                    asset: AssetId::Custom("wasm:bytecode".to_string()),
+                }));
+            }
+            CosmosMessage::InstantiateContract(instantiate) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(instantiate.sender.clone()),
+                    to: create_address(format!("wasm:code:{}", instantiate.code_id)),
+                    amount: Amount::new(instantiate.code_id as u128, 0),
+                    asset: AssetId::Custom(format!("wasm:instantiate:{}", instantiate.label)),
+                }));
+            }
+            CosmosMessage::ExecuteContract(execute) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(execute.sender.clone()),
+                    to: create_address(execute.contract.clone()),
+                    amount: Amount::new(execute.msg.len() as u128, 0),
+                    asset: AssetId::Custom("wasm:execute".to_string()),
+                }));
+            }
+            CosmosMessage::MigrateContract(migrate) => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address(migrate.contract.clone()),
+                    to: create_address(format!("wasm:code:{}", migrate.code_id)),
+                    amount: Amount::new(migrate.code_id as u128, 0),
+                    asset: AssetId::Custom("wasm:migrate".to_string()),
+                }));
+            }
+
+            // === Unknown Messages ===
+            CosmosMessage::Unknown { type_url, .. } => {
+                operations.push(Operation::Transfer(Transfer {
+                    from: create_address("unknown".to_string()),
+                    to: create_address("unknown".to_string()),
+                    amount: Amount::new(0, 0),
+                    asset: AssetId::Custom(format!("unknown:{}", type_url)),
                 }));
             }
         }
@@ -256,6 +394,7 @@ fn build_state_deltas(messages: &[CosmosMessage]) -> Result<StateDeltas> {
 
     for msg in messages {
         match msg {
+            // === Bank Messages ===
             CosmosMessage::Send(send) => {
                 account_changes.push(AccountChange {
                     address: create_address(send.from_address.clone()),
@@ -271,6 +410,49 @@ fn build_state_deltas(messages: &[CosmosMessage]) -> Result<StateDeltas> {
                     storage_changes: vec![],
                 });
             }
+            CosmosMessage::MultiSend(multi) => {
+                // Track inputs
+                for input in &multi.inputs {
+                    account_changes.push(AccountChange {
+                        address: create_address(input.address.clone()),
+                        nonce: None,
+                        balance_change: -1,
+                        storage_changes: vec![],
+                    });
+                }
+                // Track outputs
+                for output in &multi.outputs {
+                    account_changes.push(AccountChange {
+                        address: create_address(output.address.clone()),
+                        nonce: None,
+                        balance_change: 1,
+                        storage_changes: vec![],
+                    });
+                }
+            }
+
+            // === Staking Messages ===
+            CosmosMessage::Delegate(delegate) => {
+                account_changes.push(AccountChange {
+                    address: create_address(delegate.delegator_address.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
+            }
+            CosmosMessage::Undelegate(undelegate) => {
+                account_changes.push(AccountChange {
+                    address: create_address(undelegate.delegator_address.clone()),
+                    nonce: None,
+                    balance_change: 1,
+                    storage_changes: vec![],
+                });
+            }
+            CosmosMessage::BeginRedelegate(_) => {
+                // Redelegate doesn't change account balances directly
+            }
+
+            // === IBC Messages ===
             CosmosMessage::IbcTransfer(ibc) => {
                 // IBC transfer: tokens leave this chain
                 account_changes.push(AccountChange {
@@ -288,7 +470,78 @@ fn build_state_deltas(messages: &[CosmosMessage]) -> Result<StateDeltas> {
                     script: vec![],
                 });
             }
-            _ => {}
+            CosmosMessage::IbcRecvPacket(recv) => {
+                // IBC receive: tokens enter this chain
+                outputs.push(OutputValue {
+                    index: outputs.len() as u32,
+                    address: create_address(format!(
+                        "ibc:{}/{}",
+                        recv.packet.destination_port, recv.packet.destination_channel
+                    )),
+                    value: Amount::new(recv.packet.sequence as u128, 0),
+                    script: recv.packet.data.clone(),
+                });
+            }
+            CosmosMessage::IbcAcknowledgement(_) | CosmosMessage::IbcTimeout(_) => {
+                // State change already happened in original transfer
+            }
+            CosmosMessage::IbcCreateClient(_) | CosmosMessage::IbcUpdateClient(_) => {
+                // Client state changes tracked at protocol level
+            }
+
+            // === Governance Messages ===
+            CosmosMessage::Vote(_) => {
+                // Vote doesn't change account balances
+            }
+
+            // === CosmWasm Messages ===
+            CosmosMessage::StoreCode(store) => {
+                // Code storage creates new state
+                outputs.push(OutputValue {
+                    index: outputs.len() as u32,
+                    address: create_address(format!("wasm:code:{}", outputs.len())),
+                    value: Amount::new(store.wasm_byte_code.len() as u128, 0),
+                    script: vec![],
+                });
+            }
+            CosmosMessage::InstantiateContract(instantiate) => {
+                // Contract instantiation creates new contract state
+                account_changes.push(AccountChange {
+                    address: create_address(instantiate.sender.clone()),
+                    nonce: None,
+                    balance_change: -1,
+                    storage_changes: vec![],
+                });
+                outputs.push(OutputValue {
+                    index: outputs.len() as u32,
+                    address: create_address(format!("wasm:contract:{}", instantiate.label)),
+                    value: Amount::new(instantiate.code_id as u128, 0),
+                    script: instantiate.msg.clone(),
+                });
+            }
+            CosmosMessage::ExecuteContract(execute) => {
+                // Contract execution may change state
+                account_changes.push(AccountChange {
+                    address: create_address(execute.contract.clone()),
+                    nonce: None,
+                    balance_change: 0,
+                    storage_changes: vec![],
+                });
+            }
+            CosmosMessage::MigrateContract(migrate) => {
+                // Contract migration changes code pointer
+                account_changes.push(AccountChange {
+                    address: create_address(migrate.contract.clone()),
+                    nonce: None,
+                    balance_change: 0,
+                    storage_changes: vec![],
+                });
+            }
+
+            // === Unknown Messages ===
+            CosmosMessage::Unknown { .. } => {
+                // Unknown messages don't track state changes
+            }
         }
     }
 
