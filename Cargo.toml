@@ -31,6 +31,7 @@ members = [
     "crates/decoder-polkadot",      # Polkadot - SCALE encoding
     "crates/decoder-litecoin",      # Litecoin - Bitcoin fork (with SegWit)
     "crates/decoder-near",          # NEAR Protocol - Borsh encoding
+    "crates/decoder-ao",            # Arweave AO - Actor Model (ANS-104) - Phase 3.11
     "crates/decoder-cosmos",        # Cosmos Hub - Protobuf + Tendermint
     "crates/decoder-stellar",       # Stellar - XDR encoding
     "crates/decoder-algorand",      # Algorand - MessagePack encoding
