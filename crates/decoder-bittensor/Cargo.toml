@@ -1,0 +1,20 @@
+[package]
+name = "decoder-bittensor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Bittensor (TAO) transaction decoder for universal-decoder"
+
+[dependencies]
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+blake2 = "0.10"  # Blake2b hashing for transaction IDs (Substrate standard)
+borsh = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
