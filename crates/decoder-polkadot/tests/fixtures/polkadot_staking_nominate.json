@@ -1,0 +1,17 @@
+{
+  "description": "Polkadot mainnet - Staking nominate operation",
+  "chain": "Polkadot",
+  "chain_id": 0,
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "mortal",
+  "nonce": 1,
+  "tip": 0,
+  "pallet_index": 7,
+  "pallet_name": "Staking",
+  "call_index": 5,
+  "call_name": "nominate",
+  "validators_count": 4,
+  "note": "Nominates 4 validators for staking rewards"
+}

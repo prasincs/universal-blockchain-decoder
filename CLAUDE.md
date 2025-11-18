@@ -11,11 +11,12 @@
 - 🧪 `docs/TESTING_STRATEGY.md` - 5-level testing pyramid
 - 🔧 `docs/DECODER_DEPENDENCY_STRATEGY.md` - Pure Rust decoder pattern
 - 🌐 `docs/WASM_DEMO.md` - Interactive browser-based demo (Phase 3.10)
+- 🎭 `docs/ACTOR_MODEL_CHAINS.md` - Actor Model family (ICP, AO) - Implementation-ready ✅
 
 **Next Actions**:
 1. Complete OP Stack implementation (Phase 3.2) - 90% done, ~4 hours
-2. Implement Cosmos SDK decoder (Phase 3.5) - Registry vendored, high ROI
-3. Build WASM demo (Phase 3.10) - 1-2 weeks, perfect for papers/blogs/conferences
+2. Build WASM demo (Phase 3.10) - 1-2 weeks, perfect for papers/blogs/conferences
+3. Implement Actor Model family (Phase 3.11) - ICP + AO decoders, 2-3 weeks
 4. Add more property tests (Phase 1.5.2) - Need 34 more (currently 16/50)
 
 ---
@@ -1474,6 +1475,14 @@ Adding encoding would **double the complexity** and violate our core principle o
 
 ## Changelog
 
+### 2025-11-18 - v0.2.1
+- **Added**: Actor Model chain family documentation (Phase 3.11)
+  - Added `ChainFamily::Actor` to roadmap for ICP and AO support
+  - Documented Actor Model transaction semantics (async message passing)
+  - Updated ROADMAP.md with Phase 3.11 implementation plan
+  - Added to documentation map and next actions
+  - Identified key differences from UTXO/Account/Instruction models
+
 ### 2025-11-13 - v0.1.2
 - **Updated**: Rebased onto main with Verus formal verification infrastructure
   - Integrated Verus tooling (PR #36)
@@ -1519,6 +1528,6 @@ Adding encoding would **double the complexity** and violate our core principle o
 
 ---
 
-**Last Updated**: 2025-11-13
-**Version**: 0.2.0
+**Last Updated**: 2025-11-18
+**Version**: 0.2.1
 **Status**: Living Document

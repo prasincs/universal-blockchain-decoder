@@ -9,6 +9,7 @@ members = [
     "crates/decoder-starknet",      # Starknet decoder (Phase 3.6b) - 230+ chains
     "crates/decoder-bitcoin",
     "crates/decoder-ethereum",
+    "crates/decoder-filecoin",      # Filecoin - CBOR-encoded account-based
     "crates/decoder-solana",
     "crates/decoder-svm",           # SVM family decoder (Solana, Eclipse, Pyth, etc.)
     "crates/decoder-move",          # Move VM family decoder (Aptos, Sui, Movement)
@@ -38,6 +39,7 @@ members = [
     "crates/decoder-sui",           # Sui - Move-based with BCS
     "crates/decoder-aptos",         # Aptos - Move-based with BCS
     "crates/decoder-zcash",         # Zcash - Privacy chain (transparent + Sapling + Orchard)
+    "crates/decoder-aleo",          # Aleo - Privacy chain with Leo VM and zkSNARKs
     "crates/decoder-bittensor",     # Bittensor - Substrate-based proof-of-intelligence
 
     # WASM Demo (Phase 3.10)
@@ -49,6 +51,7 @@ members = [
     "tools/registry-generator",
     "tools/ai-refactor-suggest",
     "tools/auto-update-docs",
+    "tools/autonomous-executor",
     "crates/decoder-generator", "crates/decoder-mina",
 ]
 resolver = "2"

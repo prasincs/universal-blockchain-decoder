@@ -30,9 +30,11 @@
   - ✅ Common crates analysis (decoder-encodings, decoder-test-utils)
   - ✅ Airgapped operation requirement documented
   - ✅ Chain registry vendoring strategy via git subtree
+  - ✅ Actor Model family identified (ICP, AO) - Phase 3.11 planned
 **See**:
   - **NEW**: `crates/decoder-mina/tests/o1js_test_vectors.rs` - Mina o1js compatibility tests (22 tests) ✨
   - **NEW**: `crates/decoder-mina/tests/README.md` - o1js test vector documentation & extraction guide ✨
+  - **NEW**: `docs/ACTOR_MODEL_CHAINS.md` - Actor Model chain semantics (ICP, AO) - Implementation-ready ✅
   - `CLAUDE_PROPOSED.md` - Streamlined CLAUDE.md (400 lines, action-first structure)
   - `docs/CLAUDE_MD_IMPROVEMENT_SUMMARY.md` - Full analysis & migration plan (6x faster workflows)
   - `docs/DECODER_GENERATOR_IMPROVEMENTS.md` - Automation roadmap (8 PRs, 4-week plan)
@@ -63,7 +65,7 @@
 Delivered foundational architecture for universal blockchain transaction decoder with minimal TCB and trait-based extensibility:
 
 - ✅ **Core trait hierarchy** - ChainDecoder, Canonicalizer, TxHashable (< 3000 LOC)
-- ✅ **TxIR (Transaction IR)** - Unified representation across UTXO/Account/Instruction models
+- ✅ **TxIR (Transaction IR)** - Unified representation across UTXO/Account/Instruction/Privacy/Actor models
 - ✅ **Canonical serialization** - Borsh-based, deterministic encoding (no JSON for hashing)
 - ✅ **Hook system** - Extensible transaction processing without core changes
 - ✅ **Comprehensive documentation** - 5 major design docs establishing principles
@@ -411,6 +413,55 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 
 ---
 
+### 3.4: SVM Family Decoder ✅ COMPLETE
+
+**Summary**: Single decoder for 11 SVM (Solana Virtual Machine) ecosystem chains
+
+**Priority**: MEDIUM (11 SVM chains, expanding ecosystem)
+**Decoder**: `decoder-svm` ✅ COMPLETE
+**Status**: Complete - 45 comprehensive tests passing (41 + 4 real mainnet tests)
+**Chains Supported**: Solana (Mainnet/Devnet/Testnet), Eclipse (Mainnet/Testnet), Pyth Network, Drift, Jito, Sonic SVM, Firedancer, Neon EVM
+
+**Completed Tasks**:
+- ✅ Create `decoder-svm` crate (271 LOC family wrapper)
+- ✅ Wrap existing `SolanaDecoder` (27 tests)
+- ✅ Hardcode SVM chain list (11 chains)
+- ✅ Add chain ID validation
+- ✅ Support for SVM-specific features per chain
+- ✅ Compile-time chain registry (no runtime I/O)
+- ✅ Real mainnet transaction tests (4 tests with actual Solana data)
+
+**Testing**:
+- ✅ 13 unit tests (registry validation, chain properties, format validation)
+- ✅ 16 integration tests (multi-chain decoding, registry lookups, chain filters)
+- ✅ 12 property-based tests (proptest - roundtrips, invariants, safety)
+- ✅ 4 real mainnet transaction tests (SOL transfer, canonicalization, multi-chain, hash)
+- ✅ Total: 45 tests passing
+
+**Real Mainnet Transaction Validation**:
+- ✅ Decodes real 215-byte Solana mainnet SOL transfer (10.1 SOL)
+- ✅ Parses 1 signature, 3 accounts, 1 instruction correctly
+- ✅ Extracts transfer amount: 10,100,000,000 lamports
+- ✅ Validates System Program instruction structure
+- ✅ Canonicalizes to TxIR with Operation::ContractCall
+- ✅ Works across Solana Mainnet/Devnet, Eclipse chains
+- ✅ Computes SHA-256 hash from canonical bytes
+
+**Delivered**:
+- ✅ Solana decoder already implemented (27 tests passing)
+- ✅ decoder-svm family wrapper (45 tests: 13 unit + 16 integration + 12 property + 4 real mainnet)
+- ✅ 11 SVM chains with compile-time registry
+- ✅ Chain metadata (RPCs, explorers, chain properties)
+- ✅ Single decoder for entire SVM ecosystem
+- ✅ Future-proof for SVM rollups
+- ✅ Pure Rust, zero production dependencies
+- ✅ Airgapped operation (no runtime network calls)
+- ✅ Proven with real Solana mainnet transactions
+
+**Why Important**: SVM is expanding beyond Solana mainnet with L2s and app-specific chains
+
+---
+
 ### 3.5: Cosmos SDK Family Decoder (Week 7-8) ✅ COMPLETE
 
 **Priority**: MEDIUM (228 Cosmos chains)
@@ -584,7 +635,9 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 
 **3.8: Privacy Chains Family** - Zcash, Aleo, Monero (2 weeks, requires Phase 3.0 privacy extensions ✅)
 
-**3.9: Universal Decoder Integration** - Single unified API for 620+ chains (1 week)
+**3.11: Actor Model Family** - ICP, Arweave AO (2-3 weeks, requires Phase 1.5 + Phase 2 ✅) - See section above for detailed plan
+
+**3.12: Universal Decoder Integration** - Single unified API for 620+ chains (1 week)
 
 ---
 
@@ -648,6 +701,129 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
 - **Privacy Research**: Analyze Tornado Cash, compare privacy primitives
 
 **Documentation**: `docs/WASM_DEMO.md` (comprehensive implementation guide)
+
+---
+
+### 3.11: Actor Model Family Decoder 📋 PLANNED
+
+**Priority**: MEDIUM (Novel chain architecture)
+**Decoder**: `decoder-icp` (Internet Computer), `decoder-ao` (Arweave AO)
+**Status**: Not started (requires Phase 1.5 + Phase 2 complete)
+**Timeline**: 2-3 weeks
+
+**Chains Supported**: Internet Computer (ICP), Arweave (AO), future actor-based chains
+
+**Rationale**: Actor Model chains have fundamentally different transaction semantics that don't fit existing families:
+- **Not UTXO**: No input/output consumption model
+- **Not Account**: Transactions are async message calls (not synchronous state mutations)
+- **Not Instruction**: Messages create new transaction contexts across canister/actor calls
+- **Not Privacy**: No zero-knowledge component (though ICP has encryption features)
+
+**Key Differences**:
+| Aspect | Account Model | Actor Model |
+|--------|---------------|-------------|
+| **Transaction Scope** | Single account modification | Async message passing between actors |
+| **Concurrency** | Sequential (nonce-based) | Fully asynchronous |
+| **State Semantics** | Balance/nonce increments | Actor state mutations via message queues |
+| **Key Data** | Address + nonce | Caller principal → Canister method call |
+| **Ordering** | Nonce enforces order | Message queue, async dispatch |
+
+**Implementation Plan**:
+
+**3.11.1: Core ChainFamily Extension** (Day 1)
+- [ ] Add `ChainFamily::Actor` variant to core enum
+- [ ] Update `ChainFamilyEncoded` and conversions
+- [ ] Add ICP and AO to chain registry
+- [ ] Tests: Ensure backward compatibility
+
+**3.11.2: Internet Computer (ICP) Decoder** (Week 1)
+- [ ] Create `crates/decoder-icp/` crate
+- [ ] Implement ingress message parsing (Candid serialization)
+  - Parse: sender, nonce, ingress_expiry, canister_id, method_name, arg
+  - Compute request_id (SHA-256 hash of all fields)
+- [ ] Support message types: Ingress, Inter-canister, Callback
+- [ ] Parent/child message linkage in `metadata.extra`
+- [ ] Cycles tracking (ICP's computational resource model)
+- [ ] Chain registry (Mainnet, testnets, custom subnets)
+- [ ] 20+ unit tests (including message linkage tests)
+
+**3.11.3: Arweave AO Decoder** (Week 2)
+- [ ] Create `crates/decoder-ao/` crate
+- [ ] Parse ANS-104 data-items (message structure)
+  - Parse: Data, Target, Tags, Signature, Nonce, Epoch
+  - Extract action from tags
+- [ ] Message ordering via Epoch + Nonce
+- [ ] Event sourcing metadata (message height, state transitions)
+- [ ] 15+ unit tests (including message ordering tests)
+
+**3.11.4: StateDeltas Mapping** (Week 2-3)
+- [ ] Map actor semantics to TxIR (per-message):
+  - Ingress: `inputs` = caller + cycles, `account_changes` = canister pre-await state
+  - Inter-canister: Separate TxIR with parent linkage
+  - Callback: `outputs` = response + cycles returned, `account_changes` = final state
+  - `metadata.extra`: message_type, parent_message, spawned_calls
+- [ ] Observability levels (PartiallyObservable for opaque canister state)
+- [ ] Integration tests with real ICP/AO message sequences
+
+**3.11.5: Property Tests & Integration** (Week 3)
+- [ ] Property tests:
+  - Message linkage (parent/child relationships preserved)
+  - Cycles conservation (ingress + callback = net consumption)
+  - Message ordering (AO Epoch + Nonce deterministic)
+- [ ] Integration tests:
+  - Real ICP NNS governance votes (multi-step canister calls)
+  - Real AO process spawns and message chains
+- [ ] Fuzz testing: Random Candid arguments, malformed ANS-104
+- [ ] Documentation: Complete `docs/ACTOR_MODEL_CHAINS.md` with examples
+
+**Special Features**:
+- ✅ Async message-based transaction model
+- ✅ Cross-canister/actor call tracking
+- ✅ Cycles (ICP) vs traditional gas
+- ✅ Event sourcing state representation (AO)
+- ✅ Observable vs opaque actor state
+
+**Design Decisions** (based on block explorer research):
+- ✅ **Per-Message Decoding**: One TxIR per message (not per continuation chain)
+  - Matches how ICP and AO expose data (each message has separate ID)
+  - Simpler decoding (no multi-message reconstruction)
+  - Linkage via parent/child message IDs in `metadata.extra`
+- ✅ **Async as Sequential Messages**: Continuations are linked TxIRs (like Git commits)
+  - Ingress message → TxIR #1 (spawns inter-canister call)
+  - Inter-canister call → TxIR #2 (parent: TxIR #1)
+  - Callback → TxIR #3 (parent: TxIR #1, triggered_by: TxIR #2)
+- ⚠️ **Observability**: Canister/process state might be private
+  - Use `ObservabilityLevel` from Phase 3.0 privacy extensions
+  - Most canisters: `PartiallyObservable` (method visible, state opaque)
+
+**Dependencies**:
+- ✅ Phase 1.5 complete (testing infrastructure)
+- ✅ Phase 2 complete (pure Rust decoder pattern established)
+- ✅ Phase 3.0 complete (privacy extensions for observability levels)
+- Recommended: Phase 3.10 complete (WASM demo can showcase actor model)
+
+**Success Criteria**:
+- [ ] `ChainFamily::Actor` variant added (< 10 LOC change in core)
+- [ ] ICP decoder: Decode update calls, track cycles, parse Candid
+- [ ] AO decoder: Parse process messages, event sourcing model
+- [ ] 35+ tests (20 ICP + 15 AO)
+- [ ] Integration tests with real ICP NNS transactions
+- [ ] Documentation: Actor model semantics guide
+
+**ROI Analysis**:
+- **Time Investment**: 2-3 weeks
+- **Chains Unlocked**: 2 (ICP, AO) + future actor-based chains
+- **Ecosystem Impact**: Medium (novel architecture, educational value)
+- **Technical Innovation**: High (demonstrates TxIR flexibility)
+- **Conference/Paper Value**: HIGH (novel concurrency model, continuation representation)
+
+**Documentation**: `docs/ACTOR_MODEL_CHAINS.md` ✅ **COMPLETE** - Implementation-ready guide with:
+- Block explorer research findings (ICP Dashboard, AO explorers)
+- Message structure specifications (Ingress, ANS-104)
+- Per-message decoding strategy
+- StateDeltas mapping for each message type
+- Code examples and test patterns
+- Use cases for conferences & papers
 
 ---
 
@@ -858,13 +1034,19 @@ Extended TxIR to support privacy-preserving transactions (Zcash, Aleo, Monero):
    - Time: 1-2 weeks
    - **Action**: Perfect for upcoming papers/presentations
 
-4. **Phase 1.5.2: Property Tests** 📊 MEDIUM
+4. **Phase 3.11: Actor Model Family** 📋 MEDIUM
+   - Status: Not started (design complete)
+   - Impact: Novel architecture, demonstrates TxIR flexibility
+   - Time: 2-3 weeks
+   - **Action**: Add `ChainFamily::Actor`, implement ICP + AO decoders
+
+5. **Phase 1.5.2: Property Tests** 📊 MEDIUM
    - Status: 16/50 property tests (need 34 more)
    - Impact: Improved test coverage and confidence
    - Time: Ongoing (add incrementally)
    - **Action**: Use templates from Phase 1.5.3
 
-5. **Phase 3.5: Cosmos Enhancement** 🔧 LOW (Optional)
+6. **Phase 3.5: Cosmos Enhancement** 🔧 LOW (Optional)
    - Status: Foundation complete (31 tests)
    - Impact: IBC and CosmWasm support
    - Time: 1-2 days
@@ -888,9 +1070,10 @@ See `CONTRIBUTING.md` for:
 
 ---
 
-**Last Updated**: 2025-11-17
-**Current Phase**: Phase 3 - Chain Family Decoders 🚧
-**Status**: Bitcoin/Ethereum/Solana/Cosmos/Arbitrum complete, OP Stack 90%, EVM blocked by fixtures
+**Last Updated**: 2025-11-18
+**Current Phase**: Phase 3 - Chain Family Decoders 🚧 (Phase 3.4 Complete ✅)
+**Status**: Bitcoin/Ethereum/Solana/Cosmos/Arbitrum/SVM complete, OP Stack 90%, EVM blocked by fixtures
+**Branch**: `claude/implement-phase-3-4-01KKvoggkHzpu1WQeSaxbdxB`
 **Next Action**: Complete EVM test fixtures (1-2 days) OR finish OP Stack (~4 hours)
 
 **Completed Milestones**:
@@ -903,11 +1086,12 @@ See `CONTRIBUTING.md` for:
   - ✅ Phase 2.5: Common crates extraction (decoder-encodings, decoder-primitives)
   - ✅ Phase 3.0: Privacy-aware TxIR extensions
   - ✅ Phase 3.3: Arbitrum Orbit family (6 transaction types)
+  - ✅ Phase 3.4: SVM family decoder (11 chains: Solana, Eclipse, Pyth, Drift, Jito, Sonic, Firedancer, NeonEvm; 41 tests) 🎉 NEW!
   - ✅ Phase 3.5: Cosmos SDK family (228 chains)
   - ✅ Phase 3.6a: ZK Crypto Infrastructure (unlocks 300+ chains)
   - ✅ Phase 3.6b: Starknet family (230+ chains, 45 tests)
   - ✅ Phase 3.9: Mina Protocol foundation (22 tests)
-  - ✅ Phase 3.x: Polkadot decoder (SCALE encoding, 38 tests) - **NEW** ✨
+  - ✅ Phase 3.x: Polkadot decoder (SCALE encoding, 38 tests)
   - 🚧 Phase 1.5.2: Testing Infrastructure (75% complete, need 34 more property tests)
   - 🚧 Phase 3.2: OP Stack (90% complete, ~4 hours remaining)
 
@@ -920,6 +1104,12 @@ See `CONTRIBUTING.md` for:
     - Add integration tests with real deposit transactions
     - Connect to superchain registry (already vendored)
   - **Phase 3.10: WASM Demo** 🎯 HIGH PRIORITY (1-2 weeks) - Perfect for papers/blogs/conferences
+  - **Phase 3.11: Actor Model Family** 📋 MEDIUM PRIORITY (2-3 weeks) - ICP + AO decoders
+  - Phase 1.5.2: Add 34 more property tests (ongoing)
+  - Phase 3.1: Complete EVM family decoder (after fixtures)
+  - Phase 3.4: SVM family decoder (1 week)
+  - Phase 3.7: Bitcoin forks family decoder (3 days)
+  - Phase 3.8: Privacy chains family decoder (2 weeks)
   - ✅ **Phase 3.5 Enhancement: Full IBC, CosmWasm & Governance support** 🎉 COMPLETE!
     - ✅ Added 6 IBC message types (RecvPacket, Acknowledgement, Timeout, CreateClient, UpdateClient, Transfer)
     - ✅ Added 4 CosmWasm message types (StoreCode, InstantiateContract, ExecuteContract, MigrateContract)
@@ -933,7 +1123,6 @@ See `CONTRIBUTING.md` for:
     - ✅ Completed with comprehensive coverage
   - Phase 3.3: Arbitrum Orbit family decoder (retryable tickets) - 1-2 days
   - Phase 1.5.2: More property tests (need 34 more, currently 16/50) - ongoing
-  - Phase 3.4: SVM family decoder - 1 week
   - Phase 3.6: Move VM family decoder - 1 week
   - Phase 3.7: Bitcoin forks family decoder - 3 days
   - Phase 3.8: Privacy chains family decoder (Zcash, Aleo, Monero) - 2 weeks

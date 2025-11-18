@@ -1,0 +1,18 @@
+{
+  "description": "Kusama mainnet - Basic KSM transfer",
+  "chain": "Kusama",
+  "chain_id": 2,
+  "extrinsic_type": "signed",
+  "version": 4,
+  "signature_type": "Sr25519",
+  "era": "immortal",
+  "nonce": 0,
+  "tip": 0,
+  "pallet_index": 4,
+  "pallet_name": "Balances",
+  "call_index": 3,
+  "call_name": "transfer_keep_alive",
+  "amount_planck": "10000000000000",
+  "amount_ksm": "10.0",
+  "note": "Kusama uses 12 decimals for KSM"
+}

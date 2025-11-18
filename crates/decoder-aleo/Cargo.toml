@@ -1,0 +1,43 @@
+[package]
+name = "decoder-aleo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Aleo blockchain transaction decoder - zero-knowledge transactions with Leo VM"
+
+[dependencies]
+# Core decoder infrastructure
+universal-decoder-core = { path = "../universal-decoder-core" }
+decoder-primitives = { path = "../decoder-primitives" }
+decoder-encodings = { path = "../decoder-encodings" }
+decoder-chains-common = { path = "../decoder-chains-common" }
+decoder-crypto-zk = { path = "../decoder-crypto-zk" }
+
+# Minimal production dependencies
+serde = { workspace = true }
+thiserror = { workspace = true }
+borsh = { workspace = true }
+
+# Base58 for Aleo addresses
+bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
+
+# Hashing for transaction IDs
+sha2 = { workspace = true }
+
+# Cryptographic dependencies for Aleo
+# BLS12-377 curve operations (used for reference, vendored in future)
+# For now, we keep the decoder pure Rust without external crypto libs
+# bls12_377 will be vendored in Phase 3.x similar to decoder-crypto-zk
+
+[dev-dependencies]
+decoder-test-utils = { path = "../decoder-test-utils" }
+serde_json = { workspace = true }
+proptest = { workspace = true }
+hex = "0.4"
+
+# For test validation (cross-checking with Aleo reference implementations)
+# NOTE: These are in dev-dependencies only - we use pure Rust for production
+# snarkvm crate would go here for validation, but it's very large
+# For now, we'll use JSON test fixtures from actual Aleo mainnet transactions

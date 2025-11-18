@@ -18,3 +18,5 @@ thiserror = { workspace = true }
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
+base64 = "0.22"
+sha2 = "0.10"

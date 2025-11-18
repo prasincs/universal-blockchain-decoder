@@ -146,6 +146,13 @@ pub const OSMOSIS: ChainInfo = ChainInfo::new(1008, "Osmosis", ChainFamily::Acco
 /// Protocols: Transparent (Bitcoin-like), Sapling, Orchard
 pub const ZCASH: ChainInfo = ChainInfo::new(133, "Zcash", ChainFamily::Privacy);
 
+/// Aleo mainnet (Privacy-focused zkSNARK blockchain with Leo VM)
+///
+/// Chain ID: 368 (SLIP-44 coin type for Aleo)
+/// Family: Privacy (zero-knowledge transactions, encrypted records)
+/// Protocols: Leo VM, Varuna zkSNARKs, BLS12-377 curve
+pub const ALEO: ChainInfo = ChainInfo::new(368, "Aleo", ChainFamily::Privacy);
+
 // ============================================================================
 // Other Chains
 // ============================================================================
@@ -186,6 +193,7 @@ pub const ALL_CHAINS: &[ChainInfo] = &[
     COSMOS,
     OSMOSIS,
     ZCASH,
+    ALEO,
     POLKADOT,
     CARDANO,
 ];
