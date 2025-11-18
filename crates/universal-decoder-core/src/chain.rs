@@ -80,6 +80,11 @@ pub enum ChainFamily {
     /// Examples: Zcash (shielded), Monero (RingCT), Aleo (Leo VM)
     Privacy,
 
+    /// Actor model: Async message-passing between autonomous actors
+    ///
+    /// Examples: Internet Computer (ICP), Arweave AO
+    Actor,
+
     /// Hybrid or other models
     Other,
 }
@@ -114,6 +119,7 @@ pub enum ChainFamilyEncoded {
     Account = 1,
     Instruction = 2,
     Privacy = 3,
+    Actor = 5,
     Other = 4,
 }
 
@@ -124,6 +130,7 @@ impl From<ChainFamily> for ChainFamilyEncoded {
             ChainFamily::Account => ChainFamilyEncoded::Account,
             ChainFamily::Instruction => ChainFamilyEncoded::Instruction,
             ChainFamily::Privacy => ChainFamilyEncoded::Privacy,
+            ChainFamily::Actor => ChainFamilyEncoded::Actor,
             ChainFamily::Other => ChainFamilyEncoded::Other,
         }
     }
@@ -136,6 +143,7 @@ impl From<ChainFamilyEncoded> for ChainFamily {
             ChainFamilyEncoded::Account => ChainFamily::Account,
             ChainFamilyEncoded::Instruction => ChainFamily::Instruction,
             ChainFamilyEncoded::Privacy => ChainFamily::Privacy,
+            ChainFamilyEncoded::Actor => ChainFamily::Actor,
             ChainFamilyEncoded::Other => ChainFamily::Other,
         }
     }
