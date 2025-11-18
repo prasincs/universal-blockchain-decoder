@@ -83,7 +83,9 @@ mod bitreader;
 pub mod boc;
 pub mod types;
 
-pub use types::{AccountStatus, CurrencyCollection, Message, TonTransaction};
+pub use types::{
+    AccountStatus, CommonMsgInfo, CurrencyCollection, Message, MsgAddress, TonTransaction,
+};
 
 /// TON chain identity
 ///
