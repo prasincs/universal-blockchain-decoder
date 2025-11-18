@@ -30,3 +30,6 @@ Cargo.lock
 
 # Local Netlify folder
 .netlify
+
+# Temporary fixture fetch directories (not needed in repo)
+/tmp/
