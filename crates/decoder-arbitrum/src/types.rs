@@ -231,7 +231,7 @@ impl RetryTransaction {
 ///
 /// ## Specification
 ///
-/// See: https://docs.arbitrum.io/arbos/l1-to-l2-messaging
+/// See: <https://docs.arbitrum.io/arbos/l1-to-l2-messaging>
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct SubmitRetryableTransaction {
     /// Chain ID for replay protection

@@ -3,7 +3,7 @@
 //! This decoder parses Algorand transactions from their canonical MessagePack encoding.
 //! Algorand uses Ed25519 signatures and account-based model.
 //!
-//! Reference: https://developer.algorand.org/docs/get-details/transactions/
+//! Reference: <https://developer.algorand.org/docs/get-details/transactions/>
 
 use decoder_primitives::prelude::*;
 use decoder_primitives::{

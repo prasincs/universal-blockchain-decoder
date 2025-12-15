@@ -19,11 +19,11 @@ use crate::types::TransparentTransaction;
 /// - `expiry_height` (4 bytes after locktime)
 ///
 /// Input format (after header):
-/// - [transparent inputs] (varint count + inputs)
-/// - [transparent outputs] (varint count + outputs)
-/// - [locktime] (4 bytes)
-/// - [expiry_height] (4 bytes, Zcash-specific)
-/// - [optional: joinsplit data] (Phase 2+)
+/// - \[transparent inputs\] (varint count + inputs)
+/// - \[transparent outputs\] (varint count + outputs)
+/// - \[locktime\] (4 bytes)
+/// - \[expiry_height\] (4 bytes, Zcash-specific)
+/// - \[optional: joinsplit data\] (Phase 2+)
 pub fn parse_transparent_transaction(
     cursor: &mut Cursor<&[u8]>,
     version: u32,

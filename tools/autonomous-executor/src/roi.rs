@@ -73,7 +73,7 @@ impl RoiCalculator {
     fn parse_time_estimate(&self, time_str: Option<&str>) -> f64 {
         let time_str = match time_str {
             Some(s) => s.to_lowercase(),
-            None => return 40.0, // Default: 1 week
+            None => return 80.0, // Default: 1 week
         };
 
         // Extract numbers
@@ -83,7 +83,7 @@ impl RoiCalculator {
             .collect();
 
         if numbers.is_empty() {
-            return 40.0;
+            return 80.0;
         }
 
         // Calculate average if range
@@ -91,7 +91,7 @@ impl RoiCalculator {
 
         // Convert to hours based on unit
         if time_str.contains("week") {
-            avg * 40.0 // 40 hours/week
+            avg * 80.0 // 80 hours/week (2 work weeks per estimate week)
         } else if time_str.contains("day") {
             avg * 8.0 // 8 hours/day
         } else if time_str.contains("hour") || time_str.contains("hr") {
@@ -122,7 +122,7 @@ mod tests {
         assert_eq!(calc.parse_time_estimate(Some("1-2 weeks")), 120.0);
         assert_eq!(calc.parse_time_estimate(Some("3 days")), 24.0);
         assert_eq!(calc.parse_time_estimate(Some("2 months")), 320.0);
-        assert_eq!(calc.parse_time_estimate(None), 40.0);
+        assert_eq!(calc.parse_time_estimate(None), 80.0);
     }
 
     #[test]

@@ -2,7 +2,7 @@
 //!
 //! This module provides ECDSA signature verification for Starknet transactions.
 //! The implementation is extracted from the vendored `starknet-crypto` library
-//! (https://github.com/xJonathanLEI/starknet-rs/tree/master/starknet-crypto).
+//! (<https://github.com/xJonathanLEI/starknet-rs/tree/master/starknet-crypto>).
 //!
 //! # For Decoding Only
 //!
@@ -116,8 +116,8 @@ const ELEMENT_UPPER_BOUND: FieldElement = FieldElement::from_raw([
 ///
 /// # References
 ///
-/// - Vendored from: https://github.com/xJonathanLEI/starknet-rs/blob/master/starknet-crypto/src/ecdsa.rs
-/// - Original C++ implementation: https://github.com/starkware-libs/crypto-cpp
+/// - Vendored from: <https://github.com/xJonathanLEI/starknet-rs/blob/master/starknet-crypto/src/ecdsa.rs>
+/// - Original C++ implementation: <https://github.com/starkware-libs/crypto-cpp>
 pub fn verify(
     public_key: &FieldElement,
     message: &FieldElement,

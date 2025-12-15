@@ -97,9 +97,9 @@ struct Cli {
     ///
     /// If not provided, uses public endpoints (not recommended for production).
     /// Examples:
-    ///   - Bitcoin: https://your-bitcoin-node.com:8332
-    ///   - Ethereum: https://mainnet.infura.io/v3/YOUR-KEY
-    ///   - Solana: https://api.mainnet-beta.solana.com
+    ///   - Bitcoin: <https://your-bitcoin-node.com:8332>
+    ///   - Ethereum: <https://mainnet.infura.io/v3/YOUR-KEY>
+    ///   - Solana: <https://api.mainnet-beta.solana.com>
     #[arg(long, env = "RPC_ENDPOINT")]
     rpc_endpoint: Option<String>,
 
@@ -114,8 +114,8 @@ struct Cli {
     ///   - Ethereum: etherscan.io, polygonscan.com, etc.
     ///
     /// Examples:
-    ///   universal-tx-decoder --from-url "https://etherscan.io/tx/0xabc..."
-    ///   universal-tx-decoder --from-url "https://mempool.space/tx/abc..." --fetch
+    ///   universal-tx-decoder --from-url "<https://etherscan.io/tx/0xabc...>"
+    ///   universal-tx-decoder --from-url "<https://mempool.space/tx/abc...>" --fetch
     #[arg(long)]
     from_url: Option<String>,
 
@@ -133,7 +133,7 @@ struct Cli {
     /// Viewing key from environment variable (fallback)
     ///
     /// SECURITY: Less secure than --viewing-key-file but safer than CLI args.
-    /// Example: ZCASH_VIEWING_KEY=<hex> universal-tx-decoder -c zec ...
+    /// Example: ZCASH_VIEWING_KEY=\<hex\> universal-tx-decoder -c zec ...
     #[arg(long, env = "VIEWING_KEY", value_name = "ENV_VAR")]
     viewing_key_env: Option<String>,
 

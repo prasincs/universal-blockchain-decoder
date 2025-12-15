@@ -57,7 +57,7 @@
 //!
 //! ## Specification
 //!
-//! See: https://specs.optimism.io/protocol/deposits.html
+//! See: <https://specs.optimism.io/protocol/deposits.html>
 
 use decoder_primitives::prelude::*;
 
