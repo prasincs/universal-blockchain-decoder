@@ -27,6 +27,7 @@ members = [
     "crates/decoder-dash",          # Dash - Bitcoin fork (InstantSend, PrivateSend)
     "crates/decoder-tron",          # Tron - Protobuf encoding
     "crates/decoder-polygon",       # Polygon - EVM-compatible L2
+    "crates/decoder-polygon-zkevm", # Polygon zkEVM - EVM-compatible zkRollup (Phase 3.8)
     "crates/decoder-avalanche",     # Avalanche C-Chain - EVM-compatible
     "crates/decoder-polkadot",      # Polkadot - SCALE encoding
     "crates/decoder-litecoin",      # Litecoin - Bitcoin fork (with SegWit)
