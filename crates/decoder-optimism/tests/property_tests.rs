@@ -3,8 +3,62 @@
 //! These tests use proptest to verify properties hold for arbitrary inputs.
 
 use decoder_optimism::*;
+use decoder_encodings::RlpEncoder;
 use proptest::prelude::*;
 use universal_decoder_core::prelude::*;
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+/// Encodes a deposit transaction to RLP bytes (for generating valid raw_bytes)
+fn encode_deposit_tx(
+    source_hash: &[u8; 32],
+    from: &[u8; 20],
+    to: Option<[u8; 20]>,
+    mint: u128,
+    value: u128,
+    gas_limit: u64,
+    is_creation: bool,
+    data: &[u8],
+) -> Vec<u8> {
+    let mut encoder = RlpEncoder::new();
+
+    // Create RLP list with 8 fields
+    let mut list = encoder.begin_list();
+
+    // 1. source_hash (bytes32)
+    list.append_bytes(source_hash).unwrap();
+
+    // 2. from (address - 20 bytes)
+    list.append_bytes(from).unwrap();
+
+    // 3. to (optional address)
+    list.append_address(to).unwrap();
+
+    // 4. mint (uint256 as u128)
+    list.append_u128(mint).unwrap();
+
+    // 5. value (uint256 as u128)
+    list.append_u128(value).unwrap();
+
+    // 6. gas_limit (uint64)
+    list.append_u64(gas_limit).unwrap();
+
+    // 7. is_creation (bool: 0x00 or 0x01)
+    let is_creation_byte = if is_creation { 0x01 } else { 0x00 };
+    list.append_bytes(&[is_creation_byte]).unwrap();
+
+    // 8. data (bytes)
+    list.append_bytes(data).unwrap();
+
+    list.finalize().unwrap();
+
+    // Prepend deposit transaction type (0x7E)
+    let mut result = vec![DepositTransaction::TYPE_ID];
+    result.extend(encoder.finalize());
+    result
+}
 
 // ============================================================================
 // Test Strategies (Generators)
@@ -66,6 +120,18 @@ fn arb_deposit_tx() -> impl Strategy<Value = DepositTransaction> {
         )
         .prop_map(
             |(source_hash, from, to, mint, value, gas_limit, is_creation, data)| {
+                // Generate proper RLP-encoded raw_bytes for this transaction
+                let raw_bytes = encode_deposit_tx(
+                    &source_hash,
+                    &from,
+                    to,
+                    mint,
+                    value,
+                    gas_limit,
+                    is_creation,
+                    &data,
+                );
+
                 DepositTransaction {
                     source_hash,
                     from,
@@ -75,7 +141,7 @@ fn arb_deposit_tx() -> impl Strategy<Value = DepositTransaction> {
                     gas_limit,
                     is_creation,
                     data,
-                    raw_bytes: Vec::new(),
+                    raw_bytes,
                 }
             },
         )
@@ -228,6 +294,36 @@ proptest! {
         prop_assert!(deposit.gas_limit > 0);
     }
 
+    /// Property: Roundtrip encoding/decoding preserves transaction (injective property)
+    #[test]
+    fn prop_deposit_roundtrip_encoding(deposit in arb_deposit_tx()) {
+        // The deposit was constructed with proper raw_bytes from encoding
+        let original_bytes = &deposit.raw_bytes;
+
+        // Decode the raw bytes
+        let decoded = OptimismDecoder::decode(original_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Should decode to a deposit transaction
+        prop_assert!(decoded.is_deposit());
+
+        if let OptimismTransaction::Deposit(decoded_deposit) = decoded {
+            // Check all fields match
+            prop_assert_eq!(decoded_deposit.source_hash, deposit.source_hash);
+            prop_assert_eq!(decoded_deposit.from, deposit.from);
+            prop_assert_eq!(decoded_deposit.to, deposit.to);
+            prop_assert_eq!(decoded_deposit.mint, deposit.mint);
+            prop_assert_eq!(decoded_deposit.value, deposit.value);
+            prop_assert_eq!(decoded_deposit.gas_limit, deposit.gas_limit);
+            prop_assert_eq!(decoded_deposit.is_creation, deposit.is_creation);
+            prop_assert_eq!(decoded_deposit.data, deposit.data);
+
+            // Most importantly: raw_bytes should match (injective property)
+            prop_assert_eq!(decoded_deposit.raw_bytes, deposit.raw_bytes,
+                "Roundtrip failed: encode(decode(x)) != x");
+        }
+    }
+
     /// Property: Source hash is 32 bytes
     #[test]
     fn prop_source_hash_length(deposit in arb_deposit_tx()) {
@@ -266,6 +362,18 @@ proptest! {
         // Ensure is_creation matches to presence
         let is_creation = to.is_none();
 
+        // Generate proper RLP-encoded raw_bytes
+        let raw_bytes = encode_deposit_tx(
+            &source_hash,
+            &from,
+            to,
+            0,    // mint
+            0,    // value
+            gas_limit,
+            is_creation,
+            &data,
+        );
+
         let deposit = DepositTransaction {
             source_hash,
             from,
@@ -275,7 +383,7 @@ proptest! {
             gas_limit,
             is_creation,
             data,
-            raw_bytes: Vec::new(),
+            raw_bytes,
         };
 
         prop_assert!(deposit.validate().is_ok());
@@ -289,6 +397,18 @@ proptest! {
         to in arb_address(),
         gas_limit in 1u64..u64::MAX,
     ) {
+        // Generate proper RLP-encoded raw_bytes
+        let raw_bytes = encode_deposit_tx(
+            &source_hash,
+            &from,
+            Some(to),
+            u128::MAX,
+            u128::MAX,
+            gas_limit,
+            false, // is_creation
+            &[],   // empty data
+        );
+
         let deposit = DepositTransaction {
             source_hash,
             from,
@@ -298,7 +418,7 @@ proptest! {
             gas_limit,
             is_creation: false,
             data: vec![],
-            raw_bytes: Vec::new(),
+            raw_bytes,
         };
 
         // Should validate successfully
