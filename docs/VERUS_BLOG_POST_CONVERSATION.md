@@ -211,7 +211,9 @@ error: postcondition not satisfied
 
 ### Real-World Evidence
 
-- **seL4**: 15 years, zero vulnerabilities
+- **seL4 verified kernel**: 15 years, zero vulnerabilities *in the verified portion*
+  - **Important caveat**: The seL4 ecosystem (musllibc, userspace) has had vulnerabilities (e.g., CVE-2020-28928)
+  - **Lesson**: Formal verification only covers what you verify, not dependencies
 - **IronFleet**: 100x fewer bugs than unverified
 - **Amazon AWS**: "Found bugs in every system we verified"
 - **s2n TLS**: 6 bugs testing missed
@@ -470,12 +472,14 @@ Then: Use Verus
 8. Kleppmann, M. "Prediction: AI will make formal verification go mainstream." Dec 2025.
 9. Cloudflare. "18 November 2025 Outage." https://blog.cloudflare.com/18-november-2025-outage/
 10. Asterinas. "Towards Practical Formal Verification for a General-Purpose OS in Rust." Feb 2025.
+11. seL4/musllibc CVE-2020-28928: Buffer overflow in wcsnrtombs. https://github.com/seL4/musllibc/issues/7
+    - **Note**: Demonstrates that formal verification only covers verified components, not ecosystem dependencies
 
 ### Tools & Resources
 
-11. Verus GitHub: https://github.com/verus-lang/verus
-12. Verus VSCode Extension: https://marketplace.visualstudio.com/items?itemName=verus-lang.verus-analyzer
-13. Verus Tutorial: https://verus-lang.github.io/verus/
+12. Verus GitHub: https://github.com/verus-lang/verus
+13. Verus VSCode Extension: https://marketplace.visualstudio.com/items?itemName=verus-lang.verus-analyzer
+14. Verus Tutorial: https://verus-lang.github.io/verus/
 
 ---
 
