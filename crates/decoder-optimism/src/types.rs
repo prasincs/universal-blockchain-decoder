@@ -604,7 +604,6 @@ mod tests {
             v: 0,
             r: [0u8; 32],
             s: [0u8; 32],
-            raw_bytes: vec![],
         };
 
         let standard_tx = OptimismTransaction::Standard(eth_tx);

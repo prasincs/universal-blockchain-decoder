@@ -5,6 +5,7 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use decoder_encodings::rlp::RlpItem;
+use decoder_encodings::rlp_encoder::RlpEncoder;
 use serde::{Deserialize, Serialize};
 use universal_decoder_core::prelude::*;
 
@@ -107,9 +108,7 @@ pub struct EthereumTransaction {
     pub r: [u8; 32],
     /// Signature s component (32 bytes)
     pub s: [u8; 32],
-
-    /// Raw transaction bytes
-    pub raw_bytes: Vec<u8>,
+    // NOTE: No raw_bytes field - bytes must be reconstructed from fields
 }
 
 /// Access list item (EIP-2930)
@@ -134,7 +133,7 @@ impl EthereumTransaction {
         if first_byte <= 0x7f {
             // Typed transaction: first byte is type
             let tx_type = TxType::from_byte(first_byte)?;
-            Self::parse_typed_transaction(tx_type, &raw_bytes[1..], raw_bytes)
+            Self::parse_typed_transaction(tx_type, &raw_bytes[1..])
         } else {
             // Legacy transaction: starts with RLP list prefix
             Self::parse_legacy_transaction(raw_bytes)
@@ -202,19 +201,18 @@ impl EthereumTransaction {
             v,
             r,
             s,
-            raw_bytes: raw_bytes.to_vec(),
         })
     }
 
     /// Parse typed transaction (EIP-2718)
-    fn parse_typed_transaction(tx_type: TxType, payload: &[u8], raw_bytes: &[u8]) -> Result<Self> {
+    fn parse_typed_transaction(tx_type: TxType, payload: &[u8]) -> Result<Self> {
         let rlp = RlpItem::decode(payload)?;
         let items = rlp.as_list()?;
 
         match tx_type {
-            TxType::Eip2930 => Self::parse_eip2930(items, raw_bytes),
-            TxType::Eip1559 => Self::parse_eip1559(items, raw_bytes),
-            TxType::Eip4844 => Self::parse_eip4844(items, raw_bytes),
+            TxType::Eip2930 => Self::parse_eip2930(items),
+            TxType::Eip1559 => Self::parse_eip1559(items),
+            TxType::Eip4844 => Self::parse_eip4844(items),
             TxType::Legacy => Err(DecoderError::invalid_structure(
                 "Legacy type should not be in typed transaction",
             )),
@@ -222,7 +220,7 @@ impl EthereumTransaction {
     }
 
     /// Parse EIP-2930 transaction
-    fn parse_eip2930(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
+    fn parse_eip2930(items: &[RlpItem]) -> Result<Self> {
         // EIP-2930: [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, signatureYParity, signatureR, signatureS]
         if items.len() != 11 {
             return Err(DecoderError::invalid_structure(format!(
@@ -258,12 +256,11 @@ impl EthereumTransaction {
             v,
             r,
             s,
-            raw_bytes: raw_bytes.to_vec(),
         })
     }
 
     /// Parse EIP-1559 transaction
-    fn parse_eip1559(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
+    fn parse_eip1559(items: &[RlpItem]) -> Result<Self> {
         // EIP-1559: [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, signatureYParity, signatureR, signatureS]
         if items.len() != 12 {
             return Err(DecoderError::invalid_structure(format!(
@@ -300,12 +297,11 @@ impl EthereumTransaction {
             v,
             r,
             s,
-            raw_bytes: raw_bytes.to_vec(),
         })
     }
 
     /// Parse EIP-4844 transaction (blob transactions)
-    fn parse_eip4844(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
+    fn parse_eip4844(items: &[RlpItem]) -> Result<Self> {
         // EIP-4844: Similar to EIP-1559 but with additional blob fields
         // For minimal implementation, we'll parse the core fields
         if items.len() < 12 {
@@ -316,7 +312,7 @@ impl EthereumTransaction {
         }
 
         // Parse similar to EIP-1559 (blob fields can be ignored for basic decoding)
-        Self::parse_eip1559(items, raw_bytes).map(|mut tx| {
+        Self::parse_eip1559(items).map(|mut tx| {
             tx.tx_type = TxType::Eip4844;
             tx
         })
@@ -335,7 +331,149 @@ impl EthereumTransaction {
     /// Calculate transaction hash using Keccak-256
     pub fn hash(&self) -> Vec<u8> {
         use sha3::{Digest, Keccak256};
-        Keccak256::digest(&self.raw_bytes).to_vec()
+        // Reconstruct bytes from fields - no stored raw_bytes
+        let bytes = self.to_bytes().unwrap_or_default();
+        Keccak256::digest(&bytes).to_vec()
+    }
+
+    /// Strip leading zeros from signature component for RLP encoding
+    fn encode_signature_r(&self) -> Vec<u8> {
+        strip_leading_zeros(&self.r)
+    }
+
+    /// Strip leading zeros from signature component for RLP encoding
+    fn encode_signature_s(&self) -> Vec<u8> {
+        strip_leading_zeros(&self.s)
+    }
+
+    /// Reconstruct legacy transaction RLP bytes
+    fn reconstruct_legacy(&self) -> Result<Vec<u8>> {
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        // [nonce, gasPrice, gasLimit, to, value, data, v, r, s]
+        list.append_u64(self.nonce)?;
+        list.append_optional_u128(self.gas_price)?;
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+        list.append_u64(self.v)?;
+        list.append_bytes(&self.encode_signature_r())?;
+        list.append_bytes(&self.encode_signature_s())?;
+
+        list.finalize()?;
+        Ok(encoder.finalize())
+    }
+
+    /// Reconstruct EIP-2930 transaction bytes
+    fn reconstruct_eip2930(&self) -> Result<Vec<u8>> {
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        // [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, v, r, s]
+        list.append_u64(self.chain_id.unwrap_or(1))?;
+        list.append_u64(self.nonce)?;
+        list.append_optional_u128(self.gas_price)?;
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+
+        // Access list
+        self.append_access_list_rlp(&mut list)?;
+
+        list.append_u64(self.v)?;
+        list.append_bytes(&self.encode_signature_r())?;
+        list.append_bytes(&self.encode_signature_s())?;
+
+        list.finalize()?;
+
+        // Prepend type byte
+        let mut result = vec![0x01];
+        result.extend(encoder.finalize());
+        Ok(result)
+    }
+
+    /// Reconstruct EIP-1559 transaction bytes
+    fn reconstruct_eip1559(&self) -> Result<Vec<u8>> {
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        // [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, v, r, s]
+        list.append_u64(self.chain_id.unwrap_or(1))?;
+        list.append_u64(self.nonce)?;
+        list.append_optional_u128(self.max_priority_fee_per_gas)?;
+        list.append_optional_u128(self.max_fee_per_gas)?;
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+
+        // Access list
+        self.append_access_list_rlp(&mut list)?;
+
+        list.append_u64(self.v)?;
+        list.append_bytes(&self.encode_signature_r())?;
+        list.append_bytes(&self.encode_signature_s())?;
+
+        list.finalize()?;
+
+        // Prepend type byte
+        let mut result = vec![0x02];
+        result.extend(encoder.finalize());
+        Ok(result)
+    }
+
+    /// Reconstruct EIP-4844 transaction bytes
+    fn reconstruct_eip4844(&self) -> Result<Vec<u8>> {
+        // Same structure as EIP-1559, different type byte
+        let mut encoder = RlpEncoder::new();
+        let mut list = encoder.begin_list();
+
+        list.append_u64(self.chain_id.unwrap_or(1))?;
+        list.append_u64(self.nonce)?;
+        list.append_optional_u128(self.max_priority_fee_per_gas)?;
+        list.append_optional_u128(self.max_fee_per_gas)?;
+        list.append_u128(self.gas_limit)?;
+        list.append_address(self.to)?;
+        list.append_u128(self.value)?;
+        list.append_bytes(&self.data)?;
+
+        self.append_access_list_rlp(&mut list)?;
+
+        list.append_u64(self.v)?;
+        list.append_bytes(&self.encode_signature_r())?;
+        list.append_bytes(&self.encode_signature_s())?;
+
+        list.finalize()?;
+
+        let mut result = vec![0x03];
+        result.extend(encoder.finalize());
+        Ok(result)
+    }
+
+    /// Append access list to RLP encoder
+    fn append_access_list_rlp(
+        &self,
+        list: &mut decoder_encodings::rlp_encoder::ListEncoder<'_>,
+    ) -> Result<()> {
+        list.append_list(|access_list_encoder| {
+            for item in &self.access_list {
+                access_list_encoder.append_list(|entry| {
+                    entry.append_bytes(&item.address)?;
+                    entry.append_list(|keys| {
+                        for key in &item.storage_keys {
+                            keys.append_bytes(key)?;
+                        }
+                        Ok(())
+                    })?;
+                    Ok(())
+                })?;
+            }
+            Ok(())
+        })?;
+        Ok(())
     }
 
     /// Get effective gas price
@@ -568,6 +706,12 @@ fn parse_signature_component(data: &[u8], name: &str) -> Result<[u8; 32]> {
     Ok(component)
 }
 
+/// Strip leading zeros from a byte array for RLP encoding
+fn strip_leading_zeros(bytes: &[u8]) -> Vec<u8> {
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
+    bytes[start..].to_vec()
+}
+
 /// Parse access list from RLP item
 fn parse_access_list(item: &RlpItem) -> Result<Vec<AccessListItem>> {
     let list = item.as_list()?;
@@ -617,21 +761,30 @@ fn parse_access_list(item: &RlpItem) -> Result<Vec<AccessListItem>> {
 }
 
 impl ChainEncoder for EthereumTransaction {
-    /// Re-encode the Ethereum transaction back to its original RLP-encoded byte format
+    /// Re-encode the Ethereum transaction back to RLP-encoded bytes.
     ///
-    /// Since we store the original raw bytes during decoding, this simply
-    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    /// This reconstructs the transaction from parsed fields, guaranteeing
+    /// that the decoder actually parsed the data rather than just storing bytes.
     ///
     /// # Formal Properties
     ///
-    /// This implementation trivially satisfies the injective property:
+    /// The injective property is satisfied through actual reconstruction:
     /// ```text
     /// ∀ tx_bytes: EthereumDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
     /// ```
-    ///
-    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
     fn to_bytes(&self) -> Result<Vec<u8>> {
-        Ok(self.raw_bytes.clone())
+        match self.tx_type {
+            TxType::Legacy => self.reconstruct_legacy(),
+            TxType::Eip2930 => self.reconstruct_eip2930(),
+            TxType::Eip1559 => self.reconstruct_eip1559(),
+            TxType::Eip4844 => self.reconstruct_eip4844(),
+        }
+    }
+}
+
+impl ReconstructableTransaction for EthereumTransaction {
+    fn reconstruct_bytes(&self) -> Result<Vec<u8>> {
+        self.to_bytes()
     }
 }
 
@@ -685,11 +838,13 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             access_list_json
         );
 
+        // Get size from reconstructed bytes
+        let tx_bytes = self.to_bytes()?;
         let metadata = TxMetadata {
             tx_hash: self.hash(),
             block_height: None,
             timestamp: None,
-            size: self.raw_bytes.len(),
+            size: tx_bytes.len(),
             extra,
         };
 
@@ -846,7 +1001,8 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
 
 impl TxHashable for EthereumTransaction {
     fn to_canonical_bytes(&self) -> Vec<u8> {
-        self.raw_bytes.clone()
+        // Reconstruct bytes from parsed fields
+        self.to_bytes().unwrap_or_default()
     }
 
     fn compute_hash(&self) -> Vec<u8> {

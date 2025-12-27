@@ -401,6 +401,13 @@ proptest! {
 
 use decoder_encodings::RlpEncoder;
 
+/// Strip leading zeros from a byte slice for canonical RLP encoding.
+/// Per RLP spec, integers (including signature components) should be encoded minimally.
+fn strip_leading_zeros(bytes: &[u8]) -> Vec<u8> {
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
+    bytes[start..].to_vec()
+}
+
 /// Helper: Encode a valid legacy Ethereum transaction to RLP bytes
 #[allow(clippy::too_many_arguments)]
 fn encode_legacy_tx(
@@ -438,11 +445,11 @@ fn encode_legacy_tx(
     // 7. v (signature recovery id + chain id encoding)
     list.append_u64(v).unwrap();
 
-    // 8. r (signature)
-    list.append_bytes(r).unwrap();
+    // 8. r (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(r)).unwrap();
 
-    // 9. s (signature)
-    list.append_bytes(s).unwrap();
+    // 9. s (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(s)).unwrap();
 
     list.finalize().unwrap();
     encoder.finalize()
@@ -502,11 +509,11 @@ fn encode_eip1559_tx(
     // 10. v (0 or 1 for EIP-1559)
     list.append_u64(v as u64).unwrap();
 
-    // 11. r (signature)
-    list.append_bytes(r).unwrap();
+    // 11. r (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(r)).unwrap();
 
-    // 12. s (signature)
-    list.append_bytes(s).unwrap();
+    // 12. s (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(s)).unwrap();
 
     list.finalize().unwrap();
 

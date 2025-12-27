@@ -131,18 +131,18 @@ fn test_decode_malformed_input() {
     }
 }
 
-/// Test that decoding preserves raw bytes
+/// Test that decoding and re-encoding produces same bytes (roundtrip)
 #[test]
-fn test_raw_bytes_preserved() {
+fn test_roundtrip_preserved() {
     let tx_hex = include_str!("fixtures/btc_genesis_coinbase.hex");
     let tx_bytes =
         universal_decoder_core::hex::decode(tx_hex.trim()).expect("Failed to decode hex fixture");
 
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
-    // Raw bytes should be preserved
-    let raw = &decoded.raw_bytes;
-    assert_eq!(raw, &tx_bytes[..], "Raw bytes should match input");
+    // Re-encoded bytes should match original
+    let encoded = decoded.to_bytes().expect("Failed to encode transaction");
+    assert_eq!(encoded, tx_bytes, "Re-encoded bytes should match input");
 }
 
 /// Test canonicalization of Bitcoin transactions
@@ -206,7 +206,8 @@ fn test_transaction_size_bounds() {
     let decoded = BitcoinDecoder::decode(&tx_bytes).expect("Failed to decode transaction");
 
     // Bitcoin transactions are typically < 100 KB
-    let size = decoded.raw_bytes.len();
+    let encoded = decoded.to_bytes().expect("Failed to encode");
+    let size = encoded.len();
     assert!(
         size > 0 && size < 100_000,
         "Transaction size should be reasonable: {} bytes",

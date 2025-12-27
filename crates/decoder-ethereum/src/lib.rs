@@ -6,15 +6,11 @@
 use universal_decoder_core::prelude::*;
 
 pub mod types;
-pub mod verified;
 
 #[cfg(feature = "formal-verification")]
 pub mod verus_annotations;
 
 use types::EthereumTransaction;
-
-// Re-export verified types
-pub use verified::{EthereumParsedFields, VerifiedEthereumDecoder};
 
 /// Ethereum chain identity
 #[derive(Debug, Clone, Copy)]
