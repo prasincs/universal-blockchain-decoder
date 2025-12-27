@@ -35,9 +35,13 @@ use std::io::Cursor;
 
 pub mod parsing;
 pub mod types;
+pub mod verified;
 
 use parsing::*;
 pub use types::BitcoinTransaction;
+
+// Re-export verified types
+pub use verified::{BitcoinParsedFields, VerifiedBitcoinDecoder};
 
 /// Bitcoin chain identity (re-export from common library)
 pub use decoder_chains_common::chains::BITCOIN as BitcoinChain;

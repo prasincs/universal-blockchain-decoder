@@ -63,6 +63,7 @@ pub mod ir;
 pub mod privacy;
 pub mod traits;
 pub mod verification;
+pub mod verified;
 
 // Vendored dependencies (git subtree)
 mod vendored;
@@ -93,6 +94,9 @@ pub mod prelude {
         BatchDecoder, Canonicalizer, ChainDecoder, ChainEncoder, DecoderPlugin, DoubleSha256,
         FormallyVerifiable, HashAlgorithm, Keccak256Hash, Sha256Hash, TxHashable, TxVerifier,
         TxVersion,
+    };
+    pub use crate::verified::{
+        ReconstructableTransaction, VerifiedChainDecoder, VerifiedTransaction,
     };
 }
 
