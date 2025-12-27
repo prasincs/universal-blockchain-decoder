@@ -2,8 +2,8 @@
 //!
 //! These tests use proptest to verify properties hold for arbitrary inputs.
 
-use decoder_optimism::*;
 use decoder_encodings::RlpEncoder;
+use decoder_optimism::*;
 use proptest::prelude::*;
 use universal_decoder_core::prelude::*;
 

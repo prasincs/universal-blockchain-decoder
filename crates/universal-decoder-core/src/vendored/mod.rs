@@ -130,7 +130,7 @@ pub mod hex {
         }
     }
 
-    impl<'a> Iterator for BytesToHexChars<'a> {
+    impl Iterator for BytesToHexChars<'_> {
         type Item = char;
 
         fn next(&mut self) -> Option<Self::Item> {
@@ -150,7 +150,7 @@ pub mod hex {
         }
     }
 
-    impl<'a> ExactSizeIterator for BytesToHexChars<'a> {
+    impl ExactSizeIterator for BytesToHexChars<'_> {
         fn len(&self) -> usize {
             let mut length = self.inner.len() * 2;
             if self.next.is_some() {
@@ -277,7 +277,7 @@ pub mod hex {
         // Optimized decoding using chunks (from vendored hex/src/lib.rs:197-199)
         data.chunks(2)
             .enumerate()
-            .map(|(i, pair)| Ok(val(pair[0], 2 * i)? << 4 | val(pair[1], 2 * i + 1)?))
+            .map(|(i, pair)| Ok((val(pair[0], 2 * i)? << 4) | val(pair[1], 2 * i + 1)?))
             .collect()
     }
 
@@ -313,7 +313,7 @@ pub mod hex {
 
         // Implementation from vendored hex/src/lib.rs:322-325
         for (i, byte) in out.iter_mut().enumerate() {
-            *byte = val(data[2 * i], 2 * i)? << 4 | val(data[2 * i + 1], 2 * i + 1)?;
+            *byte = (val(data[2 * i], 2 * i)? << 4) | val(data[2 * i + 1], 2 * i + 1)?;
         }
 
         Ok(())

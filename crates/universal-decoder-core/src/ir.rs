@@ -47,7 +47,7 @@ pub struct TxIR<'a, const V: u8> {
     _phantom: PhantomData<&'a [u8]>,
 }
 
-impl<'a, const V: u8> TxIR<'a, V> {
+impl<const V: u8> TxIR<'_, V> {
     /// Creates a new TxIR instance from a chain identity
     ///
     /// # Arguments
