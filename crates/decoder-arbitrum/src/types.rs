@@ -663,9 +663,7 @@ fn canonicalize_retry(retry: &RetryTransaction) -> Result<TxIR<'_, 1>> {
 }
 
 /// Canonicalize a submit retryable transaction
-fn canonicalize_submit_retryable(
-    retryable: &SubmitRetryableTransaction,
-) -> Result<TxIR<'_, 1>> {
+fn canonicalize_submit_retryable(retryable: &SubmitRetryableTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
