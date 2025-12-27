@@ -396,6 +396,258 @@ proptest! {
 }
 
 //
+// Property 11: Roundtrip Encoding (Injective Property)
+//
+
+use decoder_encodings::RlpEncoder;
+
+/// Helper: Encode a valid legacy Ethereum transaction to RLP bytes
+#[allow(clippy::too_many_arguments)]
+fn encode_legacy_tx(
+    nonce: u64,
+    gas_price: u64,
+    gas_limit: u64,
+    to: Option<[u8; 20]>,
+    value: u128,
+    data: &[u8],
+    v: u64,
+    r: &[u8; 32],
+    s: &[u8; 32],
+) -> Vec<u8> {
+    let mut encoder = RlpEncoder::new();
+    let mut list = encoder.begin_list();
+
+    // 1. nonce
+    list.append_u64(nonce).unwrap();
+
+    // 2. gasPrice
+    list.append_u64(gas_price).unwrap();
+
+    // 3. gasLimit
+    list.append_u64(gas_limit).unwrap();
+
+    // 4. to (None for contract creation)
+    list.append_address(to).unwrap();
+
+    // 5. value
+    list.append_u128(value).unwrap();
+
+    // 6. data
+    list.append_bytes(data).unwrap();
+
+    // 7. v (signature recovery id + chain id encoding)
+    list.append_u64(v).unwrap();
+
+    // 8. r (signature)
+    list.append_bytes(r).unwrap();
+
+    // 9. s (signature)
+    list.append_bytes(s).unwrap();
+
+    list.finalize().unwrap();
+    encoder.finalize()
+}
+
+/// Helper: Encode a valid EIP-1559 transaction to typed transaction bytes
+#[allow(clippy::too_many_arguments)]
+fn encode_eip1559_tx(
+    chain_id: u64,
+    nonce: u64,
+    max_priority_fee_per_gas: u64,
+    max_fee_per_gas: u64,
+    gas_limit: u64,
+    to: Option<[u8; 20]>,
+    value: u128,
+    data: &[u8],
+    access_list: &[(
+        [u8; 20],      // address
+        Vec<[u8; 32]>, // storage keys
+    )],
+    v: u8,
+    r: &[u8; 32],
+    s: &[u8; 32],
+) -> Vec<u8> {
+    let mut encoder = RlpEncoder::new();
+    let mut list = encoder.begin_list();
+
+    // 1. chainId
+    list.append_u64(chain_id).unwrap();
+
+    // 2. nonce
+    list.append_u64(nonce).unwrap();
+
+    // 3. maxPriorityFeePerGas
+    list.append_u64(max_priority_fee_per_gas).unwrap();
+
+    // 4. maxFeePerGas
+    list.append_u64(max_fee_per_gas).unwrap();
+
+    // 5. gasLimit
+    list.append_u64(gas_limit).unwrap();
+
+    // 6. to (None for contract creation)
+    list.append_address(to).unwrap();
+
+    // 7. value
+    list.append_u128(value).unwrap();
+
+    // 8. data
+    list.append_bytes(data).unwrap();
+
+    // 9. accessList (encode as empty list for now)
+    // Access list is RLP list of [address, [storage_keys...]]
+    let _ = access_list; // Silence unused warning
+    list.append_list(|_| Ok(())).unwrap();
+
+    // 10. v (0 or 1 for EIP-1559)
+    list.append_u64(v as u64).unwrap();
+
+    // 11. r (signature)
+    list.append_bytes(r).unwrap();
+
+    // 12. s (signature)
+    list.append_bytes(s).unwrap();
+
+    list.finalize().unwrap();
+
+    // Prepend EIP-1559 type byte (0x02)
+    let mut result = vec![0x02];
+    result.extend(encoder.finalize());
+    result
+}
+
+/// Strategy: Generate arbitrary 32-byte hash/signature component
+fn arb_bytes32() -> impl Strategy<Value = [u8; 32]> {
+    prop::array::uniform32(any::<u8>())
+}
+
+/// Strategy: Generate arbitrary 20-byte address
+fn arb_address() -> impl Strategy<Value = [u8; 20]> {
+    prop::array::uniform20(any::<u8>())
+}
+
+/// Strategy: Generate a valid legacy Ethereum transaction
+fn arb_valid_legacy_tx() -> impl Strategy<Value = Vec<u8>> {
+    (
+        any::<u64>(),                               // nonce
+        1u64..1_000_000_000_000u64,                 // gas_price (1 gwei to 1000 gwei)
+        21000u64..30_000_000u64,                    // gas_limit
+        prop::option::of(arb_address()),            // to (None for contract creation)
+        0u128..10_000_000_000_000_000_000u128,      // value (up to 10 ETH)
+        prop::collection::vec(any::<u8>(), 0..100), // data
+        27u64..=28u64,                              // v (pre-EIP-155)
+        arb_bytes32(),                              // r
+        arb_bytes32(),                              // s
+    )
+        .prop_map(|(nonce, gas_price, gas_limit, to, value, data, v, r, s)| {
+            encode_legacy_tx(nonce, gas_price, gas_limit, to, value, &data, v, &r, &s)
+        })
+}
+
+/// Strategy: Generate a valid EIP-1559 Ethereum transaction
+fn arb_valid_eip1559_tx() -> impl Strategy<Value = Vec<u8>> {
+    (
+        1u64..10u64,                                // chain_id (mainnet = 1)
+        any::<u64>(),                               // nonce
+        1u64..100_000_000_000u64,                   // max_priority_fee (1-100 gwei)
+        1u64..1_000_000_000_000u64,                 // max_fee (1-1000 gwei)
+        21000u64..30_000_000u64,                    // gas_limit
+        prop::option::of(arb_address()),            // to
+        0u128..10_000_000_000_000_000_000u128,      // value
+        prop::collection::vec(any::<u8>(), 0..100), // data
+        0u8..=1u8,                                  // v (0 or 1 for EIP-1559)
+        arb_bytes32(),                              // r
+        arb_bytes32(),                              // s
+    )
+        .prop_filter(
+            "max_fee must be >= max_priority_fee",
+            |(_, _, max_priority, max_fee, _, _, _, _, _, _, _)| max_fee >= max_priority,
+        )
+        .prop_map(
+            |(chain_id, nonce, max_priority, max_fee, gas_limit, to, value, data, v, r, s)| {
+                // Empty access list for simplicity
+                let access_list: Vec<([u8; 20], Vec<[u8; 32]>)> = vec![];
+                encode_eip1559_tx(
+                    chain_id,
+                    nonce,
+                    max_priority,
+                    max_fee,
+                    gas_limit,
+                    to,
+                    value,
+                    &data,
+                    &access_list,
+                    v,
+                    &r,
+                    &s,
+                )
+            },
+        )
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Roundtrip encoding preserves legacy transaction bytes (Injective Property)
+    ///
+    /// This is the CRITICAL property mandated by CLAUDE.md v0.3.0:
+    /// For any valid Ethereum transaction bytes, decode(tx_bytes).to_bytes() == tx_bytes
+    #[test]
+    fn prop_ethereum_roundtrip_legacy(tx_bytes in arb_valid_legacy_tx()) {
+        // Decode the generated transaction bytes
+        let decoded = EthereumDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Re-encode back to bytes
+        let re_encoded = decoded.to_bytes()
+            .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+
+        // Verify the injective property: encode(decode(x)) == x
+        prop_assert_eq!(
+            tx_bytes.as_slice(),
+            re_encoded.as_slice(),
+            "Roundtrip failed for legacy tx: encode(decode(tx_bytes)) != tx_bytes"
+        );
+    }
+
+    /// Property: Roundtrip encoding preserves EIP-1559 transaction bytes
+    #[test]
+    fn prop_ethereum_roundtrip_eip1559(tx_bytes in arb_valid_eip1559_tx()) {
+        // Decode the generated transaction bytes
+        let decoded = EthereumDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Re-encode back to bytes
+        let re_encoded = decoded.to_bytes()
+            .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+
+        // Verify the injective property
+        prop_assert_eq!(
+            tx_bytes.as_slice(),
+            re_encoded.as_slice(),
+            "Roundtrip failed for EIP-1559 tx: encode(decode(tx_bytes)) != tx_bytes"
+        );
+    }
+
+    /// Property: Roundtrip preserves transaction type
+    #[test]
+    fn prop_ethereum_roundtrip_preserves_type(tx_bytes in prop_oneof![
+        arb_valid_legacy_tx(),
+        arb_valid_eip1559_tx()
+    ]) {
+        let decoded = EthereumDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Transaction type should match the first byte pattern
+        let is_typed = tx_bytes.first().map(|b| *b <= 0x7f).unwrap_or(false);
+        let is_legacy = decoded.tx_type == decoder_ethereum::types::TxType::Legacy;
+
+        prop_assert_eq!(!is_typed, is_legacy,
+            "Transaction type should match encoding pattern");
+    }
+}
+
+//
 // Integration Property Tests
 //
 

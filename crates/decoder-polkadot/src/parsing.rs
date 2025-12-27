@@ -37,7 +37,7 @@ pub fn read_compact_u32(bytes: &[u8], offset: &mut usize) -> Result<u32> {
             }
             let second_byte = bytes[*offset];
             *offset += 1;
-            Ok(((first_byte as u32) >> 2) | (second_byte as u32) << 6)
+            Ok(((first_byte as u32) >> 2) | ((second_byte as u32) << 6))
         }
 
         // Four-byte mode: 0b10

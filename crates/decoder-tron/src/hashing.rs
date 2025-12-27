@@ -67,13 +67,8 @@ pub fn address_to_hex(address_bytes: &[u8]) -> String {
         return String::new();
     }
 
-    // Convert to hex
-    let hex_str = address_bytes
-        .iter()
-        .map(|b| format!("{:02x}", b))
-        .collect::<String>();
-
-    format!("0x{}", hex_str)
+    // Convert to hex using vendored hex encoder
+    format!("0x{}", universal_decoder_core::hex::encode(address_bytes))
 }
 
 /// Compute Ethereum-style address from public key (for smart contracts)

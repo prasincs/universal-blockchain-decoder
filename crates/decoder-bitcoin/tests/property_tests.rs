@@ -400,6 +400,158 @@ proptest! {
 }
 
 //
+// Property 8: Roundtrip Encoding (Injective Property)
+//
+
+/// Helper: Encode a valid legacy Bitcoin transaction
+fn encode_legacy_bitcoin_tx(
+    version: u32,
+    inputs: Vec<(
+        [u8; 32], // prev_txid
+        u32,      // prev_vout
+        Vec<u8>,  // script_sig
+        u32,      // sequence
+    )>,
+    outputs: Vec<(
+        u64,     // value in satoshis
+        Vec<u8>, // script_pubkey
+    )>,
+    locktime: u32,
+) -> Vec<u8> {
+    let mut tx_bytes = Vec::new();
+
+    // Version (4 bytes, little-endian)
+    tx_bytes.extend_from_slice(&version.to_le_bytes());
+
+    // Input count (varint)
+    encode_varint(&mut tx_bytes, inputs.len() as u64);
+
+    // Inputs
+    for (prev_txid, prev_vout, script_sig, sequence) in &inputs {
+        tx_bytes.extend_from_slice(prev_txid);
+        tx_bytes.extend_from_slice(&prev_vout.to_le_bytes());
+        encode_varint(&mut tx_bytes, script_sig.len() as u64);
+        tx_bytes.extend_from_slice(script_sig);
+        tx_bytes.extend_from_slice(&sequence.to_le_bytes());
+    }
+
+    // Output count (varint)
+    encode_varint(&mut tx_bytes, outputs.len() as u64);
+
+    // Outputs
+    for (value, script_pubkey) in &outputs {
+        tx_bytes.extend_from_slice(&value.to_le_bytes());
+        encode_varint(&mut tx_bytes, script_pubkey.len() as u64);
+        tx_bytes.extend_from_slice(script_pubkey);
+    }
+
+    // Locktime (4 bytes, little-endian)
+    tx_bytes.extend_from_slice(&locktime.to_le_bytes());
+
+    tx_bytes
+}
+
+/// Strategy: Generate arbitrary 32-byte hash
+fn arb_txid() -> impl Strategy<Value = [u8; 32]> {
+    prop::array::uniform32(any::<u8>())
+}
+
+/// Strategy: Generate a valid P2PKH script_pubkey (25 bytes)
+fn arb_p2pkh_script() -> impl Strategy<Value = Vec<u8>> {
+    prop::array::uniform20(any::<u8>()).prop_map(|pubkey_hash| {
+        let mut script = vec![0x76, 0xa9, 0x14]; // OP_DUP OP_HASH160 PUSH(20)
+        script.extend_from_slice(&pubkey_hash);
+        script.extend_from_slice(&[0x88, 0xac]); // OP_EQUALVERIFY OP_CHECKSIG
+        script
+    })
+}
+
+/// Strategy: Generate a valid Bitcoin transaction input
+fn arb_tx_input() -> impl Strategy<Value = ([u8; 32], u32, Vec<u8>, u32)> {
+    (
+        arb_txid(),                                 // prev_txid
+        any::<u32>(),                               // prev_vout
+        prop::collection::vec(any::<u8>(), 0..100), // script_sig
+        prop_oneof![
+            Just(0xFFFFFFFFu32), // Standard sequence
+            Just(0xFFFFFFFEu32), // RBF enabled
+            0u32..0xFFFFFFFEu32, // Timelock
+        ],
+    )
+}
+
+/// Strategy: Generate a valid Bitcoin transaction output
+fn arb_tx_output() -> impl Strategy<Value = (u64, Vec<u8>)> {
+    (
+        1u64..2_100_000_000_000_000u64, // value: 1 sat to 21M BTC
+        arb_p2pkh_script(),             // script_pubkey
+    )
+}
+
+/// Strategy: Generate a valid legacy Bitcoin transaction
+fn arb_valid_legacy_tx() -> impl Strategy<Value = Vec<u8>> {
+    (
+        1u32..=2u32,                                   // version
+        prop::collection::vec(arb_tx_input(), 1..=3),  // inputs
+        prop::collection::vec(arb_tx_output(), 1..=3), // outputs
+        any::<u32>(),                                  // locktime
+    )
+        .prop_map(|(version, inputs, outputs, locktime)| {
+            encode_legacy_bitcoin_tx(version, inputs, outputs, locktime)
+        })
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property: Roundtrip encoding preserves transaction bytes (Injective Property)
+    ///
+    /// This is the CRITICAL property mandated by CLAUDE.md v0.3.0:
+    /// For any valid Bitcoin transaction bytes, decode(tx_bytes).to_bytes() == tx_bytes
+    ///
+    /// This verifies lossless decoding and enables forensic reconstruction.
+    #[test]
+    fn prop_bitcoin_roundtrip_encoding(tx_bytes in arb_valid_legacy_tx()) {
+        // Decode the generated transaction bytes
+        let decoded = BitcoinDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Re-encode back to bytes
+        let re_encoded = decoded.to_bytes()
+            .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+
+        // Verify the injective property: encode(decode(x)) == x
+        prop_assert_eq!(
+            tx_bytes.as_slice(),
+            re_encoded.as_slice(),
+            "Roundtrip failed: encode(decode(tx_bytes)) != tx_bytes"
+        );
+    }
+
+    /// Property: Roundtrip preserves transaction fields
+    ///
+    /// Not only should bytes match, but decoded fields should be accessible.
+    #[test]
+    fn prop_bitcoin_roundtrip_preserves_fields(tx_bytes in arb_valid_legacy_tx()) {
+        let decoded = BitcoinDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        // Version should be 1 or 2
+        prop_assert!(
+            decoded.version() == 1 || decoded.version() == 2,
+            "Version should be 1 or 2"
+        );
+
+        // Should have at least one input and output
+        prop_assert!(!decoded.inputs.is_empty(), "Should have inputs");
+        prop_assert!(!decoded.outputs.is_empty(), "Should have outputs");
+
+        // TXID should be 32 bytes
+        prop_assert_eq!(decoded.txid().len(), 32, "TXID should be 32 bytes");
+    }
+}
+
+//
 // Helper property tests for Amount arithmetic (Bitcoin-specific)
 //
 

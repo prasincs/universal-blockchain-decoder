@@ -295,10 +295,10 @@ pub trait TxVerifier {
     /// # Returns
     ///
     /// * `Result<bool>` - True if all signatures are valid, error otherwise
-    fn verify_signatures<'a, const V: u8>(tx: &TxIR<'a, V>) -> Result<bool>;
+    fn verify_signatures<const V: u8>(tx: &TxIR<'_, V>) -> Result<bool>;
 
     /// Verify structural invariants
-    fn verify_structure<'a, const V: u8>(tx: &TxIR<'a, V>) -> Result<bool> {
+    fn verify_structure<const V: u8>(tx: &TxIR<'_, V>) -> Result<bool> {
         // Default implementation checks basic structural properties
         if tx.authorization.signatures.len() != tx.authorization.public_keys.len() {
             return Err(DecoderError::invalid_structure(

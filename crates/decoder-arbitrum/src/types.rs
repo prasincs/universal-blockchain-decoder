@@ -416,7 +416,7 @@ impl<'a> universal_decoder_core::traits::Canonicalizer<'a> for ArbitrumTransacti
 }
 
 /// Canonicalize a deposit transaction
-fn canonicalize_deposit<'a>(deposit: &'a DepositTransaction) -> Result<TxIR<'a, 1>> {
+fn canonicalize_deposit(deposit: &DepositTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
@@ -485,7 +485,7 @@ fn canonicalize_deposit<'a>(deposit: &'a DepositTransaction) -> Result<TxIR<'a, 
 }
 
 /// Canonicalize an unsigned transaction
-fn canonicalize_unsigned<'a>(unsigned: &'a UnsignedTransaction) -> Result<TxIR<'a, 1>> {
+fn canonicalize_unsigned(unsigned: &UnsignedTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
@@ -549,7 +549,7 @@ fn canonicalize_unsigned<'a>(unsigned: &'a UnsignedTransaction) -> Result<TxIR<'
 }
 
 /// Canonicalize a contract transaction
-fn canonicalize_contract<'a>(contract: &'a ContractTransaction) -> Result<TxIR<'a, 1>> {
+fn canonicalize_contract(contract: &ContractTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
@@ -616,7 +616,7 @@ fn canonicalize_contract<'a>(contract: &'a ContractTransaction) -> Result<TxIR<'
 }
 
 /// Canonicalize a retry transaction
-fn canonicalize_retry<'a>(retry: &'a RetryTransaction) -> Result<TxIR<'a, 1>> {
+fn canonicalize_retry(retry: &RetryTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
@@ -663,9 +663,7 @@ fn canonicalize_retry<'a>(retry: &'a RetryTransaction) -> Result<TxIR<'a, 1>> {
 }
 
 /// Canonicalize a submit retryable transaction
-fn canonicalize_submit_retryable<'a>(
-    retryable: &'a SubmitRetryableTransaction,
-) -> Result<TxIR<'a, 1>> {
+fn canonicalize_submit_retryable(retryable: &SubmitRetryableTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 
@@ -737,7 +735,7 @@ fn canonicalize_submit_retryable<'a>(
 }
 
 /// Canonicalize an internal transaction
-fn canonicalize_internal<'a>(internal: &'a InternalTransaction) -> Result<TxIR<'a, 1>> {
+fn canonicalize_internal(internal: &InternalTransaction) -> Result<TxIR<'_, 1>> {
     use sha3::{Digest, Keccak256};
     use universal_decoder_core::prelude::*;
 

@@ -239,7 +239,7 @@ pub enum CanonicalResourceType {
 }
 
 // Conversion implementations
-impl<'a, const V: u8> TxIR<'a, V> {
+impl<const V: u8> TxIR<'_, V> {
     /// Convert to canonical representation for serialization
     pub fn to_canonical(&self) -> CanonicalTxIR {
         CanonicalTxIR {
@@ -493,7 +493,7 @@ impl From<&StorageChange> for CanonicalStorageChange {
     }
 }
 
-impl<'a, const V: u8> CanonicalSerialize for TxIR<'a, V> {
+impl<const V: u8> CanonicalSerialize for TxIR<'_, V> {
     fn to_canonical_bytes(&self) -> Result<Vec<u8>> {
         let canonical = self.to_canonical();
         borsh::to_vec(&canonical)

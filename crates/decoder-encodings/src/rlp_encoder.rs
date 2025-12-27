@@ -128,7 +128,7 @@ pub struct ListEncoder<'a> {
     items: Vec<Vec<u8>>,
 }
 
-impl<'a> ListEncoder<'a> {
+impl ListEncoder<'_> {
     /// Add an RLP-encoded item to the list
     pub fn append_bytes(&mut self, data: &[u8]) -> Result<&mut Self> {
         let mut encoder = RlpEncoder::new();
