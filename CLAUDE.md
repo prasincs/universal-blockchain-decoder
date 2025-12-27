@@ -10,6 +10,7 @@
 - `docs/GIT_SUBTREE_VENDORING.md` - Verifiable dependency vendoring
 - `docs/FORMAL_VERIFICATION.md` - Verus verification plan
 - `docs/CANONICAL_SERIALIZATION.md` - Why Borsh, not JSON
+- `docs/blockchain-addition/` - Add new blockchains in 5-30 min (LLM & human-friendly)
 
 ---
 
@@ -170,5 +171,5 @@ Core Library (Minimal, Trusted)
 
 ---
 
-**Last Updated**: 2025-12-26
-**Version**: 0.4.0
+**Last Updated**: 2025-12-27
+**Version**: 0.4.1

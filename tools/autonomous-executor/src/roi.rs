@@ -68,7 +68,7 @@ impl RoiCalculator {
     ///
     /// Examples:
     /// - "4-6 hours" → 5.0
-    /// - "1-2 weeks" → 120.0
+    /// - "1-2 weeks" → 60.0 (1.5 weeks * 40 hours/week)
     /// - "3 days" → 24.0
     fn parse_time_estimate(&self, time_str: Option<&str>) -> f64 {
         let time_str = match time_str {
@@ -119,7 +119,7 @@ mod tests {
         let calc = RoiCalculator::new();
 
         assert_eq!(calc.parse_time_estimate(Some("4-6 hours")), 5.0);
-        assert_eq!(calc.parse_time_estimate(Some("1-2 weeks")), 120.0);
+        assert_eq!(calc.parse_time_estimate(Some("1-2 weeks")), 60.0); // 1.5 weeks * 40 hours/week
         assert_eq!(calc.parse_time_estimate(Some("3 days")), 24.0);
         assert_eq!(calc.parse_time_estimate(Some("2 months")), 320.0);
         assert_eq!(calc.parse_time_estimate(None), 80.0);
