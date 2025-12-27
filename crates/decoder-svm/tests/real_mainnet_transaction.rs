@@ -25,10 +25,7 @@ fn test_svm_decode_real_mainnet_sol_transfer() {
     println!("Transaction size: {} bytes", tx_bytes.len());
     println!(
         "First 32 bytes (hex): {}",
-        tx_bytes[..32.min(tx_bytes.len())]
-            .iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>()
+        universal_decoder_core::hex::encode(&tx_bytes[..32.min(tx_bytes.len())])
     );
 
     // Verify chain properties
@@ -240,9 +237,7 @@ fn test_svm_canonical_hash() {
 
     println!(
         "Canonical hash (SHA-256): {}",
-        hash.iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>()
+        universal_decoder_core::hex::encode(hash)
     );
     assert_eq!(hash.len(), 32, "SHA-256 hash should be 32 bytes");
 

@@ -223,7 +223,7 @@ impl SecureHexInput {
             return Err(anyhow!("Invalid hex string (contains non-hex characters)"));
         }
 
-        if !hex_trimmed.len().is_multiple_of(2) {
+        if hex_trimmed.len() % 2 != 0 {
             return Err(anyhow!("Invalid hex string (odd length)"));
         }
 

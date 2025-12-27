@@ -12,6 +12,7 @@ use universal_decoder_core::prelude::*;
 // ============================================================================
 
 /// Encodes a deposit transaction to RLP bytes (for generating valid raw_bytes)
+#[allow(clippy::too_many_arguments)]
 fn encode_deposit_tx(
     source_hash: &[u8; 32],
     from: &[u8; 20],
