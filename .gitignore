@@ -2,7 +2,11 @@
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
+# Cargo.lock is intentionally COMMITTED: without it, every build re-resolves
+# against live crates.io, and an upstream yank (algonaut_client 0.4.x,
+# 2026-06) made the whole workspace unbuildable. See docs/ASSUMPTIONS_REVIEW.md.
+# Fuzz crates keep their own lockfiles ignored below.
+crates/*/fuzz/Cargo.lock
 
 # IDE
 .vscode/

@@ -19,7 +19,9 @@ sha2 = "0.10"
 [dev-dependencies]
 serde_json = { workspace = true }
 proptest = { workspace = true }
-algonaut = "0.4"
-algonaut_core = "0.4"
-algonaut_transaction = "0.4"
+# algonaut 0.4 removed: every 0.4.x release of its `algonaut_client`
+# dependency was yanked from crates.io, making the whole workspace
+# unresolvable. It was declared "for validation ONLY" but no test ever
+# imported it. Re-add a pinned, actually-used version when differential
+# tests for Algorand are written (see loop/BACKLOG.md).
 hex = "0.4"

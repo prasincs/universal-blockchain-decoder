@@ -1,0 +1,76 @@
+{
+  "core_loc_budget": 3000,
+  "core_loc_non_vendored": 4961,
+  "crates_with_fuzz_targets": [
+    "decoder-bitcoin",
+    "decoder-ethereum",
+    "decoder-evm",
+    "universal-decoder-core"
+  ],
+  "dead_validation_deps": [
+    "decoder-bnb:alloy-primitives",
+    "decoder-bnb:alloy-rlp",
+    "decoder-cardano:pallas-codec",
+    "decoder-cardano:pallas-primitives",
+    "decoder-cardano:pallas-traverse",
+    "decoder-solana:solana-transaction-status",
+    "decoder-ton:tonlib-core"
+  ],
+  "dead_validation_deps_count": 7,
+  "differential_decoders_count": 2,
+  "differential_test_deps": [
+    "decoder-bitcoin:bitcoin",
+    "decoder-crypto-zk:starknet-crypto"
+  ],
+  "fixture_counts": {
+    "decoder-algorand": 6,
+    "decoder-ao": 6,
+    "decoder-aptos": 10,
+    "decoder-bitcoin": 21,
+    "decoder-cardano": 4,
+    "decoder-cosmos-sdk": 12,
+    "decoder-ethereum": 12,
+    "decoder-mina": 6,
+    "decoder-polkadot": 24,
+    "decoder-solana": 6
+  },
+  "fixture_total": 107,
+  "ratchet_improvements": {
+    "core_loc_non_vendored": 4961,
+    "dead_validation_deps_count": 7,
+    "differential_decoders_count": 2,
+    "fixture_total": 107,
+    "raw_bytes_storing_count": 24,
+    "string_fields_in_canonical": 5
+  },
+  "ratchet_regressions": [],
+  "raw_bytes_storing_count": 24,
+  "raw_bytes_storing_decoders": [
+    "decoder-aleo",
+    "decoder-algorand",
+    "decoder-ao",
+    "decoder-aptos",
+    "decoder-avalanche",
+    "decoder-bitcoin",
+    "decoder-bittensor",
+    "decoder-cardano",
+    "decoder-cosmos",
+    "decoder-ethereum",
+    "decoder-filecoin",
+    "decoder-generator",
+    "decoder-move",
+    "decoder-near",
+    "decoder-optimism",
+    "decoder-polkadot",
+    "decoder-solana",
+    "decoder-starknet",
+    "decoder-stellar",
+    "decoder-sui",
+    "decoder-ton",
+    "decoder-tron",
+    "decoder-xrp",
+    "decoder-zcash"
+  ],
+  "string_fields_in_canonical": 5,
+  "workspace_resolves": true
+}
