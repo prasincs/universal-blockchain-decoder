@@ -394,19 +394,21 @@ impl<'a> Canonicalizer<'a> for OptimismTransaction {
                 }
 
                 // Recipient receives value (if different from sender)
-                if deposit.value > 0 && deposit.to.is_some() {
-                    account_changes.push(AccountChange {
-                        address: Address {
-                            bytes: deposit.to.unwrap().to_vec(),
-                            human_readable: Some(format!(
-                                "0x{}",
-                                universal_decoder_core::hex::encode(deposit.to.unwrap())
-                            )),
-                        },
-                        nonce: None,
-                        balance_change: deposit.value as i128,
-                        storage_changes: vec![],
-                    });
+                if deposit.value > 0 {
+                    if let Some(to) = deposit.to {
+                        account_changes.push(AccountChange {
+                            address: Address {
+                                bytes: to.to_vec(),
+                                human_readable: Some(format!(
+                                    "0x{}",
+                                    universal_decoder_core::hex::encode(to)
+                                )),
+                            },
+                            nonce: None,
+                            balance_change: deposit.value as i128,
+                            storage_changes: vec![],
+                        });
+                    }
                 }
 
                 let state_deltas = StateDeltas {
