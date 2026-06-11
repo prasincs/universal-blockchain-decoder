@@ -69,13 +69,15 @@ sidecar so anyone can re-verify against a block explorer. Requires network
 egress to an RPC/Esplora endpoint (blocked in the current sandbox; run from a
 dev machine, commit the fixtures, verification re-runs offline in tests).
 
-- [ ] **Fix `parse_eip4844` field layout** — found during the alloy work: it
-  reuses the EIP-1559 12-field layout, but blob txs have 14 fields
-  (`max_fee_per_blob_gas` + `blob_versioned_hashes` before the signature), so
-  v/r/s would be read from the wrong positions. No fixture currently reaches
-  this code. Fix the parser AND add a real mainnet type-3 fixture (below) in
-  the same iteration — alloy is the oracle.
-  Verify: `differential_eip4844` test passes field-level agreement.
+- [x] **Fix `parse_eip4844` field layout** — proper 14-field parse with
+  `max_fee_per_blob_gas` + `blob_versioned_hashes` (new typed fields on
+  `EthereumTransaction`), mandatory `to`. Fixing it exposed a SECOND 4844
+  bug: `signing_hash()` used type byte 0x02 without blob fields, so sender
+  recovery was wrong for every type-3 tx — also fixed. Oracle:
+  `differential_eip4844_alloy_generated` builds a signed blob tx with
+  alloy's encoder and asserts field-level agreement incl. tx hash and
+  recovered sender. (Done 2026-06. Mainnet type-3 fixture still open below —
+  fetching needs RPC egress this sandbox doesn't have.)
 - [ ] **Replace `eth_erc20_transfer.hex`** with a verified mainnet ERC-20
   transfer: `fetch_corpus.py ethereum 0x<txid> --name eth_erc20_transfer_v2`,
   flip its test from `assert_both_reject` to `assert_agreement`.
@@ -145,6 +147,22 @@ of re-litigating it. Reference decoders first:
   FUZZING_RESULTS.md). Fix them, then add a CI job that `cargo check`s every
   `crates/*/fuzz` so they can't rot silently again.
   Verify: `cd crates/decoder-ethereum/fuzz && cargo check`.
+- [ ] **TON `real_transactions` integration tests fail on main** — 3 of 5
+  tests in `crates/decoder-ton/tests/real_transactions.rs` panic (e.g.
+  `test_real_ton_state_init` at :86). Nobody noticed because CI's
+  integration-test job only runs `cargo test -p universal-decoder-core
+  --tests` — decoder crates' integration tests are NOT in CI (same gap that
+  let the fuzz targets rot). Fix the TON tests AND extend CI to run
+  `cargo test --workspace` (with the known-failing autonomous-executor item
+  resolved or that tool retired first).
+  Verify: `cargo test -p decoder-ton --test real_transactions`.
+- [ ] **Workspace fails clippy on current stable (1.94)** — pre-existing
+  `unnecessary_unwrap` / `large_enum_variant` errors in `decoder-optimism`
+  (src/types.rs:397-403, enum at :13) and `decoder-evm`
+  (src/registry.rs:177-178) fire under `-D warnings` with clippy 1.94 but
+  evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
+  pin/refresh the CI toolchain so local and CI clippy agree.
+  Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
 - [ ] **Run the health report in CI** — add a job calling
   `python3 scripts/loop/health_report.py` (static mode) on every PR; ratchet
   regressions fail the build.
@@ -165,7 +183,9 @@ of re-litigating it. Reference decoders first:
   it and point docs at per-crate fixtures.
 - [ ] **Repoint `tools/autonomous-executor`** at `loop/report.json` +
   `loop/BACKLOG.md` instead of parsing ROADMAP.md prose ROI, or retire it in
-  favor of the `improve-loop` skill.
+  favor of the `improve-loop` skill. Its `roi::tests::test_parse_time_estimate`
+  is failing on main (expects 60.0, gets 120.0 — the ROADMAP prose it parses
+  drifted again, which is Assumption 5 in miniature); fix or retire with it.
 - [ ] **Track TxIR expressiveness honestly**: add per-chain "% of fixture
   data landing in `Operation::Generic` / `extra`" to the health report and
   ratchet it downward. New-chain additions stay frozen until reference chains

@@ -601,6 +601,8 @@ mod tests {
             value: 1000,
             data: vec![],
             access_list: vec![],
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v: 0,
             r: [0u8; 32],
             s: [0u8; 32],

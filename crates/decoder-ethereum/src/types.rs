@@ -100,6 +100,12 @@ pub struct EthereumTransaction {
     /// Access list (EIP-2930)
     pub access_list: Vec<AccessListItem>,
 
+    // EIP-4844 fields
+    /// Max fee per blob gas (EIP-4844)
+    pub max_fee_per_blob_gas: Option<u128>,
+    /// Blob versioned hashes (EIP-4844)
+    pub blob_versioned_hashes: Vec<[u8; 32]>,
+
     // Signature
     /// Signature v component
     pub v: u64,
@@ -199,6 +205,8 @@ impl EthereumTransaction {
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             access_list: vec![],
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -255,6 +263,8 @@ impl EthereumTransaction {
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             access_list,
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -297,6 +307,8 @@ impl EthereumTransaction {
             max_fee_per_gas: Some(max_fee_per_gas),
             max_priority_fee_per_gas: Some(max_priority_fee_per_gas),
             access_list,
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -304,21 +316,59 @@ impl EthereumTransaction {
         })
     }
 
-    /// Parse EIP-4844 transaction (blob transactions)
+    /// Parse EIP-4844 transaction (blob transactions, canonical form
+    /// without the blob sidecar)
     fn parse_eip4844(items: &[RlpItem], raw_bytes: &[u8]) -> Result<Self> {
-        // EIP-4844: Similar to EIP-1559 but with additional blob fields
-        // For minimal implementation, we'll parse the core fields
-        if items.len() < 12 {
+        // EIP-4844: [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas,
+        //            gasLimit, to, value, data, accessList, maxFeePerBlobGas,
+        //            blobVersionedHashes, signatureYParity, signatureR,
+        //            signatureS]
+        if items.len() != 14 {
             return Err(DecoderError::invalid_structure(format!(
-                "EIP-4844 transaction must have at least 12 fields, got {}",
+                "EIP-4844 transaction must have 14 fields, got {}",
                 items.len()
             )));
         }
 
-        // Parse similar to EIP-1559 (blob fields can be ignored for basic decoding)
-        Self::parse_eip1559(items, raw_bytes).map(|mut tx| {
-            tx.tx_type = TxType::Eip4844;
-            tx
+        let chain_id = items[0].as_u64()?;
+        let nonce = items[1].as_u64()?;
+        let max_priority_fee_per_gas = items[2].as_u128()?;
+        let max_fee_per_gas = items[3].as_u128()?;
+        let gas_limit = items[4].as_u128()?;
+        // Blob transactions cannot be contract creations: `to` is mandatory.
+        let to = parse_address_field(&items[5])?;
+        if to.is_none() {
+            return Err(DecoderError::invalid_structure(
+                "EIP-4844 transaction must have a non-empty 'to' address",
+            ));
+        }
+        let value = items[6].as_u128()?;
+        let data = items[7].as_data()?.to_vec();
+        let access_list = parse_access_list(&items[8])?;
+        let max_fee_per_blob_gas = items[9].as_u128()?;
+        let blob_versioned_hashes = parse_blob_versioned_hashes(&items[10])?;
+        let v = items[11].as_u64()?;
+        let r = parse_signature_component(items[12].as_data()?, "r")?;
+        let s = parse_signature_component(items[13].as_data()?, "s")?;
+
+        Ok(Self {
+            tx_type: TxType::Eip4844,
+            nonce,
+            gas_price: None,
+            gas_limit,
+            to,
+            value,
+            data,
+            chain_id: Some(chain_id),
+            max_fee_per_gas: Some(max_fee_per_gas),
+            max_priority_fee_per_gas: Some(max_priority_fee_per_gas),
+            access_list,
+            max_fee_per_blob_gas: Some(max_fee_per_blob_gas),
+            blob_versioned_hashes,
+            v,
+            r,
+            s,
+            raw_bytes: raw_bytes.to_vec(),
         })
     }
 
@@ -404,7 +454,8 @@ impl EthereumTransaction {
         match self.tx_type {
             TxType::Legacy => self.legacy_signing_hash(),
             TxType::Eip2930 => self.typed_signing_hash(0x01),
-            TxType::Eip1559 | TxType::Eip4844 => self.typed_signing_hash(0x02),
+            TxType::Eip1559 => self.typed_signing_hash(0x02),
+            TxType::Eip4844 => self.typed_signing_hash(0x03),
         }
     }
 
@@ -454,7 +505,7 @@ impl EthereumTransaction {
         list.append_u64(self.nonce)?;
 
         // EIP-1559/4844 use max fees, EIP-2930 uses gas_price
-        if type_byte == 0x02 {
+        if type_byte >= 0x02 {
             list.append_optional_u128(self.max_priority_fee_per_gas)?;
             list.append_optional_u128(self.max_fee_per_gas)?;
         } else {
@@ -482,6 +533,17 @@ impl EthereumTransaction {
             }
             Ok(())
         })?;
+
+        // Blob fields (EIP-4844 only)
+        if type_byte == 0x03 {
+            list.append_optional_u128(self.max_fee_per_blob_gas)?;
+            list.append_list(|hashes| {
+                for hash in &self.blob_versioned_hashes {
+                    hashes.append_bytes(hash)?;
+                }
+                Ok(())
+            })?;
+        }
 
         list.finalize()?;
         let rlp_bytes = encoder.finalize();
@@ -614,6 +676,27 @@ fn parse_access_list(item: &RlpItem) -> Result<Vec<AccessListItem>> {
     }
 
     Ok(access_list)
+}
+
+/// Parse blob versioned hashes (EIP-4844): an RLP list of 32-byte hashes
+fn parse_blob_versioned_hashes(item: &RlpItem) -> Result<Vec<[u8; 32]>> {
+    let list = item.as_list()?;
+    let mut hashes = Vec::with_capacity(list.len());
+
+    for hash_item in list {
+        let data = hash_item.as_data()?;
+        if data.len() != 32 {
+            return Err(DecoderError::invalid_structure(
+                "Blob versioned hash must be 32 bytes",
+            ));
+        }
+
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(data);
+        hashes.push(hash);
+    }
+
+    Ok(hashes)
 }
 
 impl ChainEncoder for EthereumTransaction {

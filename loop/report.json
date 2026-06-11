@@ -38,9 +38,7 @@
     "decoder-solana": 6
   },
   "fixture_total": 107,
-  "ratchet_improvements": {
-    "differential_decoders_count": 3
-  },
+  "ratchet_improvements": {},
   "ratchet_regressions": [],
   "raw_bytes_storing_count": 24,
   "raw_bytes_storing_decoders": [
