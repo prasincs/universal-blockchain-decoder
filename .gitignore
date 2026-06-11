@@ -2,7 +2,8 @@
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
+# Cargo.lock is committed for reproducible builds and supply chain security
+# (yanked upstream crates must not break CI)
 
 # IDE
 .vscode/
