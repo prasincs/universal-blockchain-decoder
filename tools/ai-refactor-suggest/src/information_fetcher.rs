@@ -230,7 +230,7 @@ impl InformationFetcher {
         all_releases.retain(|r| r.published_at > cutoff);
 
         // Sort by date (newest first)
-        all_releases.sort_by(|a, b| b.published_at.cmp(&a.published_at));
+        all_releases.sort_by_key(|r| std::cmp::Reverse(r.published_at));
 
         // Keep only top 10 most recent across all repos
         all_releases.truncate(10);
@@ -335,7 +335,7 @@ impl InformationFetcher {
         let mut seen = std::collections::HashSet::new();
         eips.retain(|eip| seen.insert(eip.number));
 
-        eips.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+        eips.sort_by_key(|eip| std::cmp::Reverse(eip.updated_at));
         eips.truncate(10);
 
         Ok(eips)
