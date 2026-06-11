@@ -1,7 +1,7 @@
 {
   "core_loc_non_vendored": 4961,
   "dead_validation_deps_count": 7,
-  "differential_decoders_count": 2,
+  "differential_decoders_count": 3,
   "fixture_total": 107,
   "raw_bytes_storing_count": 24,
   "string_fields_in_canonical": 5

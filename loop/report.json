@@ -17,10 +17,13 @@
     "decoder-ton:tonlib-core"
   ],
   "dead_validation_deps_count": 7,
-  "differential_decoders_count": 2,
+  "differential_decoders_count": 3,
   "differential_test_deps": [
     "decoder-bitcoin:bitcoin",
-    "decoder-crypto-zk:starknet-crypto"
+    "decoder-crypto-zk:starknet-crypto",
+    "decoder-ethereum:alloy-consensus",
+    "decoder-ethereum:alloy-eips",
+    "decoder-ethereum:alloy-primitives"
   ],
   "fixture_counts": {
     "decoder-algorand": 6,
@@ -36,12 +39,7 @@
   },
   "fixture_total": 107,
   "ratchet_improvements": {
-    "core_loc_non_vendored": 4961,
-    "dead_validation_deps_count": 7,
-    "differential_decoders_count": 2,
-    "fixture_total": 107,
-    "raw_bytes_storing_count": 24,
-    "string_fields_in_canonical": 5
+    "differential_decoders_count": 3
   },
   "ratchet_regressions": [],
   "raw_bytes_storing_count": 24,
@@ -72,5 +70,15 @@
     "decoder-zcash"
   ],
   "string_fields_in_canonical": 5,
+  "upstream_outdated": [
+    "alloy-consensus: locked 1.8.3 -> latest 2.0.5",
+    "alloy-eips: locked 1.8.3 -> latest 2.0.5",
+    "bitcoin: locked 0.31.3 -> latest 0.32.100",
+    "pallas-codec: locked 0.30.2 -> latest 1.1.0",
+    "pallas-primitives: locked 0.30.2 -> latest 1.1.0",
+    "pallas-traverse: locked 0.30.2 -> latest 1.1.0",
+    "solana-transaction-status: locked 3.1.14 -> latest 4.0.2"
+  ],
+  "upstream_update_check": "ok (11 crates checked)",
   "workspace_resolves": true
 }

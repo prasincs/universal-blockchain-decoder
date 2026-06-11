@@ -38,6 +38,28 @@ loop/BACKLOG.md                 Prioritized work items derived from measured
 docs/ASSUMPTIONS_REVIEW.md      The audit that seeded all of the above.
 ```
 
+## Signal sources
+
+The loop consumes three kinds of measured signal; nothing else generates work:
+
+1. **Internal invariants** (offline, every run): build/tests, core LOC budget,
+   raw-bytes cheating, dead validation deps, JSON-in-canonical, fixture and
+   fuzz-target inventory.
+2. **Known on-chain transactions**: real transactions fetched by txid via
+   `scripts/loop/fetch_corpus.py`. Fixtures are self-certifying — the txid is
+   recomputed locally from the raw bytes (Keccak-256 for Ethereum,
+   double-SHA256 over the witness-stripped serialization for Bitcoin) before
+   writing, and stored in the sidecar for independent re-verification. The
+   differential tests decode each fixture with both our decoder and the
+   upstream library; any field-level disagreement is a finding. Corpus depth
+   (exotic transaction shapes), not chain count, is what stress-tests TxIR.
+3. **Upstream dependency updates**: the health report compares every locked
+   upstream oracle against the latest stable release on crates.io
+   (`upstream_outdated`). A new upstream release is adversarial-testing work:
+   bump the dev-dep, re-run the differential suite, and treat disagreements
+   with the new version as findings. This check is informational (network-
+   dependent, not ratcheted) and skipped silently when offline.
+
 ## One iteration
 
 1. **Measure**: `python3 scripts/loop/health_report.py` (add `--build`/

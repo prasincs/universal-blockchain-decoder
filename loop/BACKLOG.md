@@ -38,11 +38,17 @@ upstream library, and asserts field-level agreement (not just "both parsed").
 Each closed item must raise `differential_decoders_count` and reduce
 `dead_validation_deps_count` in the health report.
 
-- [ ] **Ethereum vs alloy** — re-add `alloy-primitives`/`alloy-rlp` as
-  dev-deps (they were commented out for "version conflicts"; resolve them or
-  pin), differential-test legacy/EIP-1559/EIP-2930/EIP-4844 fixtures:
-  nonce, gas fields, to, value, input, access list, v/r/s, tx hash.
+- [x] **Ethereum vs alloy** — added `alloy-consensus`/`alloy-eips`/
+  `alloy-primitives` (1.8.3, pinned by Cargo.lock) as dev-deps; the old
+  "version conflicts" no longer reproduce.
+  `tests/alloy_differential.rs` compares type, chain_id, nonce, gas fields,
+  to, value, input, access list, v/r/s parity, tx hash, and recovered sender.
   Verify: `cargo test -p decoder-ethereum --test alloy_differential`.
+  (Done 2026-06; `differential_decoders_count` 2 -> 3.)
+  **Findings produced**: 2 of 6 "real" fixtures are defective —
+  `eth_eip2930.hex` is an unsigned 8-field payload, `eth_erc20_transfer.hex`
+  has corrupt RLP (declares 176 payload bytes, contains 175). Both decoders
+  agree on rejection; the tests document this. Replacement items below.
 - [ ] **Solana vs solana-transaction-status** (dep declared, unused).
   Verify: `cargo test -p decoder-solana` includes a differential test file.
 - [ ] **Cardano vs pallas** (3 deps declared, unused).
@@ -52,6 +58,56 @@ Each closed item must raise `differential_decoders_count` and reduce
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
+
+## P1 — corpus of KNOWN on-chain transactions
+
+The differential suite is only as strong as its corpus, and the corpus rotted
+(two defective "real" fixtures, above). `scripts/loop/fetch_corpus.py` fetches
+transactions by txid and writes self-certifying fixtures: the txid is
+recomputed locally from the raw bytes before writing, and stored in the
+sidecar so anyone can re-verify against a block explorer. Requires network
+egress to an RPC/Esplora endpoint (blocked in the current sandbox; run from a
+dev machine, commit the fixtures, verification re-runs offline in tests).
+
+- [ ] **Fix `parse_eip4844` field layout** — found during the alloy work: it
+  reuses the EIP-1559 12-field layout, but blob txs have 14 fields
+  (`max_fee_per_blob_gas` + `blob_versioned_hashes` before the signature), so
+  v/r/s would be read from the wrong positions. No fixture currently reaches
+  this code. Fix the parser AND add a real mainnet type-3 fixture (below) in
+  the same iteration — alloy is the oracle.
+  Verify: `differential_eip4844` test passes field-level agreement.
+- [ ] **Replace `eth_erc20_transfer.hex`** with a verified mainnet ERC-20
+  transfer: `fetch_corpus.py ethereum 0x<txid> --name eth_erc20_transfer_v2`,
+  flip its test from `assert_both_reject` to `assert_agreement`.
+- [ ] **Replace `eth_eip2930.hex`** with a real SIGNED mainnet EIP-2930 tx
+  (they are rare; any tx with type 0x1 works), same procedure.
+- [ ] **Add EIP-4844 blob tx fixture** (type 0x3, the canonical-bytes form
+  without sidecar blobs as returned by eth_getRawTransactionByHash).
+- [ ] **Bitcoin corpus depth**: add a Taproot key-path spend, a Taproot
+  script-path spend, and a large multi-input SegWit tx via
+  `fetch_corpus.py bitcoin <txid>`; wire into the existing differential test.
+- [ ] **Corpus integrity test**: a test per decoder that recomputes each
+  fixture's txid from its raw bytes and compares against the sidecar's
+  `txid` field, so corpus corruption fails offline CI (this is what would
+  have caught `eth_erc20_transfer.hex` years earlier).
+
+## P1 — upstream dependency updates as a signal
+
+The health report now queries crates.io for newer stable versions of every
+locked upstream oracle (`upstream_outdated` in `loop/report.json`).
+
+- [ ] **Policy**: when `upstream_outdated` lists a library that has
+  differential tests, bumping it and re-running the suite IS a backlog item
+  (treat each entry as auto-generated work). Disagreements after a bump are
+  findings: minimal repro fixture + backlog entry before deciding which side
+  is wrong.
+- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [ ] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
+  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`.
+- [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
+  (e.g. monthly), gated by the full test suite + health report, so the
+  committed Cargo.lock doesn't fossilize.
 
 ## P1 — canonical form must actually be canonical
 

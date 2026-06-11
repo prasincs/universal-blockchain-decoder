@@ -18,6 +18,9 @@ Findings that seeded the system: `docs/ASSUMPTIONS_REVIEW.md`.
      this iteration; skip step 2.
    - Compare output against `loop/report.json` from the last commit; note any
      drift.
+   - If `upstream_outdated` is non-empty for a library that has differential
+     tests, append a "bump + re-run differential suite" item to the backlog
+     (P1, upstream-updates section) before selecting.
 
 2. **Select** the topmost `[ ]` item in `loop/BACKLOG.md` whose "Blocked by"
    (if any) is resolved. Mark it `[~]`. Do not invent a different task; if you

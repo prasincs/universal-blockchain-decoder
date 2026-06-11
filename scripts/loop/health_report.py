@@ -46,6 +46,8 @@ REFERENCE_CRATES = [
 UPSTREAM_LIBS = [
     "bitcoin",
     "alloy-primitives",
+    "alloy-consensus",
+    "alloy-eips",
     "alloy-rlp",
     "pallas-codec",
     "pallas-primitives",
@@ -202,6 +204,60 @@ def check_fixtures(report):
     report["fixture_total"] = sum(counts.values())
 
 
+def locked_versions():
+    """name -> set of versions pinned in Cargo.lock."""
+    lock = REPO / "Cargo.lock"
+    versions = {}
+    if not lock.is_file():
+        return versions
+    name = None
+    for line in lock.read_text(encoding="utf-8").splitlines():
+        m = re.match(r'name = "([^"]+)"', line)
+        if m:
+            name = m.group(1)
+            continue
+        m = re.match(r'version = "([^"]+)"', line)
+        if m and name:
+            versions.setdefault(name, set()).add(m.group(1))
+            name = None
+    return versions
+
+
+def check_upstream_updates(report):
+    """Upstream drift signal: are our differential oracles outdated?
+
+    A new upstream release is adversarial-testing work: bump the dev-dep and
+    re-run the differential suite — disagreements with the new version are
+    exactly the findings this project exists to produce. Network-dependent,
+    so informational (not ratcheted); skipped silently when offline.
+    """
+    import urllib.error
+    import urllib.request
+
+    locked = locked_versions()
+    outdated, checked = [], 0
+    for lib in UPSTREAM_LIBS:
+        if lib not in locked:
+            continue
+        url = f"https://crates.io/api/v1/crates/{lib}"
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "universal-blockchain-decoder health_report"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.load(resp)
+        except (urllib.error.URLError, OSError, ValueError):
+            report["upstream_update_check"] = "skipped (crates.io unreachable)"
+            return
+        checked += 1
+        latest = data.get("crate", {}).get("max_stable_version")
+        if latest and latest not in locked[lib]:
+            ours = ", ".join(sorted(locked[lib]))
+            outdated.append(f"{lib}: locked {ours} -> latest {latest}")
+    report["upstream_update_check"] = f"ok ({checked} crates checked)"
+    report["upstream_outdated"] = sorted(outdated)
+
+
 def check_build(report):
     ok, out = run(["cargo", "check", "--workspace", "--all-targets"], timeout=3600)
     report["workspace_builds"] = ok
@@ -295,6 +351,9 @@ def summarize(report):
     lines.append(f"String/JSON fields in canonical form: {report['string_fields_in_canonical']}")
     lines.append(f"fixture files (per-crate total): {report['fixture_total']}")
     lines.append(f"crates with fuzz targets: {report['crates_with_fuzz_targets']}")
+    lines.append(f"upstream update check: {report.get('upstream_update_check', 'not run')}")
+    for entry in report.get("upstream_outdated", []):
+        lines.append(f"  OUTDATED ORACLE: {entry}")
     if report["ratchet_regressions"]:
         lines.append("")
         lines.append("RATCHET REGRESSIONS:")
@@ -309,6 +368,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--build", action="store_true", help="run cargo check --workspace")
     ap.add_argument("--test", action="store_true", help="run cargo test on reference crates")
+    ap.add_argument("--offline", action="store_true", help="skip the crates.io freshness check")
     ap.add_argument("--update-ratchet", action="store_true")
     args = ap.parse_args()
 
@@ -320,6 +380,8 @@ def main():
     check_json_in_canonical(report)
     check_fuzz_targets(report)
     check_fixtures(report)
+    if not args.offline:
+        check_upstream_updates(report)
     if args.build and not hard_fail:
         hard_fail |= not check_build(report)
     if args.test and not hard_fail:
