@@ -34,3 +34,7 @@ crates/*/fuzz/Cargo.lock
 
 # Local Netlify folder
 .netlify
+
+# Python bytecode (loop tooling)
+__pycache__/
+*.pyc
