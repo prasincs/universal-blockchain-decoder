@@ -45,7 +45,6 @@ fn create_empty_txir<const V: u8>(chain: &impl ChainIdentity) -> TxIR<'_, V> {
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     )
 }
@@ -111,7 +110,6 @@ fn test_txir_with_transfer() {
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     );
 
@@ -185,7 +183,6 @@ fn test_txir_with_multiple_operations() {
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     );
 
@@ -242,7 +239,6 @@ fn test_txir_with_signatures() {
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     );
 

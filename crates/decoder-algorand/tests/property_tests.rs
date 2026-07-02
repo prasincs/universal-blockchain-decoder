@@ -212,11 +212,9 @@ mod specific_properties {
                         "Payment transaction should have operations"
                     );
 
-                    // Should have account changes for sender and receiver
-                    prop_assert!(
-                        !ir.state_deltas.account_changes.is_empty(),
-                        "Payment should have account changes"
-                    );
+                    // account_changes was removed from TxIR
+                    // (CONCEPTS_REVIEW.md C1).
+                    prop_assert!(ir.state_deltas.inputs.is_empty());
                 }
             }
         }
@@ -233,21 +231,11 @@ mod specific_properties {
 
             if let Ok(tx) = AlgorandDecoder::decode(&tx_data) {
                 if let Ok(ir) = tx.canonicalize() {
-                    // Find sender's account change
-                    let sender_change = ir.state_deltas.account_changes.iter()
-                        .find(|ac| ac.address.bytes == sender);
-
-                    if let Some(change) = sender_change {
-                        prop_assert!(
-                            change.balance_change < 0,
-                            "Sender should lose balance (fee + amount)"
-                        );
-
-                        prop_assert!(
-                            change.balance_change <= -(fee as i128),
-                            "Sender should lose at least the fee"
-                        );
-                    }
+                    // account_changes was removed from TxIR
+                    // (CONCEPTS_REVIEW.md C1): fee/amount balance guesses
+                    // are no longer fabricated.
+                    prop_assert!(ir.state_deltas.inputs.is_empty());
+                    let _ = (amount, fee);
                 }
             }
         }

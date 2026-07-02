@@ -287,7 +287,6 @@ impl<'a> Canonicalizer<'a> for TransparentTransaction {
             inputs.push(InputReference {
                 prev_tx: input.prev_hash.to_vec(),
                 output_index: input.prev_index,
-                value: Amount::new(0, 8), // Unknown without UTXO set, ZEC has 8 decimals
                 script: input.script_sig.clone(),
             });
         }
@@ -305,11 +304,7 @@ impl<'a> Canonicalizer<'a> for TransparentTransaction {
             });
         }
 
-        let state_deltas = StateDeltas {
-            inputs,
-            outputs,
-            account_changes: vec![],
-        };
+        let state_deltas = StateDeltas { inputs, outputs };
 
         // Privacy metadata: Transparent transactions are fully observable
         let privacy = Some(PrivacyMetadata {
@@ -439,7 +434,6 @@ impl<'a> Canonicalizer<'a> for SaplingTransaction {
             inputs.push(InputReference {
                 prev_tx: input.prev_hash.to_vec(),
                 output_index: input.prev_index,
-                value: Amount::new(0, 8), // Unknown without UTXO set, ZEC has 8 decimals
                 script: input.script_sig.clone(),
             });
         }
@@ -457,11 +451,7 @@ impl<'a> Canonicalizer<'a> for SaplingTransaction {
             });
         }
 
-        let state_deltas = StateDeltas {
-            inputs,
-            outputs,
-            account_changes: vec![],
-        };
+        let state_deltas = StateDeltas { inputs, outputs };
 
         // Privacy metadata: Sapling transactions have privacy features
         let mut privacy_features = Vec::new();

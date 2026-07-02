@@ -34,7 +34,6 @@ fn create_test_canonical_tx() -> CanonicalTxIR {
         state_deltas: CanonicalStateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     }
 }
@@ -116,7 +115,6 @@ fn test_empty_transaction() {
         state_deltas: CanonicalStateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     };
 

@@ -36,8 +36,9 @@ fn test_decode_real_transfer_transaction() {
         panic!("Expected Transfer operation");
     }
 
-    // Validate account changes
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 2); // From and To
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]

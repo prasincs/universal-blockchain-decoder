@@ -110,9 +110,10 @@ fn test_full_ao_message_workflow() {
     assert_eq!(tx_ir.authorization.public_keys.len(), 1);
     assert_eq!(tx_ir.authorization.signature_scheme, SignatureScheme::EdDsa);
 
-    // Verify state deltas
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 1);
-    assert_eq!(tx_ir.state_deltas.account_changes[0].address.bytes, target);
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
+    let _ = target;
 }
 
 /// Test decoding minimal message (no optional fields)
@@ -162,8 +163,9 @@ fn test_minimal_ao_message() {
     // No operations without Action tag
     assert_eq!(tx_ir.operations.len(), 0);
 
-    // No account changes without target
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 0);
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 /// Test validation errors

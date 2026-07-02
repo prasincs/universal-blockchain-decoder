@@ -326,7 +326,19 @@ pub struct GenericOperation {
     pub metadata: String,
 }
 
-/// State deltas representing inputs consumed and outputs created
+/// Byte-derivable input/output facts (UTXO model)
+///
+/// This structure contains ONLY facts present in the raw transaction bytes:
+/// which outpoints are consumed and which outputs are created. It is NOT a
+/// prediction of state effects — a raw transaction does not determine
+/// balance changes (that requires chain state: the UTXO set, account
+/// balances, gas execution). Effect prediction, if ever needed, is a
+/// separate `effects(tx, state)` concern outside TxIR.
+///
+/// History: this struct used to carry `account_changes` (fabricated balance
+/// deltas — sentinel values, fee-only guesses) and per-input `value` (not
+/// present in UTXO transaction bytes). Both were removed; see
+/// `docs/CONCEPTS_REVIEW.md` C1.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StateDeltas {
     /// Inputs consumed (for UTXO model)
@@ -334,12 +346,13 @@ pub struct StateDeltas {
 
     /// Outputs created (for UTXO model)
     pub outputs: Vec<OutputValue>,
-
-    /// Account state changes (for Account model)
-    pub account_changes: Vec<AccountChange>,
 }
 
-/// Reference to an input (UTXO or account state)
+/// Reference to an input being consumed (an outpoint)
+///
+/// Note: deliberately does NOT carry the input's value — the value of a
+/// consumed output lives in the referenced prior transaction, not in the
+/// bytes being decoded (`docs/CONCEPTS_REVIEW.md` C1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InputReference {
     /// Previous transaction hash
@@ -347,9 +360,6 @@ pub struct InputReference {
 
     /// Output index
     pub output_index: u32,
-
-    /// Value consumed
-    pub value: Amount,
 
     /// Script/conditions
     pub script: Vec<u8>,
@@ -369,32 +379,6 @@ pub struct OutputValue {
 
     /// Script/conditions
     pub script: Vec<u8>,
-}
-
-/// Account state change (for account-based models)
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AccountChange {
-    /// Account address
-    pub address: Address,
-
-    /// Sequence number/nonce
-    pub nonce: Option<u64>,
-
-    /// Balance change
-    pub balance_change: i128,
-
-    /// Storage changes
-    pub storage_changes: Vec<StorageChange>,
-}
-
-/// Storage change in an account
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StorageChange {
-    /// Storage key
-    pub key: Vec<u8>,
-
-    /// New value (None for deletion)
-    pub value: Option<Vec<u8>>,
 }
 
 /// Address representation (normalized across chains)
@@ -724,7 +708,6 @@ mod tests {
             StateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         );
 

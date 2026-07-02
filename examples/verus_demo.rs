@@ -100,7 +100,6 @@ fn create_sample_transaction() -> CanonicalTxIR {
         state_deltas: CanonicalStateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     }
 }

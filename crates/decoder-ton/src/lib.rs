@@ -242,18 +242,11 @@ impl<'a> Canonicalizer<'a> for TonTransaction {
             signature_scheme: SignatureScheme::EdDsa,
         };
 
+        // Balance/nonce effect guesses are NOT byte-derivable and were removed
+        // from TxIR (docs/CONCEPTS_REVIEW.md C1).
         let state_deltas = StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![AccountChange {
-                address: Address {
-                    bytes: self.account_addr.to_vec(),
-                    human_readable: None,
-                },
-                nonce: Some(self.lt),
-                balance_change: 0,
-                storage_changes: vec![],
-            }],
         };
 
         Ok(TxIR::new(

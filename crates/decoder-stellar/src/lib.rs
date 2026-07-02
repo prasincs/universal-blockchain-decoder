@@ -322,21 +322,11 @@ impl StellarTransaction {
 
     /// Build state deltas (account changes)
     fn build_state_deltas(&self) -> Result<StateDeltas> {
-        // Source account pays fee and potentially sends funds
-        let account_changes = vec![AccountChange {
-            address: Address {
-                bytes: self.source_account.clone(),
-                human_readable: None,
-            },
-            nonce: Some(self.sequence_number as u64),
-            balance_change: -(self.fee as i128), // Fee is always negative
-            storage_changes: vec![],
-        }];
-
+        // Balance/nonce effect guesses are NOT byte-derivable and were removed
+        // from TxIR (docs/CONCEPTS_REVIEW.md C1).
         Ok(StateDeltas {
             inputs: vec![],  // Account-based chain, no UTXOs
             outputs: vec![], // Account-based chain, no UTXOs
-            account_changes,
         })
     }
 

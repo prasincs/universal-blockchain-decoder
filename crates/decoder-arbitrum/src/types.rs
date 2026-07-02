@@ -470,7 +470,6 @@ fn canonicalize_deposit(deposit: &DepositTransaction) -> Result<TxIR<'_, 1>> {
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain =
         crate::ArbitrumChain::from_chain_id(deposit.chain_id).unwrap_or(crate::ArbitrumChain::ONE);
@@ -534,7 +533,6 @@ fn canonicalize_unsigned(unsigned: &UnsignedTransaction) -> Result<TxIR<'_, 1>> 
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain =
         crate::ArbitrumChain::from_chain_id(unsigned.chain_id).unwrap_or(crate::ArbitrumChain::ONE);
@@ -601,7 +599,6 @@ fn canonicalize_contract(contract: &ContractTransaction) -> Result<TxIR<'_, 1>> 
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain =
         crate::ArbitrumChain::from_chain_id(contract.chain_id).unwrap_or(crate::ArbitrumChain::ONE);
@@ -648,7 +645,6 @@ fn canonicalize_retry(retry: &RetryTransaction) -> Result<TxIR<'_, 1>> {
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain =
         crate::ArbitrumChain::from_chain_id(retry.chain_id).unwrap_or(crate::ArbitrumChain::ONE);
@@ -720,7 +716,6 @@ fn canonicalize_submit_retryable(retryable: &SubmitRetryableTransaction) -> Resu
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain = crate::ArbitrumChain::from_chain_id(retryable.chain_id)
         .unwrap_or(crate::ArbitrumChain::ONE);
@@ -766,7 +761,6 @@ fn canonicalize_internal(internal: &InternalTransaction) -> Result<TxIR<'_, 1>> 
     let state_deltas = StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes: vec![],
     };
     let chain =
         crate::ArbitrumChain::from_chain_id(internal.chain_id).unwrap_or(crate::ArbitrumChain::ONE);

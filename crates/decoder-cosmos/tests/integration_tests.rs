@@ -285,9 +285,10 @@ fn test_decode_ibc_transfer_transaction() {
     let tx_ir = decoded.canonicalize().unwrap();
     assert_eq!(tx_ir.operations.len(), 1);
 
-    // Verify IBC transfer creates state delta with outputs (tokens leaving chain)
-    assert!(!tx_ir.state_deltas.outputs.is_empty());
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 1); // Sender account
+    // IBC pseudo-outputs and account_changes were removed from TxIR
+    // (CONCEPTS_REVIEW.md C1): Cosmos is an account chain with no
+    // byte-derivable UTXO facts, and balance effects were fabricated.
+    assert!(tx_ir.state_deltas.outputs.is_empty());
 }
 
 #[test]

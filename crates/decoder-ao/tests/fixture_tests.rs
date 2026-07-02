@@ -134,8 +134,9 @@ fn test_solana_minimal_message_fixture() {
     // No operations without Action tag
     assert_eq!(tx_ir.operations.len(), 0);
 
-    // No state deltas without target
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 0);
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]

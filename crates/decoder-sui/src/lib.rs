@@ -326,26 +326,11 @@ impl SuiTransaction {
 
     /// Build state deltas from transaction
     fn build_state_deltas(&self) -> StateDeltas {
-        let sender_address = Address {
-            bytes: self.sender().to_vec(),
-            human_readable: Some(universal_decoder_core::hex::encode(self.sender())),
-        };
-
-        // Calculate gas cost as i128 (negative for spending)
-        let gas_cost = (self.gas_budget() * self.gas_price()) as i128;
-
-        // Create account change for gas payment
-        let account_changes = vec![AccountChange {
-            address: sender_address,
-            nonce: None,
-            balance_change: -gas_cost,
-            storage_changes: vec![],
-        }];
-
+        // Gas-cost balance guesses are NOT byte-derivable state effects and
+        // were removed from TxIR (docs/CONCEPTS_REVIEW.md C1).
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         }
     }
 }

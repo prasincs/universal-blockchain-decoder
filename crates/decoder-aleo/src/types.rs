@@ -345,61 +345,13 @@ impl AleoTransaction {
     }
 
     fn build_state_deltas(&self) -> StateDeltas {
-        let mut account_changes = Vec::new();
-
-        if let TransactionType::Execute(exec) = &self.transaction_type {
-            for transition in &exec.transitions {
-                if !transition.finalize.is_empty() {
-                    let mut storage_changes = Vec::new();
-
-                    for finalize_op in &transition.finalize {
-                        match finalize_op {
-                            FinalizeOperation::InsertMapping {
-                                name: _,
-                                key,
-                                value,
-                            }
-                            | FinalizeOperation::UpdateMapping {
-                                name: _,
-                                key,
-                                value,
-                            } => {
-                                storage_changes.push(StorageChange {
-                                    key: key.clone(),
-                                    value: Some(value.clone()),
-                                });
-                            }
-                            FinalizeOperation::RemoveMapping { name: _, key } => {
-                                storage_changes.push(StorageChange {
-                                    key: key.clone(),
-                                    value: None,
-                                });
-                            }
-                            FinalizeOperation::InitializeMapping { name: _ } => {
-                                // No-op for initialization
-                            }
-                        }
-                    }
-
-                    if !storage_changes.is_empty() {
-                        account_changes.push(AccountChange {
-                            address: Address {
-                                bytes: transition.program_id.as_bytes().to_vec(),
-                                human_readable: Some(transition.program_id.clone()),
-                            },
-                            nonce: None,
-                            balance_change: 0,
-                            storage_changes,
-                        });
-                    }
-                }
-            }
-        }
-
+        // Effects-shaped structures (AccountChange/StorageChange) were removed
+        // from TxIR (docs/CONCEPTS_REVIEW.md C1). Aleo finalize operations ARE
+        // byte-derivable and should return as typed operation content under the
+        // C3 follow-up (Generic no-information-destruction rule).
         StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         }
     }
 

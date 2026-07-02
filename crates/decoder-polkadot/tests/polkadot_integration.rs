@@ -252,16 +252,9 @@ fn test_state_deltas() {
 
     let tx_ir = tx.canonicalize().unwrap();
 
-    // Should have account changes (sender nonce, balances)
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
-
-    // Verify nonce change is recorded for sender
-    let has_nonce_change = tx_ir
-        .state_deltas
-        .account_changes
-        .iter()
-        .any(|change| change.nonce.is_some());
-    assert!(has_nonce_change, "Should record nonce change for sender");
+    // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1):
+    // nonce/balance effects are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]

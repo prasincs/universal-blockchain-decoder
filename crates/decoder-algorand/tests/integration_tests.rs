@@ -224,26 +224,10 @@ fn test_canonicalize_payment_transaction() {
         _ => panic!("Expected Transfer operation"),
     }
 
-    // Verify state deltas (account changes)
-    assert_eq!(tx_ir.state_deltas.account_changes.len(), 2);
-
-    // Sender should lose amount + fee
-    let sender_change = tx_ir
-        .state_deltas
-        .account_changes
-        .iter()
-        .find(|ac| ac.address.bytes == sender)
-        .expect("Sender account change not found");
-    assert_eq!(sender_change.balance_change, -1_001_000); // -(amount + fee)
-
-    // Receiver should gain amount
-    let receiver_change = tx_ir
-        .state_deltas
-        .account_changes
-        .iter()
-        .find(|ac| ac.address.bytes == receiver)
-        .expect("Receiver account change not found");
-    assert_eq!(receiver_change.balance_change, 1_000_000);
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
+    let _ = (&sender, &receiver);
 }
 
 #[test]

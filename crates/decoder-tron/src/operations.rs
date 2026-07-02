@@ -208,44 +208,11 @@ fn parse_unfreeze_balance_contract(data: &[u8]) -> Result<Operation> {
 }
 
 /// Parse state deltas from contracts
-pub fn parse_state_deltas(contracts: &[Contract]) -> Result<StateDeltas> {
-    let mut account_changes = Vec::new();
-
-    for contract in contracts {
-        let contract_type = ContractType::try_from(contract.r#type).ok();
-        let parameter = contract.parameter.as_ref();
-
-        if let (Some(ContractType::TransferContract), Some(param)) = (contract_type, parameter) {
-            if let Ok(transfer) = TransferContract::decode(param.value.as_slice()) {
-                // From account: balance decrease
-                account_changes.push(AccountChange {
-                    address: Address {
-                        bytes: transfer.owner_address.clone(),
-                        human_readable: Some(address_to_hex(&transfer.owner_address)),
-                    },
-                    nonce: None,
-                    balance_change: -(transfer.amount as i128),
-                    storage_changes: vec![],
-                });
-
-                // To account: balance increase
-                account_changes.push(AccountChange {
-                    address: Address {
-                        bytes: transfer.to_address.clone(),
-                        human_readable: Some(address_to_hex(&transfer.to_address)),
-                    },
-                    nonce: None,
-                    balance_change: transfer.amount as i128,
-                    storage_changes: vec![],
-                });
-            }
-        }
-        // Other contract types can be added here
-    }
-
+pub fn parse_state_deltas(_contracts: &[Contract]) -> Result<StateDeltas> {
+    // Balance/nonce effect guesses are NOT byte-derivable and were removed
+    // from TxIR (docs/CONCEPTS_REVIEW.md C1).
     Ok(StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes,
     })
 }

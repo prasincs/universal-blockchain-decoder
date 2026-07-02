@@ -304,7 +304,6 @@ impl<'a> Canonicalizer<'a> for CardanoTransaction {
             .map(|input| InputReference {
                 prev_tx: input.transaction_id.clone(),
                 output_index: input.index as u32,
-                value: Amount::new(0, 6), // We don't have the amount here
                 script: vec![],
             })
             .collect();
@@ -326,11 +325,7 @@ impl<'a> Canonicalizer<'a> for CardanoTransaction {
             })
             .collect();
 
-        let state_deltas = StateDeltas {
-            inputs,
-            outputs,
-            account_changes: vec![],
-        };
+        let state_deltas = StateDeltas { inputs, outputs };
 
         // Create operations
         let operations = vec![Operation::Transfer(Transfer {

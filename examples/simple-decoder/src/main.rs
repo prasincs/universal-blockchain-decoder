@@ -102,8 +102,9 @@ fn demo_ethereum_decoder(registry: &HookRegistry) {
                     println!("  - Chain: {}", tx_ir.chain.name);
                     println!("  - Operations: {}", tx_ir.operations.len());
                     println!(
-                        "  - Account changes: {}",
-                        tx_ir.state_deltas.account_changes.len()
+                        "  - Inputs/outputs: {}/{}",
+                        tx_ir.state_deltas.inputs.len(),
+                        tx_ir.state_deltas.outputs.len()
                     );
                 }
                 Err(e) => println!("✗ Canonicalization failed: {}", e),

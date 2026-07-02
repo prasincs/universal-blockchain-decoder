@@ -171,14 +171,12 @@ pub struct CanonicalGenericOperation {
 pub struct CanonicalStateDeltas {
     pub inputs: Vec<CanonicalInputReference>,
     pub outputs: Vec<CanonicalOutputValue>,
-    pub account_changes: Vec<CanonicalAccountChange>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 pub struct CanonicalInputReference {
     pub prev_tx: Vec<u8>,
     pub output_index: u32,
-    pub value: CanonicalAmount,
     pub script: Vec<u8>,
 }
 
@@ -188,20 +186,6 @@ pub struct CanonicalOutputValue {
     pub address: CanonicalAddress,
     pub value: CanonicalAmount,
     pub script: Vec<u8>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
-pub struct CanonicalAccountChange {
-    pub address: CanonicalAddress,
-    pub nonce: Option<u64>,
-    pub balance_change: i128,
-    pub storage_changes: Vec<CanonicalStorageChange>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
-pub struct CanonicalStorageChange {
-    pub key: Vec<u8>,
-    pub value: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
@@ -446,7 +430,6 @@ impl From<&StateDeltas> for CanonicalStateDeltas {
         Self {
             inputs: sd.inputs.iter().map(Into::into).collect(),
             outputs: sd.outputs.iter().map(Into::into).collect(),
-            account_changes: sd.account_changes.iter().map(Into::into).collect(),
         }
     }
 }
@@ -456,7 +439,6 @@ impl From<&InputReference> for CanonicalInputReference {
         Self {
             prev_tx: i.prev_tx.clone(),
             output_index: i.output_index,
-            value: (&i.value).into(),
             script: i.script.clone(),
         }
     }
@@ -469,26 +451,6 @@ impl From<&OutputValue> for CanonicalOutputValue {
             address: (&o.address).into(),
             value: (&o.value).into(),
             script: o.script.clone(),
-        }
-    }
-}
-
-impl From<&AccountChange> for CanonicalAccountChange {
-    fn from(ac: &AccountChange) -> Self {
-        Self {
-            address: (&ac.address).into(),
-            nonce: ac.nonce,
-            balance_change: ac.balance_change,
-            storage_changes: ac.storage_changes.iter().map(Into::into).collect(),
-        }
-    }
-}
-
-impl From<&StorageChange> for CanonicalStorageChange {
-    fn from(sc: &StorageChange) -> Self {
-        Self {
-            key: sc.key.clone(),
-            value: sc.value.clone(),
         }
     }
 }
@@ -552,7 +514,6 @@ mod tests {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -594,7 +555,6 @@ mod tests {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -633,7 +593,6 @@ mod tests {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 

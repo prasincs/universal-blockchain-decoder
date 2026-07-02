@@ -273,25 +273,11 @@ impl<'a> Canonicalizer<'a> for XrpTransaction {
             }
         }
 
-        // Build state deltas (account-based model)
-        let mut account_changes = vec![];
-
-        if let (Some(account), Some(fee)) = (&self.account, self.fee) {
-            account_changes.push(AccountChange {
-                address: Address {
-                    bytes: account.to_vec(),
-                    human_readable: Some(Self::format_account(account)),
-                },
-                nonce: self.sequence.map(|s| s as u64),
-                balance_change: -(fee as i128), // Negative for fee payment
-                storage_changes: vec![],
-            });
-        }
-
+        // Fee-only balance guesses are NOT byte-derivable state effects and
+        // were removed from TxIR (docs/CONCEPTS_REVIEW.md C1).
         let state_deltas = StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         };
 
         Ok(TxIR::new(

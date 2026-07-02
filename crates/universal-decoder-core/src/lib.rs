@@ -79,10 +79,10 @@ pub mod prelude {
         Hook, HookContext, HookRegistry, HookRegistryBuilder, HookResult, HookStage,
     };
     pub use crate::ir::{
-        AccountChange, Address, Amount, AssetId, AuthorizationPackage, ContractCall,
-        ContractDeploy, GenericOperation, InputReference, KeyType, Operation, OutputValue,
-        PublicKey, ResourceLimits, ResourceType, Signature, SignatureScheme, Stake,
-        StakeOperationType, StateDeltas, StorageChange, Transfer, TxIR, TxMetadata,
+        Address, Amount, AssetId, AuthorizationPackage, ContractCall, ContractDeploy,
+        GenericOperation, InputReference, KeyType, Operation, OutputValue, PublicKey,
+        ResourceLimits, ResourceType, Signature, SignatureScheme, Stake, StakeOperationType,
+        StateDeltas, Transfer, TxIR, TxMetadata,
     };
     pub use crate::privacy::{
         AddressPrivacyType, ComplianceProof, ConfidentialAmount, DecryptionPolicy,

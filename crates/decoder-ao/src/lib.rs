@@ -253,26 +253,12 @@ fn build_authorization(msg: &AOMessage) -> Result<AuthorizationPackage> {
 }
 
 /// Build state deltas from AO message
-fn build_state_deltas(msg: &AOMessage) -> Result<StateDeltas> {
-    let mut account_changes = Vec::new();
-
-    // Add target process state change
-    if let Some(target) = &msg.target {
-        account_changes.push(AccountChange {
-            address: Address {
-                bytes: target.clone(),
-                human_readable: msg.target_string(),
-            },
-            nonce: msg.nonce,
-            balance_change: 0,       // AO doesn't track balances in messages
-            storage_changes: vec![], // State derived from message history
-        });
-    }
-
+fn build_state_deltas(_msg: &AOMessage) -> Result<StateDeltas> {
+    // Balance/nonce effect guesses are NOT byte-derivable and were removed
+    // from TxIR (docs/CONCEPTS_REVIEW.md C1).
     Ok(StateDeltas {
         inputs: vec![],  // AO doesn't use UTXO model
         outputs: vec![], // AO doesn't use UTXO model
-        account_changes,
     })
 }
 

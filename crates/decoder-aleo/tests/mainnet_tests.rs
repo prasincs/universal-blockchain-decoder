@@ -343,8 +343,9 @@ fn test_decode_aleo_with_finalize_operations_mainnet() {
     let tx = result.unwrap();
     let tx_ir = tx.canonicalize().unwrap();
 
-    // Should have state deltas (account changes)
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
+    // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1); finalize
+    // content returns as typed operations under the C3 follow-up.
+    assert!(!tx_ir.operations.is_empty());
 }
 
 #[test]

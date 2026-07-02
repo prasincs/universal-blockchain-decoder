@@ -856,39 +856,11 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             }));
         }
 
-        // Build state deltas
-        let mut account_changes = vec![AccountChange {
-            address: Address {
-                bytes: sender_address.to_vec(),
-                human_readable: Some(format!(
-                    "0x{}",
-                    universal_decoder_core::hex::encode(sender_address)
-                )),
-            },
-            nonce: Some(self.nonce),
-            balance_change: -(self.value as i128),
-            storage_changes: vec![],
-        }];
-
-        if let Some(recipient) = self.to {
-            account_changes.push(AccountChange {
-                address: Address {
-                    bytes: recipient.to_vec(),
-                    human_readable: Some(format!(
-                        "0x{}",
-                        universal_decoder_core::hex::encode(recipient)
-                    )),
-                },
-                nonce: None,
-                balance_change: self.value as i128,
-                storage_changes: vec![],
-            });
-        }
-
+        // State effects (balance changes) are NOT byte-derivable and were
+        // removed from TxIR - see docs/CONCEPTS_REVIEW.md C1.
         let state_deltas = StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         };
 
         // Use the actual chain ID from the transaction, not hardcoded EthereumChain

@@ -349,24 +349,12 @@ fn build_authorization(variant: &StarknetTxVariant) -> Result<AuthorizationPacka
     })
 }
 
-fn build_state_deltas(variant: &StarknetTxVariant) -> Result<StateDeltas> {
-    let mut account_changes = Vec::new();
-
-    // Add sender account change (nonce increment)
-    let sender = variant.sender_address();
-    if sender != FieldElement::ZERO {
-        account_changes.push(AccountChange {
-            address: create_address(sender),
-            nonce: None,
-            balance_change: 0, // Fee will be deducted
-            storage_changes: vec![],
-        });
-    }
-
+fn build_state_deltas(_variant: &StarknetTxVariant) -> Result<StateDeltas> {
+    // Balance/nonce effect guesses are NOT byte-derivable and were removed
+    // from TxIR (docs/CONCEPTS_REVIEW.md C1).
     Ok(StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes,
     })
 }
 

@@ -208,13 +208,20 @@ them autonomously; they need an explicit design decision first. Once signed
 off, they should be batched into ONE TxIR v2 format break (migration sketch
 at the end of CONCEPTS_REVIEW.md).
 
-- [ ] **C1: remove effects from TxIR** — delete fabricated `StateDeltas`
-  content (Bitcoin `value: 0 // Requires UTXO set`, Cosmos `balance_change:
-  ±1` sentinels, Ethereum gas-less balance math). Keep byte-derivable UTXO
-  in/out facts; drop balances/account_changes or move behind an explicit
-  `fn effects(tx, state)` API.
-  Verify: grep finds no placeholder/sentinel writes into state_deltas; TxIR
-  hash spec no longer covers non-byte-derivable fields.
+- [x] **C1: remove effects from TxIR** (SIGNED OFF + DONE 2026-07) —
+  `AccountChange`/`StorageChange` deleted from core; `InputReference` no
+  longer carries a fabricated `value`; `StateDeltas` reduced to
+  byte-derivable UTXO in/out facts. All 23 decoder fabrication sites removed
+  (Bitcoin/Zcash/Cardano zero-values, Cosmos ±1 sentinels + IBC
+  pseudo-outputs, Ethereum/NEAR/Tron/Algorand/Filecoin gas-less balance
+  math, XRP/Stellar fee-only guesses, Solana/TON/Starknet/AO/Polkadot/
+  Bittensor zero-fills, Optimism mint credits, Sui/Aptos gas guesses).
+  Orphaned `decoder-cosmos/src/lib_simple.rs` (never compiled) deleted.
+  CLI/WASM no longer surface fabricated effects. Canonical hashes change;
+  V stays 1 (format was never published, prior hashes covered garbage).
+  Follow-ups: Aleo finalize ops should resurface as typed operation content
+  (C3); nonce returns as a typed field under C2's typed-extras work.
+  Verify: `grep -rn "AccountChange\|Requires UTXO" crates/*/src` is empty.
 - [ ] **C2: write CANONICAL_HASH.md spec** — enumerate exactly which fields
   are hashed per format version; hash domain = byte-derivable fields only
   (no `human_readable`, no `ChainRef.name`, no token `decimals`, no JSON).
