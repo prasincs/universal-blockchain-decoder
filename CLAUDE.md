@@ -12,6 +12,10 @@
   currently violated (core LOC budget, JSON-free canonical form, differential
   testing coverage, non-vacuous roundtrip). Trust `loop/report.json` over
   status claims in this file or ROADMAP.md.
+- `docs/CONCEPTS_REVIEW.md` - 2026-07 design audit of TxIR itself (fabricated
+  state deltas, ill-defined canonical hash, lossy Generic fallback, chain
+  identity). Its fixes are breaking: see "Concept decisions (need sign-off)"
+  in the backlog before touching TxIR.
 - Run one iteration with the `improve-loop` skill (`/improve-loop`).
 
 **Documentation**:

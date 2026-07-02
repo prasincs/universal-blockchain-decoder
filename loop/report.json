@@ -69,13 +69,13 @@
   ],
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
-    "alloy-consensus: locked 1.8.3 -> latest 2.0.5",
-    "alloy-eips: locked 1.8.3 -> latest 2.0.5",
-    "bitcoin: locked 0.31.3 -> latest 0.32.100",
-    "pallas-codec: locked 0.30.2 -> latest 1.1.0",
-    "pallas-primitives: locked 0.30.2 -> latest 1.1.0",
-    "pallas-traverse: locked 0.30.2 -> latest 1.1.0",
-    "solana-transaction-status: locked 3.1.14 -> latest 4.0.2"
+    "alloy-consensus: locked 1.8.3 -> latest 2.1.0",
+    "alloy-eips: locked 1.8.3 -> latest 2.1.0",
+    "bitcoin: locked 0.31.3 -> latest 0.32.101",
+    "pallas-codec: locked 0.30.2 -> latest 1.1.1",
+    "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
+    "pallas-traverse: locked 0.30.2 -> latest 1.1.1",
+    "solana-transaction-status: locked 3.1.14 -> latest 4.1.0"
   ],
   "upstream_update_check": "ok (11 crates checked)",
   "workspace_resolves": true

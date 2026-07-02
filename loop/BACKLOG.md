@@ -170,7 +170,85 @@ of re-litigating it. Reference decoders first:
   `k256` is already a dependency. Implement ECDSA recovery from (v, r, s).
   Verify: differential test asserts recovered sender == alloy's.
 
+## P2 — layer-1 correctness bugs (found by the 2026-07 concepts survey)
+
+These are byte-derivable facts computed wrongly — fixable now, no design
+sign-off needed (they correct outright-wrong values; note each fix shifts
+canonical hashes that were hashing garbage anyway). Each needs a known-txid
+fixture (`fetch_corpus.py`) or upstream library as its oracle.
+
+- [ ] **Zcash `metadata.tx_hash` is always empty** and `size` hardcoded 0
+  (`decoder-zcash/src/types.rs:231,234,343,346`). Compute the real txid.
+  Verify: differential test against a known mainnet txid.
+- [ ] **TON `metadata.tx_hash` is the PREVIOUS transaction's hash**
+  (`decoder-ton/src/lib.rs:232`), and `operations` is hardcoded `vec![]`
+  (`lib.rs:263`) despite parsed in/out messages. Also `tonlib-core` dev-dep
+  is declared but unused — this is the chain to close both gaps together.
+- [ ] **Polkadot extrinsic hash uses Blake2b-512; real hash is Blake2b-256**
+  (`decoder-polkadot/src/lib.rs:45-49`). Also `Sr25519` public keys are
+  mislabeled `KeyType::Ed25519` (`lib.rs:170`).
+- [ ] **Stellar tx hash is wrong** — hashes ASCII tag strings + signatures
+  instead of network-id ‖ XDR envelope discriminant ‖ signature-base
+  (`decoder-stellar/src/types.rs:443-465`); and `public_keys` is a single
+  hardcoded entry regardless of N signers (`lib.rs:129-132`), which core's
+  own `verify_structure` rejects.
+- [ ] **XRP**: `Ecdsa` hardcoded even for `ED`-prefixed Ed25519 keys;
+  `Signers` multisig arrays not represented (`decoder-xrp/src/types.rs:174-197`).
+- [ ] **Bitcoin txid byte order** — `metadata.tx_hash` is internal order,
+  not the display (reversed) txid (`decoder-bitcoin/src/types.rs:266`).
+  Decide which convention TxIR uses, document it in the C2 hash spec, apply
+  uniformly across UTXO decoders.
+
 ## P3 — shrink the TCB and the dead structure
+
+## Concept decisions (need sign-off — see docs/CONCEPTS_REVIEW.md)
+
+These change canonical hashes and/or public types. The loop must NOT execute
+them autonomously; they need an explicit design decision first. Once signed
+off, they should be batched into ONE TxIR v2 format break (migration sketch
+at the end of CONCEPTS_REVIEW.md).
+
+- [ ] **C1: remove effects from TxIR** — delete fabricated `StateDeltas`
+  content (Bitcoin `value: 0 // Requires UTXO set`, Cosmos `balance_change:
+  ±1` sentinels, Ethereum gas-less balance math). Keep byte-derivable UTXO
+  in/out facts; drop balances/account_changes or move behind an explicit
+  `fn effects(tx, state)` API.
+  Verify: grep finds no placeholder/sentinel writes into state_deltas; TxIR
+  hash spec no longer covers non-byte-derivable fields.
+- [ ] **C2: write CANONICAL_HASH.md spec** — enumerate exactly which fields
+  are hashed per format version; hash domain = byte-derivable fields only
+  (no `human_readable`, no `ChainRef.name`, no token `decimals`, no JSON).
+  Verify: a test constructs two TxIRs differing only in display fields and
+  asserts equal canonical hashes.
+- [ ] **C3: Generic no-information-destruction rule** — `Generic.data` must
+  carry the full chain-native operation encoding; stable chain-namespaced
+  `op_type` registry (e.g. `near:AddKey`); ban Debug/JSON strings. Fix the
+  NEAR AddKey/DeleteKey/DeleteAccount mappings first (currently `data:
+  vec![]` + `format!("{:?}")` — the added key is not in the TxIR at all).
+  Verify: test that every Generic op for a payload-bearing action has
+  non-empty `data`; decode(AddKey fixture) exposes the key bytes.
+- [ ] **C4: CAIP-2-shaped chain identity** — hashed identity becomes
+  `(namespace, reference)`; u64 id and display name demoted to non-hashed
+  convenience metadata (today SLIP-44, EVM chain-ids, and ad hoc numbers
+  share one u64 namespace).
+- [ ] **C5: ChainFamily = state model only** — `Utxo | Account | Hybrid`;
+  privacy/packaging axes move to non-hashed capability metadata (Zcash is
+  currently "Privacy" though it is UTXO + shielded, double-counting the
+  `TxIR.privacy` field).
+- [ ] **C6: per-signature scheme + real witness representation** — drop the
+  single `signature_scheme` per tx; per-input witness stacks with typed
+  items (signature | pubkey | script | control-block | opaque).
+- [ ] **C7: delete dead core concepts** — `TxVerifier` (0 impls, and
+  conceptually impossible from TxIR), `DecoderPlugin` (0 impls, `Box<dyn
+  Any>`), const-generic version `V` (all 45 usages are V=1; replace with
+  runtime `format_version`), `hooks.rs` middleware, and the
+  `TxHashable`/`CanonicalSerialize` duplication (keep one).
+  Verify: `core_loc_non_vendored` drops; no decoder breaks
+  (`cargo check --workspace`).
+- [ ] **C8: fabrication metric in the health report** — count placeholder
+  writes (`Requires UTXO set`, `placeholder`, sentinel balance values) and
+  Generic-with-empty-data emissions; ratchet both downward. This makes the
+  no-fabrication rule mechanical instead of aspirational.
 
 - [ ] **Delete the `Canonical*` mirror hierarchy** (~650 LOC): drop the
   phantom lifetime from `TxIR` (it owns all its data; the lifetime prevents
