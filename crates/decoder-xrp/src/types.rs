@@ -331,19 +331,17 @@ impl<'a> Canonicalizer<'a> for XrpTransaction {
                     ));
                 }
             }
-            XrpTransactionType::TrustSet => {
-                if self.limit_amount.is_none() {
-                    return Err(DecoderError::invalid_structure(
-                        "TrustSet must have a limit amount",
-                    ));
-                }
+            XrpTransactionType::TrustSet if self.limit_amount.is_none() => {
+                return Err(DecoderError::invalid_structure(
+                    "TrustSet must have a limit amount",
+                ));
             }
-            XrpTransactionType::OfferCreate => {
-                if self.taker_pays.is_none() || self.taker_gets.is_none() {
-                    return Err(DecoderError::invalid_structure(
-                        "OfferCreate must have taker_pays and taker_gets",
-                    ));
-                }
+            XrpTransactionType::OfferCreate
+                if self.taker_pays.is_none() || self.taker_gets.is_none() =>
+            {
+                return Err(DecoderError::invalid_structure(
+                    "OfferCreate must have taker_pays and taker_gets",
+                ));
             }
             _ => {} // Other types have minimal validation for now
         }

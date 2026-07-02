@@ -59,10 +59,10 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run unit tests (lib)
-        run: cargo test --lib --all --verbose
+        run: cargo test --locked --lib --all --verbose
 
       - name: Run unit tests (bins)
-        run: cargo test --bins --all --verbose
+        run: cargo test --locked --bins --all --verbose
 
   # Job 2: Property-based tests (every commit)
   property-tests:
@@ -88,7 +88,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run property tests
-        run: cargo test --test property_tests --all --verbose
+        run: cargo test --locked --test property_tests --all --verbose
         env:
           PROPTEST_CASES: 1000  # Run 1000 iterations per property
 
@@ -116,7 +116,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run documentation tests
-        run: cargo test --doc --all --verbose
+        run: cargo test --locked --doc --all --verbose
 
   # Job 4: Integration tests (every commit) - Currently disabled due to Phase 2 decoder work
   integration-tests:
@@ -142,7 +142,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run integration tests (core only)
-        run: cargo test -p universal-decoder-core --tests --verbose
+        run: cargo test --locked -p universal-decoder-core --tests --verbose
         continue-on-error: true  # Allow failure during Phase 1.5 (decoders need Phase 2 updates)
 
       # Note: decoder integration tests will be enabled in Phase 2 after pure Rust implementations
@@ -179,7 +179,7 @@ jobs:
         run: |
           # Exclude crates with unstable dependencies (lambdaworks-math, tonlib-core use unstable Rust features)
           # These crates will be checked when their upstream dependencies release fixes
-          cargo clippy --workspace --all-targets \
+          cargo clippy --locked --workspace --all-targets \
             --exclude decoder-crypto-zk \
             --exclude decoder-starknet \
             --exclude decoder-aleo \
@@ -230,7 +230,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build documentation
-        run: cargo doc --no-deps --all --verbose
+        run: cargo doc --locked --no-deps --all --verbose
         env:
           RUSTDOCFLAGS: -D warnings
 

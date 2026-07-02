@@ -44,6 +44,7 @@ jobs:
       - name: Generate coverage report
         run: |
           cargo llvm-cov \
+            --locked \
             --all-features \
             --workspace \
             --lcov \

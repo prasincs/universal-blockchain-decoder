@@ -189,12 +189,14 @@ use decoder_primitives::prelude::*;
 /// Chain-specific transaction representation
 #[derive(Debug, Clone)]
 pub struct <Chain>Transaction {
-    // Chain-specific fields
+    // Chain-specific fields - NO raw_bytes field!
+    // Bytes must be reconstructed from parsed fields to ensure
+    // the decoder actually parses the data (type-safe verification)
     pub version: u32,
     pub inputs: Vec<TxInput>,
     pub outputs: Vec<TxOutput>,
     pub locktime: u32,
-    pub raw_bytes: Vec<u8>,  // ALWAYS store raw bytes for hashing
+    // NOTE: No raw_bytes field - use to_bytes() to reconstruct
 }
 
 impl <Chain>Transaction {
@@ -203,11 +205,22 @@ impl <Chain>Transaction {
         self.version
     }
 
+    /// Reconstruct transaction bytes from parsed fields
+    /// This is REQUIRED for the injective property: encode(decode(x)) == x
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend(&self.version.to_le_bytes());
+        // ... serialize all fields back to bytes
+        bytes
+    }
+
     /// Calculate transaction ID (chain-specific hashing)
     pub fn txid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
         // Double SHA-256 for Bitcoin-like chains
-        let hash1 = Sha256::digest(&self.raw_bytes);
+        // Use reconstructed bytes, not stored raw_bytes
+        let tx_bytes = self.to_bytes();
+        let hash1 = Sha256::digest(&tx_bytes);
         let hash2 = Sha256::digest(hash1);
         hash2.to_vec()
     }
@@ -215,6 +228,12 @@ impl <Chain>Transaction {
     /// Check if transaction is valid
     pub fn is_valid(&self) -> bool {
         !self.inputs.is_empty() && !self.outputs.is_empty()
+    }
+}
+
+impl ReconstructableTransaction for <Chain>Transaction {
+    fn reconstruct_bytes(&self) -> Result<Vec<u8>> {
+        Ok(self.to_bytes())
     }
 }
 ```
@@ -1388,7 +1407,7 @@ pub struct DogecoinTransaction {
     pub inputs: Vec<TxInput>,
     pub outputs: Vec<TxOutput>,
     pub locktime: u32,
-    pub raw_bytes: Vec<u8>,
+    // NOTE: No raw_bytes field - bytes must be reconstructed from fields
 }
 
 impl DogecoinTransaction {
@@ -1414,10 +1433,27 @@ impl DogecoinTransaction {
         false  // Dogecoin does not support SegWit
     }
 
+    /// Reconstruct transaction bytes from parsed fields
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend(&self.version.to_le_bytes());
+        bytes.extend(encode_varint(self.inputs.len() as u64));
+        for input in &self.inputs {
+            bytes.extend(input.serialize());
+        }
+        bytes.extend(encode_varint(self.outputs.len() as u64));
+        for output in &self.outputs {
+            bytes.extend(output.serialize());
+        }
+        bytes.extend(&self.locktime.to_le_bytes());
+        bytes
+    }
+
     pub fn txid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
-        // Same as Bitcoin: double SHA-256
-        let hash1 = Sha256::digest(&self.raw_bytes);
+        // Same as Bitcoin: double SHA-256 of reconstructed bytes
+        let tx_bytes = self.to_bytes();
+        let hash1 = Sha256::digest(&tx_bytes);
         let hash2 = Sha256::digest(hash1);
         hash2.to_vec()
     }

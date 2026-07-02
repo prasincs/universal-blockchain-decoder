@@ -110,7 +110,19 @@ impl ChainDecoder for BitcoinDecoder {
 
         // Parse witness data (if SegWit)
         let witnesses = if is_segwit {
-            parse_witnesses(&mut cursor, inputs.len())?
+            let witnesses = parse_witnesses(&mut cursor, inputs.len())?;
+
+            // BIP-144: if no input has witness data, the transaction MUST use
+            // the non-witness serialization. Accepting the marker+flag form
+            // here would break encode(decode(x)) == x because re-encoding
+            // chooses the serialization based on actual witness content.
+            if witnesses.iter().all(|w| w.is_empty()) {
+                return Err(DecoderError::invalid_structure(
+                    "Non-canonical SegWit encoding: witness flag set but all witness stacks are empty",
+                ));
+            }
+
+            witnesses
         } else {
             vec![Witness::empty(); inputs.len()]
         };
@@ -135,7 +147,6 @@ impl ChainDecoder for BitcoinDecoder {
             outputs,
             witnesses,
             locktime,
-            raw_bytes: raw_bytes.to_vec(),
         })
     }
 

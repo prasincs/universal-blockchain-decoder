@@ -44,10 +44,11 @@ fn decode_and_validate_fork_tx(
         fork_name
     );
 
-    // Verify raw bytes are preserved
+    // Verify roundtrip works
+    let encoded = decoded.to_bytes().expect("Failed to encode");
     assert_eq!(
-        &decoded.raw_bytes, &tx_bytes,
-        "{}: Raw bytes should match input",
+        &encoded, &tx_bytes,
+        "{}: Re-encoded bytes should match input",
         fork_name
     );
 
@@ -106,14 +107,15 @@ fn test_decode_bitcoin_cash_transaction() {
     decode_and_validate_fork_tx("Bitcoin Cash", tx_hex, 1, 1, 2);
 }
 
-/// Test that BCH transactions preserve raw bytes correctly
+/// Test that BCH transactions have correct roundtrip
 #[test]
-fn test_bch_raw_bytes_preservation() {
+fn test_bch_roundtrip() {
     let tx_hex = include_str!("fixtures/forks/bch_simple_tx.hex");
     let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim()).unwrap();
     let decoded = BitcoinDecoder::decode(&tx_bytes).unwrap();
 
-    assert_eq!(&decoded.raw_bytes, &tx_bytes);
+    let encoded = decoded.to_bytes().unwrap();
+    assert_eq!(&encoded, &tx_bytes);
 }
 
 /// Test BCH transaction is not identified as coinbase
@@ -467,9 +469,9 @@ fn test_all_forks_deterministic_hashes() {
     }
 }
 
-/// Test that all fork transactions preserve raw bytes
+/// Test that all fork transactions have correct roundtrip
 #[test]
-fn test_all_forks_preserve_raw_bytes() {
+fn test_all_forks_roundtrip() {
     let test_cases = vec![
         (
             "Bitcoin Cash",
@@ -499,9 +501,10 @@ fn test_all_forks_preserve_raw_bytes() {
         let tx_bytes = universal_decoder_core::hex::decode(tx_hex.trim()).unwrap();
         let decoded = BitcoinDecoder::decode(&tx_bytes).unwrap();
 
+        let encoded = decoded.to_bytes().expect("Failed to encode");
         assert_eq!(
-            &decoded.raw_bytes, &tx_bytes,
-            "{}: Raw bytes should be preserved",
+            &encoded, &tx_bytes,
+            "{}: Re-encoded bytes should match input",
             fork_name
         );
     }

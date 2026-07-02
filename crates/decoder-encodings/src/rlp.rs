@@ -54,6 +54,15 @@ impl RlpItem {
                     ));
                 }
 
+                // Canonical form: a single byte < 0x80 must be encoded as itself,
+                // not as a 1-byte string with 0x81 prefix. Accepting the
+                // non-canonical form would break encode(decode(x)) == x.
+                if length == 1 && bytes[1] < 0x80 {
+                    return Err(DecoderError::invalid_structure(
+                        "Non-canonical RLP: single byte below 0x80 must be encoded as itself",
+                    ));
+                }
+
                 let data = bytes[1..1 + length].to_vec();
                 Ok((RlpItem::Data(data), 1 + length))
             }
@@ -396,6 +405,29 @@ mod tests {
         let item =
             RlpItem::decode(&[0x88, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]).unwrap();
         assert_eq!(item.as_u128().unwrap(), 0x0102030405060708u128);
+    }
+
+    #[test]
+    fn test_rejects_non_canonical_single_byte() {
+        // 0x81 0x05 is non-canonical: 0x05 must be encoded as itself.
+        // Accepting it would break the injective property because the
+        // encoder always emits the canonical form.
+        assert!(RlpItem::decode(&[0x81, 0x05]).is_err());
+        assert!(RlpItem::decode(&[0x81, 0x00]).is_err());
+        assert!(RlpItem::decode(&[0x81, 0x7f]).is_err());
+
+        // 0x81 0x80 IS canonical (byte >= 0x80 needs the prefix)
+        assert_eq!(
+            RlpItem::decode(&[0x81, 0x80]).unwrap(),
+            RlpItem::Data(vec![0x80])
+        );
+        assert_eq!(
+            RlpItem::decode(&[0x81, 0xff]).unwrap(),
+            RlpItem::Data(vec![0xff])
+        );
+
+        // Non-canonical items nested inside lists are also rejected
+        assert!(RlpItem::decode(&[0xc2, 0x81, 0x05]).is_err());
     }
 
     #[test]

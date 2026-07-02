@@ -24,8 +24,8 @@ fuzz_target!(|data: &[u8]| {
 
     // Test 2: If data decodes as transaction, hash should be deterministic
     if let Ok(tx) = EthereumDecoder::decode(data) {
-        let tx_hash1 = tx.hash();
-        let tx_hash2 = tx.hash();
+        let tx_hash1 = tx.hash().expect("hash of decoded tx should succeed");
+        let tx_hash2 = tx.hash().expect("hash of decoded tx should succeed");
         assert_eq!(tx_hash1, tx_hash2, "Transaction hash is non-deterministic");
 
         // Hash should match Keccak256 of original bytes

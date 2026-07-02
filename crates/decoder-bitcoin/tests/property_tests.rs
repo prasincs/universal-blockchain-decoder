@@ -619,3 +619,62 @@ proptest! {
         }
     }
 }
+
+//
+// Strict Injective Property: decode success implies EXACT roundtrip
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(1000))]
+
+    /// Property: For ARBITRARY bytes, if decode succeeds then re-encoding
+    /// reproduces the input exactly.
+    ///
+    /// This is the strongest form of the injective property. It holds only
+    /// because the decoder rejects non-canonical encodings (non-minimal
+    /// varints, witness flag without witness data) — anything it accepts,
+    /// it can reproduce byte-for-byte from parsed fields alone.
+    #[test]
+    fn prop_decode_success_implies_exact_roundtrip(bytes in arb_small_bytes()) {
+        if let Ok(decoded) = BitcoinDecoder::decode(&bytes) {
+            let re_encoded = decoded.to_bytes()
+                .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+            prop_assert_eq!(
+                bytes.as_slice(),
+                re_encoded.as_slice(),
+                "Decoder accepted bytes it cannot reproduce: this breaks injectivity"
+            );
+        }
+    }
+}
+
+#[test]
+fn test_rejects_segwit_flag_without_witness_data() {
+    // A transaction using the BIP-144 witness serialization (marker 0x00,
+    // flag 0x01) whose witness stacks are all empty is non-canonical: the
+    // non-witness serialization is required in that case. Accepting it would
+    // break encode(decode(x)) == x because re-encoding picks the
+    // serialization based on actual witness content.
+    let mut tx = Vec::new();
+    tx.extend_from_slice(&1u32.to_le_bytes()); // version
+    tx.push(0x00); // segwit marker
+    tx.push(0x01); // segwit flag
+    tx.push(0x01); // input count = 1
+    tx.extend_from_slice(&[0u8; 32]); // prev hash
+    tx.extend_from_slice(&0xFFFFFFFFu32.to_le_bytes()); // prev index
+    tx.push(0x00); // empty script_sig
+    tx.extend_from_slice(&0xFFFFFFFFu32.to_le_bytes()); // sequence
+    tx.push(0x01); // output count = 1
+    tx.extend_from_slice(&50_000u64.to_le_bytes()); // value
+    tx.push(0x01); // script len 1
+    tx.push(0x51); // OP_TRUE
+    tx.push(0x00); // witness stack for input 0: 0 items (empty!)
+    tx.extend_from_slice(&0u32.to_le_bytes()); // locktime
+
+    let result = BitcoinDecoder::decode(&tx);
+    assert!(
+        result.is_err(),
+        "SegWit-flagged tx with all-empty witnesses must be rejected, got: {:?}",
+        result.map(|t| t.to_bytes())
+    );
+}
