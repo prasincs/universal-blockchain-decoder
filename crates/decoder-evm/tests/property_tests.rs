@@ -79,8 +79,8 @@ proptest! {
         let decoder = EvmDecoder::new();
 
         if let Ok((tx, _)) = decoder.decode(&bytes, None) {
-            let hash1 = tx.hash();
-            let hash2 = tx.hash();
+            let hash1 = tx.hash().ok();
+            let hash2 = tx.hash().ok();
             prop_assert_eq!(hash1, hash2, "Hash should be deterministic");
         }
     }

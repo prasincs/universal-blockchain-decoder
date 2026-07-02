@@ -76,9 +76,16 @@ proptest! {
     /// Property: RLP short strings (0-55 bytes) encode/decode consistently
     #[test]
     fn prop_rlp_short_string(data in prop::collection::vec(any::<u8>(), 1..=55)) {
-        // Encode: prefix (0x80 + length) + data
-        let mut encoded = vec![0x80 + data.len() as u8];
-        encoded.extend_from_slice(&data);
+        // Canonical encoding: a single byte below 0x80 is encoded as itself;
+        // everything else uses the 0x80 + length prefix. The decoder is
+        // strict and rejects the non-canonical prefixed single-byte form.
+        let encoded = if data.len() == 1 && data[0] < 0x80 {
+            vec![data[0]]
+        } else {
+            let mut encoded = vec![0x80 + data.len() as u8];
+            encoded.extend_from_slice(&data);
+            encoded
+        };
 
         let decoded = RlpItem::decode(&encoded).unwrap();
 
@@ -106,9 +113,11 @@ proptest! {
             b
         };
 
-        // Encode as RLP
+        // Encode as RLP (canonical: single byte < 0x80 encoded as itself)
         let encoded = if bytes.is_empty() {
             vec![0x80]
+        } else if bytes.len() == 1 && bytes[0] < 0x80 {
+            vec![bytes[0]]
         } else if bytes.len() <= 55 {
             let mut e = vec![0x80 + bytes.len() as u8];
             e.extend_from_slice(&bytes);
@@ -143,9 +152,11 @@ proptest! {
             b
         };
 
-        // Encode as RLP
+        // Encode as RLP (canonical: single byte < 0x80 encoded as itself)
         let encoded = if bytes.is_empty() {
             vec![0x80]
+        } else if bytes.len() == 1 && bytes[0] < 0x80 {
+            vec![bytes[0]]
         } else if bytes.len() <= 55 {
             let mut e = vec![0x80 + bytes.len() as u8];
             e.extend_from_slice(&bytes);

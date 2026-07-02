@@ -1,0 +1,6 @@
+# Pin the toolchain so CI (which installs latest stable) and local builds
+# use the same compiler and clippy. New stable releases add clippy lints,
+# which previously broke CI without any code change. Bump deliberately.
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]

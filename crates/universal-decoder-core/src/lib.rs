@@ -95,9 +95,7 @@ pub mod prelude {
         FormallyVerifiable, HashAlgorithm, Keccak256Hash, Sha256Hash, TxHashable, TxVerifier,
         TxVersion,
     };
-    pub use crate::verified::{
-        ReconstructableTransaction, VerifiedChainDecoder, VerifiedTransaction,
-    };
+    pub use crate::verified::ReconstructableTransaction;
 }
 
 /// Library version

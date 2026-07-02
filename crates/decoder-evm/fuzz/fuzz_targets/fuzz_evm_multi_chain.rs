@@ -71,8 +71,8 @@ fuzz_target!(|data: &[u8]| {
         );
 
         // Transaction hash should be identical (based on bytes, not chain)
-        let hash1 = tx1.hash();
-        let hash2 = tx2.hash();
+        let hash1 = tx1.hash().ok();
+        let hash2 = tx2.hash().ok();
         assert_eq!(
             hash1, hash2,
             "Transaction hash differs between chain {} and {}",

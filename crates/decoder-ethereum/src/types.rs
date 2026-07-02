@@ -101,6 +101,12 @@ pub struct EthereumTransaction {
     /// Access list (EIP-2930)
     pub access_list: Vec<AccessListItem>,
 
+    // EIP-4844 fields
+    /// Max fee per blob gas (EIP-4844)
+    pub max_fee_per_blob_gas: Option<u128>,
+    /// Blob versioned hashes (EIP-4844)
+    pub blob_versioned_hashes: Vec<[u8; 32]>,
+
     // Signature
     /// Signature v component
     pub v: u64,
@@ -198,6 +204,8 @@ impl EthereumTransaction {
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             access_list: vec![],
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -253,6 +261,8 @@ impl EthereumTransaction {
             max_fee_per_gas: None,
             max_priority_fee_per_gas: None,
             access_list,
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -294,6 +304,8 @@ impl EthereumTransaction {
             max_fee_per_gas: Some(max_fee_per_gas),
             max_priority_fee_per_gas: Some(max_priority_fee_per_gas),
             access_list,
+            max_fee_per_blob_gas: None,
+            blob_versioned_hashes: vec![],
             v,
             r,
             s,
@@ -302,19 +314,56 @@ impl EthereumTransaction {
 
     /// Parse EIP-4844 transaction (blob transactions)
     fn parse_eip4844(items: &[RlpItem]) -> Result<Self> {
-        // EIP-4844: Similar to EIP-1559 but with additional blob fields
-        // For minimal implementation, we'll parse the core fields
-        if items.len() < 12 {
+        // EIP-4844: [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit,
+        //            to, value, data, accessList, maxFeePerBlobGas,
+        //            blobVersionedHashes, signatureYParity, signatureR, signatureS]
+        if items.len() != 14 {
             return Err(DecoderError::invalid_structure(format!(
-                "EIP-4844 transaction must have at least 12 fields, got {}",
+                "EIP-4844 transaction must have 14 fields, got {}",
                 items.len()
             )));
         }
 
-        // Parse similar to EIP-1559 (blob fields can be ignored for basic decoding)
-        Self::parse_eip1559(items).map(|mut tx| {
-            tx.tx_type = TxType::Eip4844;
-            tx
+        let chain_id = items[0].as_u64()?;
+        let nonce = items[1].as_u64()?;
+        let max_priority_fee_per_gas = items[2].as_u128()?;
+        let max_fee_per_gas = items[3].as_u128()?;
+        let gas_limit = items[4].as_u128()?;
+
+        // EIP-4844 prohibits contract creation: `to` must be a valid address
+        let to = parse_address_field(&items[5])?;
+        if to.is_none() {
+            return Err(DecoderError::invalid_structure(
+                "EIP-4844 transaction cannot be a contract creation",
+            ));
+        }
+
+        let value = items[6].as_u128()?;
+        let data = items[7].as_data()?.to_vec();
+        let access_list = parse_access_list(&items[8])?;
+        let max_fee_per_blob_gas = items[9].as_u128()?;
+        let blob_versioned_hashes = parse_blob_versioned_hashes(&items[10])?;
+        let v = items[11].as_u64()?;
+        let r = parse_signature_component(items[12].as_data()?, "r")?;
+        let s = parse_signature_component(items[13].as_data()?, "s")?;
+
+        Ok(Self {
+            tx_type: TxType::Eip4844,
+            nonce,
+            gas_price: None,
+            gas_limit,
+            to,
+            value,
+            data,
+            chain_id: Some(chain_id),
+            max_fee_per_gas: Some(max_fee_per_gas),
+            max_priority_fee_per_gas: Some(max_priority_fee_per_gas),
+            access_list,
+            max_fee_per_blob_gas: Some(max_fee_per_blob_gas),
+            blob_versioned_hashes,
+            v,
+            r,
+            s,
         })
     }
 
@@ -329,11 +378,14 @@ impl EthereumTransaction {
     }
 
     /// Calculate transaction hash using Keccak-256
-    pub fn hash(&self) -> Vec<u8> {
+    ///
+    /// The hash is computed over bytes reconstructed from parsed fields.
+    /// Returns an error instead of silently hashing empty bytes if
+    /// reconstruction fails.
+    pub fn hash(&self) -> Result<Vec<u8>> {
         use sha3::{Digest, Keccak256};
-        // Reconstruct bytes from fields - no stored raw_bytes
-        let bytes = self.to_bytes().unwrap_or_default();
-        Keccak256::digest(&bytes).to_vec()
+        let bytes = self.to_bytes()?;
+        Ok(Keccak256::digest(&bytes).to_vec())
     }
 
     /// Strip leading zeros from signature component for RLP encoding
@@ -427,10 +479,11 @@ impl EthereumTransaction {
 
     /// Reconstruct EIP-4844 transaction bytes
     fn reconstruct_eip4844(&self) -> Result<Vec<u8>> {
-        // Same structure as EIP-1559, different type byte
         let mut encoder = RlpEncoder::new();
         let mut list = encoder.begin_list();
 
+        // [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to,
+        //  value, data, accessList, maxFeePerBlobGas, blobVersionedHashes, v, r, s]
         list.append_u64(self.chain_id.unwrap_or(1))?;
         list.append_u64(self.nonce)?;
         list.append_optional_u128(self.max_priority_fee_per_gas)?;
@@ -442,6 +495,9 @@ impl EthereumTransaction {
 
         self.append_access_list_rlp(&mut list)?;
 
+        list.append_optional_u128(self.max_fee_per_blob_gas)?;
+        self.append_blob_hashes_rlp(&mut list)?;
+
         list.append_u64(self.v)?;
         list.append_bytes(&self.encode_signature_r())?;
         list.append_bytes(&self.encode_signature_s())?;
@@ -451,6 +507,20 @@ impl EthereumTransaction {
         let mut result = vec![0x03];
         result.extend(encoder.finalize());
         Ok(result)
+    }
+
+    /// Append blob versioned hashes list to RLP encoder (EIP-4844)
+    fn append_blob_hashes_rlp(
+        &self,
+        list: &mut decoder_encodings::rlp_encoder::ListEncoder<'_>,
+    ) -> Result<()> {
+        list.append_list(|hashes| {
+            for hash in &self.blob_versioned_hashes {
+                hashes.append_bytes(hash)?;
+            }
+            Ok(())
+        })?;
+        Ok(())
     }
 
     /// Append access list to RLP encoder
@@ -542,7 +612,8 @@ impl EthereumTransaction {
         match self.tx_type {
             TxType::Legacy => self.legacy_signing_hash(),
             TxType::Eip2930 => self.typed_signing_hash(0x01),
-            TxType::Eip1559 | TxType::Eip4844 => self.typed_signing_hash(0x02),
+            TxType::Eip1559 => self.typed_signing_hash(0x02),
+            TxType::Eip4844 => self.typed_signing_hash(0x03),
         }
     }
 
@@ -592,7 +663,7 @@ impl EthereumTransaction {
         list.append_u64(self.nonce)?;
 
         // EIP-1559/4844 use max fees, EIP-2930 uses gas_price
-        if type_byte == 0x02 {
+        if type_byte >= 0x02 {
             list.append_optional_u128(self.max_priority_fee_per_gas)?;
             list.append_optional_u128(self.max_fee_per_gas)?;
         } else {
@@ -604,7 +675,7 @@ impl EthereumTransaction {
         list.append_u128(self.value)?;
         list.append_bytes(&self.data)?;
 
-        // Access list (for EIP-2930 and EIP-1559)
+        // Access list (for EIP-2930, EIP-1559, and EIP-4844)
         list.append_list(|access_list| {
             for item in &self.access_list {
                 access_list.append_list(|entry| {
@@ -620,6 +691,12 @@ impl EthereumTransaction {
             }
             Ok(())
         })?;
+
+        // Blob fields (EIP-4844 only)
+        if type_byte == 0x03 {
+            list.append_optional_u128(self.max_fee_per_blob_gas)?;
+            self.append_blob_hashes_rlp(&mut list)?;
+        }
 
         list.finalize()?;
         let rlp_bytes = encoder.finalize();
@@ -690,6 +767,10 @@ fn parse_address_field(item: &RlpItem) -> Result<Option<[u8; 20]>> {
 }
 
 /// Parse signature component (r or s) from RLP data
+///
+/// Signature components are RLP integers, so the canonical encoding has no
+/// leading zeros. Zero-padded encodings are rejected because re-encoding
+/// always strips leading zeros, which would break `encode(decode(x)) == x`.
 fn parse_signature_component(data: &[u8], name: &str) -> Result<[u8; 32]> {
     if data.len() > 32 {
         return Err(DecoderError::invalid_structure(format!(
@@ -698,8 +779,15 @@ fn parse_signature_component(data: &[u8], name: &str) -> Result<[u8; 32]> {
         )));
     }
 
+    if !data.is_empty() && data[0] == 0 {
+        return Err(DecoderError::invalid_structure(format!(
+            "Signature component {} has non-canonical leading zeros",
+            name
+        )));
+    }
+
     let mut component = [0u8; 32];
-    // Right-pad with zeros if less than 32 bytes
+    // Left-pad with zeros if less than 32 bytes
     let offset = 32 - data.len();
     component[offset..].copy_from_slice(data);
 
@@ -710,6 +798,26 @@ fn parse_signature_component(data: &[u8], name: &str) -> Result<[u8; 32]> {
 fn strip_leading_zeros(bytes: &[u8]) -> Vec<u8> {
     let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
     bytes[start..].to_vec()
+}
+
+/// Parse blob versioned hashes from RLP item (EIP-4844)
+fn parse_blob_versioned_hashes(item: &RlpItem) -> Result<Vec<[u8; 32]>> {
+    let list = item.as_list()?;
+    let mut hashes = Vec::with_capacity(list.len());
+
+    for hash_item in list {
+        let hash_data = hash_item.as_data()?;
+        if hash_data.len() != 32 {
+            return Err(DecoderError::invalid_structure(
+                "Blob versioned hash must be 32 bytes",
+            ));
+        }
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(hash_data);
+        hashes.push(hash);
+    }
+
+    Ok(hashes)
 }
 
 /// Parse access list from RLP item
@@ -841,7 +949,7 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
         // Get size from reconstructed bytes
         let tx_bytes = self.to_bytes()?;
         let metadata = TxMetadata {
-            tx_hash: self.hash(),
+            tx_hash: self.hash()?,
             block_height: None,
             timestamp: None,
             size: tx_bytes.len(),
@@ -995,6 +1103,19 @@ impl<'a> Canonicalizer<'a> for EthereumTransaction {
             ));
         }
 
+        if self.tx_type == TxType::Eip4844 {
+            if self.max_fee_per_blob_gas.is_none() {
+                return Err(DecoderError::invalid_structure(
+                    "EIP-4844 transaction must have max_fee_per_blob_gas",
+                ));
+            }
+            if self.to.is_none() {
+                return Err(DecoderError::invalid_structure(
+                    "EIP-4844 transaction cannot be a contract creation",
+                ));
+            }
+        }
+
         Ok(())
     }
 }
@@ -1043,5 +1164,14 @@ mod tests {
         // Test with more than 32 bytes (should error)
         let data = vec![0u8; 33];
         assert!(parse_signature_component(&data, "r").is_err());
+
+        // Non-canonical leading zeros must be rejected: re-encoding strips
+        // them, so accepting them would break encode(decode(x)) == x
+        assert!(parse_signature_component(&[0x00, 0x01], "r").is_err());
+        assert!(parse_signature_component(&[0u8; 32], "s").is_err());
+
+        // Empty data (integer zero, canonical form) is accepted here;
+        // validate() rejects zero signatures later
+        assert_eq!(parse_signature_component(&[], "r").unwrap(), [0u8; 32]);
     }
 }

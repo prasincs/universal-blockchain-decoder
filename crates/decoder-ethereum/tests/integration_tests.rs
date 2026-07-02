@@ -312,7 +312,7 @@ mod alloy_validation {
 
         // Decode with our parser
         let our_tx = EthereumDecoder::decode(&tx_bytes).unwrap();
-        let our_hash = our_tx.hash();
+        let our_hash = our_tx.hash().unwrap();
 
         // Decode with alloy
         let alloy_tx = TxEnvelope::decode(&mut &tx_bytes[..]).unwrap();
