@@ -43,6 +43,12 @@ jobs:
 
       - name: Generate coverage report
         run: |
+          # coverage/ is gitignored and cargo-llvm-cov does not create
+          # parent directories for --output-path. This step had never
+          # actually reached report generation before 2026-07 (test
+          # failures always aborted the job first), so the missing mkdir
+          # went unnoticed since the workflow was added.
+          mkdir -p coverage
           cargo llvm-cov \
             --locked \
             --all-features \
