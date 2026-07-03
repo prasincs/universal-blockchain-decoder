@@ -406,11 +406,9 @@ fn test_deposit_canonicalization() {
     // Should have operations
     assert!(!tx_ir.operations.is_empty(), "Should have operations");
 
-    // Should have state deltas
-    assert!(
-        !tx_ir.state_deltas.account_changes.is_empty(),
-        "Should have account changes"
-    );
+    // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1):
+    // mint/value credits are effects, not byte-derivable facts.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 /// Test that decoding is deterministic

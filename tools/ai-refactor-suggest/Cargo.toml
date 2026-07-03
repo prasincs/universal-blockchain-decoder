@@ -42,7 +42,7 @@ chrono = "0.4"
 regex = "1.10"
 
 # GitHub API integration
-octocrab = "0.39"
+octocrab = "0.44"
 
 # Caching for API responses
 cacache = { version = "13.0", default-features = false, features = ["tokio-runtime"] }

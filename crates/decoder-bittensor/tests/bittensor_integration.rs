@@ -187,8 +187,9 @@ fn test_canonicalize_tao_transfer() {
     assert_eq!(tx_ir.authorization.signatures.len(), 1);
     assert_eq!(tx_ir.authorization.public_keys.len(), 1);
 
-    // Verify state deltas
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]
@@ -349,16 +350,9 @@ fn test_state_deltas_for_transfers() {
     let tx = BittensorDecoder::decode(&tx_bytes).unwrap();
     let tx_ir = tx.canonicalize().unwrap();
 
-    // Should have account changes for sender and recipient
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
-
-    // Should record nonce change
-    let has_nonce = tx_ir
-        .state_deltas
-        .account_changes
-        .iter()
-        .any(|c| c.nonce.is_some());
-    assert!(has_nonce);
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]

@@ -69,7 +69,8 @@ proptest! {
 
         let tx_ir = result.unwrap();
         prop_assert_eq!(tx_ir.operations.len(), 1);
-        prop_assert!(!tx_ir.state_deltas.account_changes.is_empty());
+        // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1).
+        prop_assert!(tx_ir.state_deltas.inputs.is_empty());
     }
 
     /// Test that transaction validation works correctly
@@ -288,11 +289,10 @@ proptest! {
         prop_assert!(result.is_ok());
 
         let tx_ir = result.unwrap();
-        prop_assert!(!tx_ir.state_deltas.account_changes.is_empty());
-
-        // Source account should have negative balance change (fee)
-        let source_change = &tx_ir.state_deltas.account_changes[0];
-        prop_assert_eq!(source_change.balance_change, -(fee as i128));
+        // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1);
+        // fee-only balance guesses are no longer fabricated.
+        prop_assert!(tx_ir.state_deltas.inputs.is_empty());
+        let _ = fee;
     }
 }
 

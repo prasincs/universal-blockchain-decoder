@@ -4,6 +4,20 @@
 
 **Current Phase**: Phase 1.5 - Testing & Dependency Infrastructure
 
+**Self-Improvement Loop** (start here when resuming work):
+- `loop/report.json` - MEASURED project state (regenerate: `python3 scripts/loop/health_report.py`)
+- `loop/BACKLOG.md` - prioritized work items with mechanical acceptance checks
+- `docs/SELF_IMPROVEMENT_LOOP.md` - loop design + anti-Goodhart rules
+- `docs/ASSUMPTIONS_REVIEW.md` - 2026-06 audit; several claims below are
+  currently violated (core LOC budget, JSON-free canonical form, differential
+  testing coverage, non-vacuous roundtrip). Trust `loop/report.json` over
+  status claims in this file or ROADMAP.md.
+- `docs/CONCEPTS_REVIEW.md` - 2026-07 design audit of TxIR itself (fabricated
+  state deltas, ill-defined canonical hash, lossy Generic fallback, chain
+  identity). Its fixes are breaking: see "Concept decisions (need sign-off)"
+  in the backlog before touching TxIR.
+- Run one iteration with the `improve-loop` skill (`/improve-loop`).
+
 **Documentation**:
 - `ROADMAP.md` - Project phases and implementation details
 - `docs/TESTING_STRATEGY.md` - 5-level testing pyramid

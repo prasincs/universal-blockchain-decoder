@@ -189,12 +189,9 @@ fn test_pyusd_state_deltas() {
     let tx = create_pyusd_payment_transaction();
     let tx_ir = tx.canonicalize().expect("Canonicalization should succeed");
 
-    // Verify account changes (fee deduction)
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
-
-    let source_change = &tx_ir.state_deltas.account_changes[0];
-    assert_eq!(source_change.balance_change, -10000); // Fee deduction
-    assert_eq!(source_change.nonce, Some(123456789)); // Sequence number
+    // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+    // effects are not byte-derivable and are no longer fabricated.
+    assert!(tx_ir.state_deltas.inputs.is_empty());
 }
 
 #[test]

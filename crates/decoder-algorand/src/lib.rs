@@ -7,8 +7,8 @@
 
 use decoder_primitives::prelude::*;
 use decoder_primitives::{
-    AccountChange, Address, Amount, AssetId, ContractCall, GenericOperation, KeyType, Operation,
-    PublicKey, ResourceLimits, ResourceType, Signature, Transfer,
+    Address, Amount, AssetId, ContractCall, GenericOperation, KeyType, Operation, PublicKey,
+    ResourceLimits, ResourceType, Signature, Transfer,
 };
 use serde::{Deserialize, Serialize};
 
@@ -467,43 +467,11 @@ impl<'a> Canonicalizer<'a> for AlgorandTransaction {
             }
         }
 
-        // State deltas (account-based model)
-        let mut account_changes = Vec::new();
-
-        // Sender account change (fee + amount)
-        let sender_delta = if let Some(amount) = tx.amount {
-            -(amount as i128) - (tx.fee as i128)
-        } else {
-            -(tx.fee as i128)
-        };
-
-        account_changes.push(AccountChange {
-            address: Address {
-                bytes: tx.sender.clone(),
-                human_readable: Some(encode_address(&tx.sender)),
-            },
-            balance_change: sender_delta,
-            nonce: None,
-            storage_changes: vec![],
-        });
-
-        // Receiver account change (if payment)
-        if let (Some(receiver), Some(amount)) = (&tx.receiver, tx.amount) {
-            account_changes.push(AccountChange {
-                address: Address {
-                    bytes: receiver.clone(),
-                    human_readable: Some(encode_address(receiver)),
-                },
-                balance_change: amount as i128,
-                nonce: None,
-                storage_changes: vec![],
-            });
-        }
-
+        // Balance-effect guesses are NOT byte-derivable and were removed
+        // from TxIR (docs/CONCEPTS_REVIEW.md C1).
         let state_deltas = StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         };
 
         Ok(TxIR::new(

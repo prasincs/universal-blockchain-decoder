@@ -327,28 +327,12 @@ impl<'a> Canonicalizer<'a> for SolanaTransaction {
             }));
         }
 
-        // Create state deltas (account-based model)
-        let mut state_deltas = StateDeltas {
+        // Account chains have no byte-derivable input/output facts; state
+        // effects were removed from TxIR (docs/CONCEPTS_REVIEW.md C1).
+        let state_deltas = StateDeltas {
             inputs: Vec::new(),
             outputs: Vec::new(),
-            account_changes: Vec::new(),
         };
-
-        // Add account changes for all writable accounts
-        let num_writable = self.message.header.num_writable_signed_accounts() as usize;
-        for i in 0..num_writable {
-            if let Some(pubkey) = self.message.account_keys.get(i) {
-                state_deltas.account_changes.push(AccountChange {
-                    address: Address {
-                        bytes: pubkey.to_vec(),
-                        human_readable: None,
-                    },
-                    nonce: None,       // We don't parse nonces in minimal decoder
-                    balance_change: 0, // We don't parse balance changes in minimal decoder
-                    storage_changes: vec![],
-                });
-            }
-        }
 
         Ok(TxIR::new(
             &SolanaChain,

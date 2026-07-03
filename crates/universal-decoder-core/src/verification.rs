@@ -301,7 +301,6 @@ mod tests {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         }
     }

@@ -233,41 +233,12 @@ fn build_operations(msg: &FilecoinMessage) -> Result<Vec<Operation>> {
 }
 
 /// Build state deltas from Filecoin message
-fn build_state_deltas(msg: &FilecoinMessage) -> Result<StateDeltas> {
-    let value = msg.value_as_u128()? as i128;
-
-    let mut account_changes = vec![
-        // Sender account
-        AccountChange {
-            address: filecoin_address_to_universal(&msg.from),
-            nonce: Some(msg.sequence),
-            balance_change: -value,
-            storage_changes: vec![],
-        },
-        // Recipient account
-        AccountChange {
-            address: filecoin_address_to_universal(&msg.to),
-            nonce: None,
-            balance_change: value,
-            storage_changes: vec![],
-        },
-    ];
-
-    // If it's a method call, add a note about potential state changes
-    if !msg.is_transfer() {
-        // For actor calls, state changes depend on the actor implementation
-        // We can only track the explicit value transfer here
-        // Store the method parameters as a storage change indicator
-        account_changes[1].storage_changes.push(StorageChange {
-            key: vec![],
-            value: Some(msg.params.clone()),
-        });
-    }
-
+fn build_state_deltas(_msg: &FilecoinMessage) -> Result<StateDeltas> {
+    // Balance-effect guesses are NOT byte-derivable and were removed from
+    // TxIR (docs/CONCEPTS_REVIEW.md C1).
     Ok(StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes,
     })
 }
 

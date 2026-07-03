@@ -251,10 +251,8 @@ proptest! {
             prop_assert!(!tx_ir.operations.is_empty());
         }
 
-        // If mint > 0, should have account changes
-        if has_mint {
-            prop_assert!(!tx_ir.state_deltas.account_changes.is_empty());
-        }
+        // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1).
+        prop_assert!(tx_ir.state_deltas.inputs.is_empty());
     }
 
     /// Property: Deposit transaction type ID is constant
@@ -514,10 +512,11 @@ proptest! {
             // Operation counts should be equal
             prop_assert_eq!(txir1.operations.len(), txir2.operations.len());
 
-            // Account change counts should be equal
+            // Input/output counts should be equal (account_changes was
+            // removed from TxIR - CONCEPTS_REVIEW.md C1).
             prop_assert_eq!(
-                txir1.state_deltas.account_changes.len(),
-                txir2.state_deltas.account_changes.len()
+                txir1.state_deltas.outputs.len(),
+                txir2.state_deltas.outputs.len()
             );
         }
     }

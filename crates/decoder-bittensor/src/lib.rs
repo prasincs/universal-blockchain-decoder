@@ -285,46 +285,12 @@ fn parse_balances_transfer(extrinsic: &Extrinsic, call: &Call) -> Result<Option<
 }
 
 /// Build state deltas from extrinsic
-fn build_state_deltas(extrinsic: &Extrinsic, call: &Call) -> Result<StateDeltas> {
-    let mut account_changes = Vec::new();
-
-    // For signed transactions, record nonce change
-    if let Extrinsic::Signed(signed) = extrinsic {
-        if let BittensorAddress::Id(id) = &signed.from {
-            account_changes.push(AccountChange {
-                address: create_account_address(id),
-                nonce: Some(signed.extension.nonce),
-                balance_change: 0,
-                storage_changes: vec![],
-            });
-        }
-    }
-
-    // For balance transfers, record balance changes
-    if call.pallet_index == 4 && call.call_index == 0 {
-        if let Ok(Some(transfer)) = parse_balances_transfer(extrinsic, call) {
-            // Deduct from sender
-            account_changes.push(AccountChange {
-                address: transfer.from.clone(),
-                nonce: None,
-                balance_change: -(transfer.amount.value as i128),
-                storage_changes: vec![],
-            });
-
-            // Add to recipient
-            account_changes.push(AccountChange {
-                address: transfer.to.clone(),
-                nonce: None,
-                balance_change: transfer.amount.value as i128,
-                storage_changes: vec![],
-            });
-        }
-    }
-
+fn build_state_deltas(_extrinsic: &Extrinsic, _call: &Call) -> Result<StateDeltas> {
+    // Balance/nonce effect guesses are NOT byte-derivable and were removed
+    // from TxIR (docs/CONCEPTS_REVIEW.md C1).
     Ok(StateDeltas {
         inputs: vec![],
         outputs: vec![],
-        account_changes,
     })
 }
 

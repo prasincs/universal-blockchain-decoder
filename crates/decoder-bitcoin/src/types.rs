@@ -387,10 +387,6 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
             .map(|input| InputReference {
                 prev_tx: input.prev_hash.to_vec(),
                 output_index: input.prev_index,
-                value: Amount {
-                    value: 0, // Requires UTXO set
-                    decimals: 8,
-                },
                 script: input.script_sig.clone(),
             })
             .collect();
@@ -413,11 +409,7 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
             })
             .collect();
 
-        let state_deltas = StateDeltas {
-            inputs,
-            outputs,
-            account_changes: vec![], // Bitcoin uses UTXO model, not account model
-        };
+        let state_deltas = StateDeltas { inputs, outputs };
 
         Ok(TxIR::new(
             &BitcoinChain,

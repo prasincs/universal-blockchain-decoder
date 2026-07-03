@@ -7,6 +7,20 @@
 use std::time::Instant;
 use universal_decoder_core::hex;
 
+/// Wall-clock assertions are meaningless under coverage instrumentation:
+/// llvm-cov-instrumented binaries run several times slower, so timing
+/// thresholds that comfortably hold in normal builds fail spuriously.
+/// cargo-llvm-cov sets LLVM_PROFILE_FILE for the test process; skip the
+/// timing ASSERTIONS there (the code under test still runs, so coverage
+/// is unaffected - only the threshold check is bypassed).
+fn skip_timing_assertions() -> bool {
+    let under_coverage = std::env::var_os("LLVM_PROFILE_FILE").is_some();
+    if under_coverage {
+        println!("coverage instrumentation detected - timing assertions skipped");
+    }
+    under_coverage
+}
+
 /// Test that verifies the hex encoding doesn't have obvious performance issues.
 /// This is a smoke test, not a full benchmark.
 #[test]
@@ -30,6 +44,9 @@ fn test_encode_performance_reasonable() {
     // should complete in well under 100ms on any reasonable hardware.
     // The old format!-based implementation would take ~500ms+.
     println!("Encoded 10KB 100 times in {:?}", elapsed);
+    if skip_timing_assertions() {
+        return;
+    }
     assert!(
         elapsed.as_millis() < 100,
         "Encoding took {:?}, expected < 100ms (likely using slow format! implementation)",
@@ -60,6 +77,9 @@ fn test_decode_performance_reasonable() {
     // should complete in well under 200ms. Decoding is more complex than
     // encoding (involves error checking and bit operations per byte).
     println!("Decoded 20KB hex 100 times in {:?}", elapsed);
+    if skip_timing_assertions() {
+        return;
+    }
     assert!(
         elapsed.as_millis() < 200,
         "Decoding took {:?}, expected < 200ms",
@@ -141,6 +161,9 @@ fn test_decode_to_slice_performance() {
     let elapsed = start.elapsed();
 
     println!("decode_to_slice 100 times in {:?}", elapsed);
+    if skip_timing_assertions() {
+        return;
+    }
     assert!(
         elapsed.as_millis() < 100,
         "decode_to_slice took {:?}, expected < 100ms",

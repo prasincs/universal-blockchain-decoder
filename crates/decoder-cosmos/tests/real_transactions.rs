@@ -358,10 +358,12 @@ fn test_real_ibc_transfer_cosmoshub_to_osmosis() {
         _ => panic!("Expected MsgIbcTransfer"),
     }
 
-    // Validate state deltas for cross-chain transfer
+    // IBC pseudo-outputs were removed from TxIR (CONCEPTS_REVIEW.md C1):
+    // Cosmos is an account chain; `outputs` is a UTXO fact and abusing it
+    // for IBC transfers fabricated data not present in the bytes.
     let tx_ir = decoded.canonicalize().unwrap();
     assert_eq!(tx_ir.operations.len(), 1);
-    assert!(!tx_ir.state_deltas.outputs.is_empty()); // Tokens leaving chain
+    assert!(tx_ir.state_deltas.outputs.is_empty());
 }
 
 /// Test real governance proposal submission

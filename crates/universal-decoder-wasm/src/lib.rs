@@ -541,12 +541,13 @@ fn create_borsh_fields(tx_ir: &TxIR<'_, 1>) -> Result<serde_json::Value, JsValue
                 }),
             }
         }).collect::<Vec<_>>(),
+        // NOTE: input `value` and `account_changes` were removed from TxIR -
+        // they were fabricated (not derivable from transaction bytes). See
+        // docs/CONCEPTS_REVIEW.md C1.
         "state_deltas": {
             "inputs": tx_ir.state_deltas.inputs.iter().map(|input| json!({
                 "prev_txid": universal_decoder_core::hex::encode(&input.prev_tx),
                 "output_index": input.output_index,
-                "value": input.value.value.to_string(),
-                "decimals": input.value.decimals,
             })).collect::<Vec<_>>(),
             "outputs": tx_ir.state_deltas.outputs.iter().map(|output| json!({
                 "index": output.index,
@@ -554,13 +555,6 @@ fn create_borsh_fields(tx_ir: &TxIR<'_, 1>) -> Result<serde_json::Value, JsValue
                 "address_readable": output.address.human_readable.as_ref().unwrap_or(&"".to_string()),
                 "value": output.value.value.to_string(),
                 "decimals": output.value.decimals,
-            })).collect::<Vec<_>>(),
-            "account_changes": tx_ir.state_deltas.account_changes.iter().map(|change| json!({
-                "address": universal_decoder_core::hex::encode(&change.address.bytes),
-                "address_readable": change.address.human_readable.as_ref().unwrap_or(&"".to_string()),
-                "nonce": change.nonce,
-                "balance_change": change.balance_change.to_string(),
-                "storage_changes_count": change.storage_changes.len(),
             })).collect::<Vec<_>>(),
         },
         "privacy": tx_ir.privacy.as_ref().map(|p| json!({

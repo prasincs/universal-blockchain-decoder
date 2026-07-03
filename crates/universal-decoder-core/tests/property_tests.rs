@@ -82,7 +82,6 @@ fn arb_canonical_tx() -> impl Strategy<Value = CanonicalTxIR> {
                 state_deltas: CanonicalStateDeltas {
                     inputs: vec![],
                     outputs: vec![],
-                    account_changes: vec![],
                 },
             },
         )
@@ -174,7 +173,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -212,7 +210,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -254,7 +251,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -291,7 +287,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -328,7 +323,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -365,7 +359,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -402,7 +395,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -439,7 +431,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -476,7 +467,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -513,7 +503,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -550,7 +539,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -587,7 +575,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -625,7 +612,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -662,7 +648,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -671,7 +656,6 @@ proptest! {
 
         prop_assert!(deserialized.state_deltas.inputs.is_empty());
         prop_assert!(deserialized.state_deltas.outputs.is_empty());
-        prop_assert!(deserialized.state_deltas.account_changes.is_empty());
     }
 
     /// Property: Large chain IDs are preserved
@@ -701,7 +685,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -755,7 +738,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -783,7 +765,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -820,7 +801,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -848,7 +828,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -887,7 +866,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -915,7 +893,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -952,7 +929,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -980,7 +956,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1017,7 +992,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1045,7 +1019,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1082,7 +1055,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1110,7 +1082,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1178,7 +1149,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1219,7 +1189,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1265,7 +1234,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1293,7 +1261,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1331,7 +1298,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1368,7 +1334,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1407,7 +1372,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1444,7 +1408,6 @@ proptest! {
             state_deltas: CanonicalStateDeltas {
                 inputs: vec![],
                 outputs: vec![],
-                account_changes: vec![],
             },
         };
 
@@ -1483,7 +1446,6 @@ fn test_empty_vec_serialization() {
         state_deltas: CanonicalStateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes: vec![],
         },
     };
 

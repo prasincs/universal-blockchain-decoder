@@ -329,38 +329,11 @@ impl NearTransaction {
 
     /// Build state deltas (account changes)
     fn build_state_deltas(&self) -> Result<StateDeltas> {
-        let tx = &self.signed_tx.transaction;
-
-        // Calculate total balance change (sum of all transfers/deposits)
-        let total_sent = self.signed_tx.total_transfer_amount();
-
-        let account_changes = vec![
-            // Signer account (sender)
-            AccountChange {
-                address: Address {
-                    bytes: tx.signer_id.clone().into_bytes(),
-                    human_readable: Some(tx.signer_id.clone()),
-                },
-                nonce: Some(tx.nonce),
-                balance_change: -(total_sent as i128), // Negative for sender
-                storage_changes: vec![],
-            },
-            // Receiver account
-            AccountChange {
-                address: Address {
-                    bytes: tx.receiver_id.clone().into_bytes(),
-                    human_readable: Some(tx.receiver_id.clone()),
-                },
-                nonce: None,
-                balance_change: total_sent as i128, // Positive for receiver
-                storage_changes: vec![],
-            },
-        ];
-
+        // Balance/nonce effect guesses are NOT byte-derivable and were removed
+        // from TxIR (docs/CONCEPTS_REVIEW.md C1).
         Ok(StateDeltas {
             inputs: vec![],
             outputs: vec![],
-            account_changes,
         })
     }
 }

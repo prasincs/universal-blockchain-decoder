@@ -374,47 +374,11 @@ impl<'a> Canonicalizer<'a> for OptimismTransaction {
                     }));
                 }
 
-                // Build state deltas
-                let mut account_changes = vec![];
-
-                // Sender gets minted ETH
-                if deposit.mint > 0 {
-                    account_changes.push(AccountChange {
-                        address: Address {
-                            bytes: deposit.from.to_vec(),
-                            human_readable: Some(format!(
-                                "0x{}",
-                                universal_decoder_core::hex::encode(deposit.from)
-                            )),
-                        },
-                        nonce: None,
-                        balance_change: deposit.mint as i128,
-                        storage_changes: vec![],
-                    });
-                }
-
-                // Recipient receives value (if different from sender)
-                if deposit.value > 0 {
-                    if let Some(to) = deposit.to {
-                        account_changes.push(AccountChange {
-                            address: Address {
-                                bytes: to.to_vec(),
-                                human_readable: Some(format!(
-                                    "0x{}",
-                                    universal_decoder_core::hex::encode(to)
-                                )),
-                            },
-                            nonce: None,
-                            balance_change: deposit.value as i128,
-                            storage_changes: vec![],
-                        });
-                    }
-                }
-
+                // State effects (mint/value credits) are NOT byte-derivable
+                // and were removed from TxIR (docs/CONCEPTS_REVIEW.md C1).
                 let state_deltas = StateDeltas {
                     inputs: vec![],
                     outputs: vec![],
-                    account_changes,
                 };
 
                 Ok(TxIR::new(

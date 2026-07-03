@@ -173,12 +173,8 @@ fn test_state_deltas() {
     // Check state deltas
     assert_eq!(tx_ir.state_deltas.inputs.len(), 0); // Account-based, no inputs
     assert_eq!(tx_ir.state_deltas.outputs.len(), 0); // Account-based, no outputs
-    assert!(!tx_ir.state_deltas.account_changes.is_empty());
-
-    // Source account should have fee deducted
-    let source_change = &tx_ir.state_deltas.account_changes[0];
-    assert_eq!(source_change.balance_change, -100); // Fee
-    assert_eq!(source_change.nonce, Some(1)); // Sequence number
+                                                     // account_changes was removed from TxIR (docs/CONCEPTS_REVIEW.md C1):
+                                                     // effects are not byte-derivable and are no longer fabricated.
 }
 
 #[test]

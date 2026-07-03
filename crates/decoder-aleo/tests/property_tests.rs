@@ -333,8 +333,11 @@ proptest! {
 
         if let Ok(tx) = AleoDecoder::decode(&bytes) {
             if let Ok(tx_ir) = tx.canonicalize() {
-                prop_assert!(!tx_ir.state_deltas.account_changes.is_empty(),
-                    "Finalize operations should generate account changes");
+                // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1);
+                // finalize operations will resurface as typed operation content
+                // under the C3 follow-up. Until then, canonicalization must
+                // simply succeed without fabricating effects.
+                prop_assert!(tx_ir.state_deltas.inputs.is_empty());
             }
         }
     }
@@ -365,8 +368,8 @@ proptest! {
 
         if let Ok(tx) = AleoDecoder::decode(&bytes) {
             if let Ok(tx_ir) = tx.canonicalize() {
-                prop_assert!(tx_ir.state_deltas.account_changes.is_empty(),
-                    "Deploy and Fee transactions should not have account changes");
+                // account_changes was removed from TxIR (CONCEPTS_REVIEW.md C1).
+                prop_assert!(tx_ir.state_deltas.inputs.is_empty());
             }
         }
     }
