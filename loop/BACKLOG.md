@@ -163,6 +163,13 @@ of re-litigating it. Reference decoders first:
   evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
   pin/refresh the CI toolchain so local and CI clippy agree.
   Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
+- [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
+  Task Executor` workflows have failed EVERY night since at least 2026-02-16
+  (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
+  main. This is the same blind spot that rotted the fuzz targets. Fix the
+  workflows or delete them; then make scheduled failures visible (e.g.
+  a health-report check via the Actions API, or failure notifications).
+  Verify: latest scheduled run of each remaining workflow is green.
 - [ ] **Run the health report in CI** — add a job calling
   `python3 scripts/loop/health_report.py` (static mode) on every PR; ratchet
   regressions fail the build.

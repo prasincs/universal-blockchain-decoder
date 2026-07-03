@@ -524,12 +524,10 @@ impl<'a> Canonicalizer<'a> for AlgorandTransaction {
                     ));
                 }
             }
-            AlgorandTxType::AssetTransfer => {
-                if tx.xfer_asset.is_none() {
-                    return Err(DecoderError::invalid_structure(
-                        "Asset transfer must have asset ID",
-                    ));
-                }
+            AlgorandTxType::AssetTransfer if tx.xfer_asset.is_none() => {
+                return Err(DecoderError::invalid_structure(
+                    "Asset transfer must have asset ID",
+                ));
             }
             _ => {} // Other types have different validation rules
         }

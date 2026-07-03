@@ -292,7 +292,16 @@ RATCHETS = {
 }
 
 
-def apply_ratchet(report, update: bool):
+def apply_ratchet(report, update: bool, accept_regression: str | None = None):
+    """Compare metrics against one-way baselines.
+
+    `accept_regression` (a mandatory human-readable reason) rebaselines any
+    regressed metrics instead of failing. This exists for exactly one
+    situation: merging upstream work (e.g. main) that legitimately moves a
+    metric the wrong way. The acceptance is recorded in loop/ratchet.json
+    under "accepted_regressions" as an audit trail - the regression stays
+    visible, it does not get laundered into a normal baseline update.
+    """
     ratchet = json.loads(RATCHET_PATH.read_text()) if RATCHET_PATH.is_file() else {}
     regressions, improved = [], {}
     for metric, direction in RATCHETS.items():
@@ -313,12 +322,36 @@ def apply_ratchet(report, update: bool):
                 regressions.append(f"{metric}: {baseline} -> {current} (must not decrease)")
             elif current > baseline:
                 improved[metric] = current
-    if update and improved:
-        ratchet.update(improved)
+    accepted = []
+    if regressions and accept_regression:
+        import datetime
+
+        for metric, direction in RATCHETS.items():
+            current, baseline = report.get(metric), ratchet.get(metric)
+            if current is None or baseline is None:
+                continue
+            regressed = current > baseline if direction == "max" else current < baseline
+            if regressed:
+                ratchet[metric] = current
+                accepted.append(
+                    {
+                        "metric": metric,
+                        "from": baseline,
+                        "to": current,
+                        "reason": accept_regression,
+                        "accepted_at": datetime.date.today().isoformat(),
+                    }
+                )
+        ratchet.setdefault("accepted_regressions", []).extend(accepted)
+        regressions = []
+    if update and (improved or accepted):
         RATCHET_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ratchet.update(improved)
         RATCHET_PATH.write_text(json.dumps(ratchet, indent=2, sort_keys=True) + "\n")
     report["ratchet_regressions"] = regressions
     report["ratchet_improvements"] = improved
+    if accepted:
+        report["ratchet_accepted_regressions"] = accepted
     return regressions
 
 
@@ -361,6 +394,10 @@ def summarize(report):
     if report.get("ratchet_improvements"):
         lines.append("")
         lines.append(f"ratchet improvements recorded: {report['ratchet_improvements']}")
+    for acc in report.get("ratchet_accepted_regressions", []):
+        lines.append(
+            f"ACCEPTED REGRESSION {acc['metric']}: {acc['from']} -> {acc['to']} ({acc['reason']})"
+        )
     return "\n".join(lines)
 
 
@@ -370,7 +407,15 @@ def main():
     ap.add_argument("--test", action="store_true", help="run cargo test on reference crates")
     ap.add_argument("--offline", action="store_true", help="skip the crates.io freshness check")
     ap.add_argument("--update-ratchet", action="store_true")
+    ap.add_argument(
+        "--accept-regression",
+        metavar="REASON",
+        help="rebaseline regressed metrics with an audited reason "
+        "(ONLY for merges of upstream work; implies --update-ratchet)",
+    )
     args = ap.parse_args()
+    if args.accept_regression:
+        args.update_ratchet = True
 
     report = {}
     hard_fail = not check_resolve(report)
@@ -387,7 +432,9 @@ def main():
     if args.test and not hard_fail:
         hard_fail |= not check_tests(report)
 
-    regressions = apply_ratchet(report, update=args.update_ratchet)
+    regressions = apply_ratchet(
+        report, update=args.update_ratchet, accept_regression=args.accept_regression
+    )
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")

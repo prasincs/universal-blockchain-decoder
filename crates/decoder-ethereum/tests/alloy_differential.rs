@@ -185,7 +185,12 @@ fn assert_fields_agree(name: &str, ours: &EthereumTransaction, theirs: &TxEnvelo
     assert_eq!(ours.r, r.to_be_bytes::<32>(), "{name}: signature r");
     assert_eq!(ours.s, s.to_be_bytes::<32>(), "{name}: signature s");
     assert_eq!(our_parity(ours), parity, "{name}: signature y-parity");
-    assert_eq!(ours.hash().as_slice(), hash.as_slice(), "{name}: tx hash");
+    // hash() is now computed from RE-ENCODED bytes (raw_bytes was removed
+    // upstream), so agreement here also validates our reconstruction.
+    let our_hash = ours
+        .hash()
+        .unwrap_or_else(|e| panic!("{name}: hash reconstruction failed: {e}"));
+    assert_eq!(our_hash.as_slice(), hash.as_slice(), "{name}: tx hash");
 
     // Sender recovery: both must agree on accept/reject, and on the address
     // when both accept. (Fixtures with synthetic signatures are rejected by

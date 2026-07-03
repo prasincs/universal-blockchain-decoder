@@ -85,7 +85,12 @@ The loop improves the *code*, and the metrics merely observe it. Therefore:
    Deleting/`#[ignore]`-ing a failing test is a regression, not a fix.
 2. **Never edit `loop/ratchet.json` by hand.** Only
    `health_report.py --update-ratchet` writes it, and only in the improving
-   direction.
+   direction. The single exception is merging upstream work that
+   legitimately moves a metric the wrong way:
+   `--accept-regression "<reason>"` rebaselines the regressed metrics AND
+   records `{metric, from, to, reason, date}` under `accepted_regressions`
+   in the ratchet file — the regression stays on the record and should have
+   a backlog item driving it back.
 3. **Never satisfy a metric by deleting the thing it measures** (e.g.,
    deleting a decoder to lower `raw_bytes_storing_count`) unless the backlog
    item explicitly says deletion is the fix (dead deps are an example where

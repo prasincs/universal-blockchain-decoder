@@ -21,8 +21,7 @@ pub struct BitcoinTransaction {
     pub witnesses: Vec<Witness>,
     /// Lock time
     pub locktime: u32,
-    /// Raw transaction bytes
-    pub raw_bytes: Vec<u8>,
+    // NOTE: No raw_bytes field - bytes must be reconstructed from fields
 }
 
 impl BitcoinTransaction {
@@ -86,13 +85,8 @@ impl BitcoinTransaction {
     pub fn txid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
 
-        let bytes_to_hash = if self.is_segwit() {
-            // For SegWit: serialize without marker, flag, and witness data
-            self.serialize_without_witness()
-        } else {
-            // For legacy: use raw bytes
-            self.raw_bytes.clone()
-        };
+        // For TXID, always use serialization without witness
+        let bytes_to_hash = self.serialize_without_witness();
 
         // Double SHA-256
         let hash1 = Sha256::digest(&bytes_to_hash);
@@ -167,11 +161,60 @@ impl BitcoinTransaction {
     pub fn wtxid(&self) -> Vec<u8> {
         use sha2::{Digest, Sha256};
 
-        // WTXID includes all data including witness
-        let hash1 = Sha256::digest(&self.raw_bytes);
+        // WTXID includes all data including witness - reconstruct from fields
+        let bytes = self.to_bytes().unwrap_or_default();
+        let hash1 = Sha256::digest(&bytes);
         let hash2 = Sha256::digest(hash1);
 
         hash2.to_vec()
+    }
+
+    /// Serialize transaction with witness data (full serialization)
+    fn serialize_with_witness(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Version (4 bytes, little-endian)
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+
+        // SegWit marker and flag
+        bytes.push(0x00); // Marker
+        bytes.push(0x01); // Flag
+
+        // Input count (varint)
+        encode_varint(&mut bytes, self.inputs.len() as u64);
+
+        // Inputs
+        for input in &self.inputs {
+            bytes.extend_from_slice(&input.prev_hash);
+            bytes.extend_from_slice(&input.prev_index.to_le_bytes());
+            encode_varint(&mut bytes, input.script_sig.len() as u64);
+            bytes.extend_from_slice(&input.script_sig);
+            bytes.extend_from_slice(&input.sequence.to_le_bytes());
+        }
+
+        // Output count (varint)
+        encode_varint(&mut bytes, self.outputs.len() as u64);
+
+        // Outputs
+        for output in &self.outputs {
+            bytes.extend_from_slice(&output.value.to_le_bytes());
+            encode_varint(&mut bytes, output.script_pubkey.len() as u64);
+            bytes.extend_from_slice(&output.script_pubkey);
+        }
+
+        // Witness data
+        for witness in &self.witnesses {
+            encode_varint(&mut bytes, witness.items.len() as u64);
+            for item in &witness.items {
+                encode_varint(&mut bytes, item.len() as u64);
+                bytes.extend_from_slice(item);
+            }
+        }
+
+        // Locktime (4 bytes, little-endian)
+        bytes.extend_from_slice(&self.locktime.to_le_bytes());
+
+        bytes
     }
 
     /// Calculate total output value
@@ -231,21 +274,29 @@ impl BitcoinTransaction {
 }
 
 impl ChainEncoder for BitcoinTransaction {
-    /// Re-encode the Bitcoin transaction back to its original byte format
+    /// Re-encode the Bitcoin transaction back to bytes.
     ///
-    /// Since we store the original raw bytes during decoding, this simply
-    /// returns a clone of those bytes, guaranteeing exact reconstruction.
+    /// This reconstructs the transaction from parsed fields, guaranteeing
+    /// that the decoder actually parsed the data rather than just storing bytes.
     ///
     /// # Formal Properties
     ///
-    /// This implementation trivially satisfies the injective property:
+    /// The injective property is satisfied through actual reconstruction:
     /// ```text
     /// ∀ tx_bytes: BitcoinDecoder::decode(tx_bytes)?.to_bytes()? == tx_bytes
     /// ```
-    ///
-    /// Because we store `raw_bytes` during decode, the roundtrip is guaranteed.
     fn to_bytes(&self) -> Result<Vec<u8>> {
-        Ok(self.raw_bytes.clone())
+        if self.is_segwit() {
+            Ok(self.serialize_with_witness())
+        } else {
+            Ok(self.serialize_without_witness())
+        }
+    }
+}
+
+impl ReconstructableTransaction for BitcoinTransaction {
+    fn reconstruct_bytes(&self) -> Result<Vec<u8>> {
+        self.to_bytes()
     }
 }
 
@@ -262,11 +313,13 @@ impl<'a> Canonicalizer<'a> for BitcoinTransaction {
             self.is_segwit()
         );
 
+        // Get size from reconstructed bytes
+        let tx_bytes = self.to_bytes()?;
         let metadata = TxMetadata {
             tx_hash: self.txid(),
             block_height: None, // Not available from transaction alone
             timestamp: Some(self.locktime as u64),
-            size: self.raw_bytes.len(),
+            size: tx_bytes.len(),
             extra,
         };
 
@@ -411,26 +464,15 @@ impl TxHashable for BitcoinTransaction {
     ///
     /// # Formal Verification (Phase 4.2 - VT-14.1, VT-14.2)
     ///
-    /// VT-14.1: Canonicalization preserves original bytes (injectivity)
-    /// - Returns clone of raw_bytes (perfect preservation)
+    /// VT-14.1: Canonicalization reconstructs bytes from fields (injectivity)
+    /// - Reconstructs from parsed fields, guaranteeing actual parsing
     /// - Roundtrip property: decode(encode(tx)) == tx
     ///
     /// VT-14.2: Signature verification preserved
-    /// - Original bytes preserve exact signature data
-    /// - Hash of canonical bytes == hash of original bytes
-    ///
-    /// ## Verification Conditions (for Verus)
-    ///
-    /// ```rust,ignore
-    /// // VT-14.1: Injectivity
-    /// ensures(result == self.raw_bytes)
-    ///
-    /// // VT-14.2: Signature preservation
-    /// ensures(hash(result) == hash(self.raw_bytes))
-    /// ```
+    /// - Reconstructed bytes preserve exact signature data
     fn to_canonical_bytes(&self) -> Vec<u8> {
-        // Use raw bytes as canonical representation
-        self.raw_bytes.clone()
+        // Reconstruct bytes from parsed fields
+        self.to_bytes().unwrap_or_default()
     }
 
     /// Compute cryptographic hash of transaction
@@ -439,13 +481,6 @@ impl TxHashable for BitcoinTransaction {
     ///
     /// Uses double SHA-256 per Bitcoin protocol
     /// Hash is deterministic and preserves signature verification
-    ///
-    /// ## Verification Conditions (for Verus)
-    ///
-    /// ```rust,ignore
-    /// ensures(result.len() == 32)  // Double SHA-256 produces 32-byte hash
-    /// ensures(compute_hash() == compute_hash())  // Deterministic
-    /// ```
     fn compute_hash(&self) -> Vec<u8> {
         // Bitcoin uses double SHA-256
         self.compute_hash_with::<DoubleSha256>()
@@ -474,7 +509,6 @@ mod tests {
             outputs: vec![],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(coinbase_tx.is_coinbase());
@@ -490,7 +524,6 @@ mod tests {
             outputs: vec![],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(!regular_tx.is_coinbase());
@@ -504,7 +537,6 @@ mod tests {
             outputs: vec![],
             witnesses: vec![Witness::empty()],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(!legacy_tx.is_segwit());
@@ -517,7 +549,6 @@ mod tests {
                 items: vec![vec![0xAA, 0xBB]],
             }],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(segwit_tx.is_segwit());
@@ -544,7 +575,6 @@ mod tests {
             ],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert_eq!(tx.total_output_value().unwrap(), 6_000_000);
@@ -567,7 +597,6 @@ mod tests {
             ],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(tx.total_output_value().is_err());
@@ -589,7 +618,6 @@ mod tests {
             }],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         // Input: 5 BTC, Output: 4 BTC, Fee: 1 BTC
@@ -616,7 +644,6 @@ mod tests {
             }],
             witnesses: vec![Witness::empty()],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(tx.validate().is_ok());
@@ -633,7 +660,6 @@ mod tests {
             }],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(tx.validate().is_err());
@@ -652,7 +678,6 @@ mod tests {
             outputs: vec![],
             witnesses: vec![],
             locktime: 0,
-            raw_bytes: vec![],
         };
 
         assert!(tx.validate().is_err());

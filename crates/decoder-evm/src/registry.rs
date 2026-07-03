@@ -171,11 +171,13 @@ mod tests {
 
         let eth = registry.get_chain_by_name("eth");
         assert!(eth.is_some());
-        assert_eq!(eth.unwrap().chain_id, 1);
+        if let Some(eth_chain) = eth {
+            assert_eq!(eth_chain.chain_id, 1);
+        }
 
         let bnb = registry.get_chain_by_name("bnb");
-        if bnb.is_some() {
-            assert_eq!(bnb.unwrap().chain_id, 56);
+        if let Some(bnb_chain) = bnb {
+            assert_eq!(bnb_chain.chain_id, 56);
         }
     }
 

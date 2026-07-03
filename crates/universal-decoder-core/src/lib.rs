@@ -63,6 +63,7 @@ pub mod ir;
 pub mod privacy;
 pub mod traits;
 pub mod verification;
+pub mod verified;
 
 // Vendored dependencies (git subtree)
 mod vendored;
@@ -94,6 +95,7 @@ pub mod prelude {
         FormallyVerifiable, HashAlgorithm, Keccak256Hash, Sha256Hash, TxHashable, TxVerifier,
         TxVersion,
     };
+    pub use crate::verified::ReconstructableTransaction;
 }
 
 /// Library version

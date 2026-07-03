@@ -80,7 +80,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run property tests (extended)
-        run: cargo test --test property_tests --all --verbose
+        run: cargo test --locked --test property_tests --all --verbose
         env:
           PROPTEST_CASES: 10000  # 10x more iterations for nightly
 
@@ -108,7 +108,7 @@ jobs:
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run benchmarks
-        run: cargo bench --all --verbose
+        run: cargo bench --locked --all --verbose
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -161,4 +161,4 @@ jobs:
       - name: Run vendored dependency tests
         run: |
           # Test that vendored dependencies work correctly
-          cargo test -p universal-decoder-core --test vendored_hex_tests --verbose
+          cargo test --locked -p universal-decoder-core --test vendored_hex_tests --verbose

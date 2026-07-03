@@ -1,8 +1,17 @@
 {
-  "core_loc_non_vendored": 4902,
+  "accepted_regressions": [
+    {
+      "accepted_at": "2026-07-03",
+      "from": 4902,
+      "metric": "core_loc_non_vendored",
+      "reason": "merge of main PR #135 (strict canonical decoding for injectivity) added core LOC; reduction tracked by Canonical-mirror deletion item",
+      "to": 5169
+    }
+  ],
+  "core_loc_non_vendored": 5169,
   "dead_validation_deps_count": 7,
   "differential_decoders_count": 3,
   "fixture_total": 107,
-  "raw_bytes_storing_count": 24,
+  "raw_bytes_storing_count": 22,
   "string_fields_in_canonical": 5
 }

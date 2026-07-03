@@ -1,6 +1,6 @@
 {
   "core_loc_budget": 3000,
-  "core_loc_non_vendored": 4902,
+  "core_loc_non_vendored": 5169,
   "crates_with_fuzz_targets": [
     "decoder-bitcoin",
     "decoder-ethereum",
@@ -38,22 +38,18 @@
     "decoder-solana": 6
   },
   "fixture_total": 107,
-  "ratchet_improvements": {
-    "core_loc_non_vendored": 4902
-  },
+  "ratchet_improvements": {},
   "ratchet_regressions": [],
-  "raw_bytes_storing_count": 24,
+  "raw_bytes_storing_count": 22,
   "raw_bytes_storing_decoders": [
     "decoder-aleo",
     "decoder-algorand",
     "decoder-ao",
     "decoder-aptos",
     "decoder-avalanche",
-    "decoder-bitcoin",
     "decoder-bittensor",
     "decoder-cardano",
     "decoder-cosmos",
-    "decoder-ethereum",
     "decoder-filecoin",
     "decoder-generator",
     "decoder-move",
@@ -70,15 +66,5 @@
     "decoder-zcash"
   ],
   "string_fields_in_canonical": 5,
-  "upstream_outdated": [
-    "alloy-consensus: locked 1.8.3 -> latest 2.1.0",
-    "alloy-eips: locked 1.8.3 -> latest 2.1.0",
-    "bitcoin: locked 0.31.3 -> latest 0.32.101",
-    "pallas-codec: locked 0.30.2 -> latest 1.1.1",
-    "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
-    "pallas-traverse: locked 0.30.2 -> latest 1.1.1",
-    "solana-transaction-status: locked 3.1.14 -> latest 4.1.0"
-  ],
-  "upstream_update_check": "ok (11 crates checked)",
   "workspace_resolves": true
 }

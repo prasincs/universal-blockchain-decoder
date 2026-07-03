@@ -103,11 +103,11 @@ proptest! {
     #[test]
     fn prop_transaction_hash_deterministic(bytes in arb_small_bytes()) {
         if let Ok(tx) = EthereumDecoder::decode(&bytes) {
-            let hash1 = tx.hash();
-            let hash2 = tx.hash();
+            let hash1 = tx.hash().ok();
+            let hash2 = tx.hash().ok();
             prop_assert_eq!(hash1.clone(), hash2, "Transaction hash is non-deterministic");
             let expected_hash = Keccak256::digest(&bytes).to_vec();
-            prop_assert_eq!(hash1, expected_hash, "Hash should match Keccak256 of bytes");
+            prop_assert_eq!(hash1, Some(expected_hash), "Hash should match Keccak256 of bytes");
         }
     }
 
@@ -401,6 +401,13 @@ proptest! {
 
 use decoder_encodings::RlpEncoder;
 
+/// Strip leading zeros from a byte slice for canonical RLP encoding.
+/// Per RLP spec, integers (including signature components) should be encoded minimally.
+fn strip_leading_zeros(bytes: &[u8]) -> Vec<u8> {
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
+    bytes[start..].to_vec()
+}
+
 /// Helper: Encode a valid legacy Ethereum transaction to RLP bytes
 #[allow(clippy::too_many_arguments)]
 fn encode_legacy_tx(
@@ -438,11 +445,11 @@ fn encode_legacy_tx(
     // 7. v (signature recovery id + chain id encoding)
     list.append_u64(v).unwrap();
 
-    // 8. r (signature)
-    list.append_bytes(r).unwrap();
+    // 8. r (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(r)).unwrap();
 
-    // 9. s (signature)
-    list.append_bytes(s).unwrap();
+    // 9. s (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(s)).unwrap();
 
     list.finalize().unwrap();
     encoder.finalize()
@@ -502,11 +509,11 @@ fn encode_eip1559_tx(
     // 10. v (0 or 1 for EIP-1559)
     list.append_u64(v as u64).unwrap();
 
-    // 11. r (signature)
-    list.append_bytes(r).unwrap();
+    // 11. r (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(r)).unwrap();
 
-    // 12. s (signature)
-    list.append_bytes(s).unwrap();
+    // 12. s (signature) - strip leading zeros for canonical encoding
+    list.append_bytes(&strip_leading_zeros(s)).unwrap();
 
     list.finalize().unwrap();
 
@@ -514,6 +521,139 @@ fn encode_eip1559_tx(
     let mut result = vec![0x02];
     result.extend(encoder.finalize());
     result
+}
+
+/// Helper: Encode a legacy transaction WITHOUT stripping signature leading
+/// zeros. Used to verify the decoder rejects this non-canonical form.
+#[allow(clippy::too_many_arguments)]
+fn encode_legacy_tx_unstripped_sig(
+    nonce: u64,
+    gas_price: u64,
+    gas_limit: u64,
+    to: Option<[u8; 20]>,
+    value: u128,
+    data: &[u8],
+    v: u64,
+    r: &[u8; 32],
+    s: &[u8; 32],
+) -> Vec<u8> {
+    let mut encoder = RlpEncoder::new();
+    let mut list = encoder.begin_list();
+
+    list.append_u64(nonce).unwrap();
+    list.append_u64(gas_price).unwrap();
+    list.append_u64(gas_limit).unwrap();
+    list.append_address(to).unwrap();
+    list.append_u128(value).unwrap();
+    list.append_bytes(data).unwrap();
+    list.append_u64(v).unwrap();
+    // Deliberately non-canonical: full 32 bytes including leading zeros
+    list.append_bytes(r).unwrap();
+    list.append_bytes(s).unwrap();
+
+    list.finalize().unwrap();
+    encoder.finalize()
+}
+
+/// Helper: Encode a valid EIP-4844 blob transaction to typed transaction bytes
+#[allow(clippy::too_many_arguments)]
+fn encode_eip4844_tx(
+    chain_id: u64,
+    nonce: u64,
+    max_priority_fee_per_gas: u64,
+    max_fee_per_gas: u64,
+    gas_limit: u64,
+    to: [u8; 20],
+    value: u128,
+    data: &[u8],
+    max_fee_per_blob_gas: u64,
+    blob_versioned_hashes: &[[u8; 32]],
+    v: u8,
+    r: &[u8; 32],
+    s: &[u8; 32],
+) -> Vec<u8> {
+    let mut encoder = RlpEncoder::new();
+    let mut list = encoder.begin_list();
+
+    list.append_u64(chain_id).unwrap();
+    list.append_u64(nonce).unwrap();
+    list.append_u64(max_priority_fee_per_gas).unwrap();
+    list.append_u64(max_fee_per_gas).unwrap();
+    list.append_u64(gas_limit).unwrap();
+    list.append_address(Some(to)).unwrap();
+    list.append_u128(value).unwrap();
+    list.append_bytes(data).unwrap();
+
+    // Empty access list
+    list.append_list(|_| Ok(())).unwrap();
+
+    list.append_u64(max_fee_per_blob_gas).unwrap();
+    list.append_list(|hashes| {
+        for hash in blob_versioned_hashes {
+            hashes.append_bytes(hash)?;
+        }
+        Ok(())
+    })
+    .unwrap();
+
+    list.append_u64(v as u64).unwrap();
+    list.append_bytes(&strip_leading_zeros(r)).unwrap();
+    list.append_bytes(&strip_leading_zeros(s)).unwrap();
+
+    list.finalize().unwrap();
+
+    // Prepend EIP-4844 type byte (0x03)
+    let mut result = vec![0x03];
+    result.extend(encoder.finalize());
+    result
+}
+
+/// Strategy: Generate a valid EIP-4844 blob transaction
+///
+/// The 13 parameters exceed proptest's 12-element tuple limit,
+/// so they are grouped into two nested tuples.
+fn arb_valid_eip4844_tx() -> impl Strategy<Value = Vec<u8>> {
+    (
+        (
+            1u64..10u64,                                // chain_id
+            any::<u64>(),                               // nonce
+            1u64..100_000_000_000u64,                   // max_priority_fee
+            1u64..1_000_000_000_000u64,                 // max_fee
+            21000u64..30_000_000u64,                    // gas_limit
+            arb_address(),                              // to (required for 4844)
+            0u128..10_000_000_000_000_000_000u128,      // value
+            prop::collection::vec(any::<u8>(), 0..100), // data
+        ),
+        (
+            1u64..1_000_000_000u64,                      // max_fee_per_blob_gas
+            prop::collection::vec(arb_bytes32(), 1..=6), // blob_versioned_hashes
+            0u8..=1u8,                                   // v
+            arb_bytes32(),                               // r
+            arb_bytes32(),                               // s
+        ),
+    )
+        .prop_map(
+            |(
+                (chain_id, nonce, max_priority, max_fee, gas_limit, to, value, data),
+                (max_fee_per_blob_gas, blob_hashes, v, r, s),
+            )| {
+                encode_eip4844_tx(
+                    chain_id,
+                    nonce,
+                    max_priority,
+                    max_fee,
+                    gas_limit,
+                    to,
+                    value,
+                    &data,
+                    max_fee_per_blob_gas,
+                    &blob_hashes,
+                    v,
+                    &r,
+                    &s,
+                )
+            },
+        )
 }
 
 /// Strategy: Generate arbitrary 32-byte hash/signature component
@@ -629,6 +769,24 @@ proptest! {
         );
     }
 
+    /// Property: Roundtrip encoding preserves EIP-4844 transaction bytes
+    #[test]
+    fn prop_ethereum_roundtrip_eip4844(tx_bytes in arb_valid_eip4844_tx()) {
+        let decoded = EthereumDecoder::decode(&tx_bytes)
+            .map_err(|e| TestCaseError::fail(format!("Decode failed: {}", e)))?;
+
+        prop_assert_eq!(decoded.tx_type, decoder_ethereum::types::TxType::Eip4844);
+
+        let re_encoded = decoded.to_bytes()
+            .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+
+        prop_assert_eq!(
+            tx_bytes.as_slice(),
+            re_encoded.as_slice(),
+            "Roundtrip failed for EIP-4844 tx: encode(decode(tx_bytes)) != tx_bytes"
+        );
+    }
+
     /// Property: Roundtrip preserves transaction type
     #[test]
     fn prop_ethereum_roundtrip_preserves_type(tx_bytes in prop_oneof![
@@ -644,6 +802,66 @@ proptest! {
 
         prop_assert_eq!(!is_typed, is_legacy,
             "Transaction type should match encoding pattern");
+    }
+}
+
+//
+// Strict Injective Property: decode success implies EXACT roundtrip
+//
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(1000))]
+
+    /// Property: For ARBITRARY bytes, if decode succeeds then re-encoding
+    /// reproduces the input exactly.
+    ///
+    /// This is the strongest form of the injective property. It holds only
+    /// because the decoder rejects non-canonical encodings (padded signature
+    /// components, non-minimal RLP) — anything it accepts, it can reproduce
+    /// byte-for-byte from parsed fields alone.
+    #[test]
+    fn prop_decode_success_implies_exact_roundtrip(bytes in arb_small_bytes()) {
+        if let Ok(decoded) = EthereumDecoder::decode(&bytes) {
+            let re_encoded = decoded.to_bytes()
+                .map_err(|e| TestCaseError::fail(format!("Encode failed: {}", e)))?;
+            prop_assert_eq!(
+                bytes.as_slice(),
+                re_encoded.as_slice(),
+                "Decoder accepted bytes it cannot reproduce: this breaks injectivity"
+            );
+        }
+    }
+
+    /// Property: Non-canonical zero-padded signature components are rejected.
+    ///
+    /// A signature r/s value with leading zero bytes has exactly one canonical
+    /// RLP encoding (stripped). The decoder must reject the padded form,
+    /// otherwise decode would succeed on bytes that to_bytes() cannot reproduce.
+    #[test]
+    fn prop_ethereum_rejects_padded_signature(
+        (nonce, gas_price, gas_limit, to, value, data, v, r, s) in (
+            any::<u64>(),
+            1u64..1_000_000_000_000u64,
+            21000u64..30_000_000u64,
+            prop::option::of(arb_address()),
+            0u128..10_000_000_000_000_000_000u128,
+            prop::collection::vec(any::<u8>(), 0..100),
+            27u64..=28u64,
+            arb_bytes32(),
+            arb_bytes32(),
+        )
+    ) {
+        let mut r = r;
+        r[0] = 0; // Force a leading zero so the 32-byte encoding is non-canonical
+
+        let tx_bytes = encode_legacy_tx_unstripped_sig(
+            nonce, gas_price, gas_limit, to, value, &data, v, &r, &s,
+        );
+
+        prop_assert!(
+            EthereumDecoder::decode(&tx_bytes).is_err(),
+            "Decoder must reject zero-padded signature components"
+        );
     }
 }
 

@@ -93,7 +93,10 @@ fn demo_ethereum_decoder(registry: &HookRegistry) {
             println!("  - Gas limit: {}", tx.gas_limit);
             println!("  - EIP-1559: {}", tx.is_eip1559());
             println!("  - Contract creation: {}", tx.is_contract_creation());
-            println!("  - Hash: {}", hex::encode(tx.hash()));
+            match tx.hash() {
+                Ok(hash) => println!("  - Hash: {}", hex::encode(hash)),
+                Err(e) => println!("  - Hash unavailable: {}", e),
+            }
 
             // Canonicalize to TxIR
             match tx.canonicalize() {
