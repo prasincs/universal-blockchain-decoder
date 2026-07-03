@@ -147,15 +147,18 @@ of re-litigating it. Reference decoders first:
   FUZZING_RESULTS.md). Fix them, then add a CI job that `cargo check`s every
   `crates/*/fuzz` so they can't rot silently again.
   Verify: `cd crates/decoder-ethereum/fuzz && cargo check`.
-- [ ] **TON `real_transactions` integration tests fail on main** — 3 of 5
-  tests in `crates/decoder-ton/tests/real_transactions.rs` panic (e.g.
-  `test_real_ton_state_init` at :86). Nobody noticed because CI's
-  integration-test job only runs `cargo test -p universal-decoder-core
-  --tests` — decoder crates' integration tests are NOT in CI (same gap that
-  let the fuzz targets rot). Fix the TON tests AND extend CI to run
-  `cargo test --workspace` (with the known-failing autonomous-executor item
-  resolved or that tool retired first).
-  Verify: `cargo test -p decoder-ton --test real_transactions`.
+- [x] **TON `real_transactions` integration tests fail on main** — root
+  cause: the "real StateInit from the TON cookbook" fixture is TRUNCATED
+  (header declares 27 cells / 875 bytes of cell data; 163 bytes present).
+  Our parser was right to reject it; three tests asserted success on corrupt
+  data. Rewrote them: corrupt BoC now must be rejected by BOTH our parser
+  and tonlib-core (first TON differential test - the declared oracle is
+  finally used); the valid 4-cell BoC became the positive multi-cell case
+  with tonlib-core cell-count agreement. (Done 2026-07;
+  `differential_decoders_count` -> 5, `dead_validation_deps_count` -> 5.)
+  Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
+  this finally surfaced; the plain Test Suite integration job still only
+  covers core.
 - [ ] **Workspace fails clippy on current stable (1.94)** — pre-existing
   `unnecessary_unwrap` / `large_enum_variant` errors in `decoder-optimism`
   (src/types.rs:397-403, enum at :13) and `decoder-evm`

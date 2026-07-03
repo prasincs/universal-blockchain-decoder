@@ -108,9 +108,13 @@ def dev_deps(cargo_toml: Path):
 
 
 def crate_uses_lib(crate_dir: Path, lib: str) -> bool:
-    """Does any test/bench/example code actually import this library?"""
+    """Does any test/bench/example code actually import this library?
+
+    Matches `use lib::...`, `extern crate lib`, and fully-qualified
+    `lib::path::Item` usage.
+    """
     ident = lib.replace("-", "_")
-    pattern = re.compile(rf"\b(use|extern crate)\s+{re.escape(ident)}\b")
+    pattern = re.compile(rf"\b(use\s+{re.escape(ident)}\b|extern crate\s+{re.escape(ident)}\b|{re.escape(ident)}::)")
     candidates = []
     for sub in ("tests", "benches", "examples"):
         candidates.extend((crate_dir / sub).rglob("*.rs") if (crate_dir / sub).is_dir() else [])

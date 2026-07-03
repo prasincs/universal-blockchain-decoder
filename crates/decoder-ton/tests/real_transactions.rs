@@ -69,37 +69,30 @@ fn test_real_ton_transfer_message() {
 }
 
 #[test]
-fn test_real_ton_state_init() {
-    // Real TON StateInit message from TON documentation
-    // This represents contract initialization data
-    // Source: TON cookbook examples
+fn test_corrupt_boc_rejected_by_both_implementations() {
+    // CORPUS FINDING (2026-07): this base64 string was checked in as a "real
+    // TON StateInit from the TON cookbook", but it is TRUNCATED: its BoC
+    // header declares 27 cells with 875 bytes of cell data, while only 163
+    // bytes remain in the file. Our parser was correct to reject it - the
+    // three tests that previously used it were asserting successful parses
+    // of corrupt data. Differential check: tonlib-core (upstream) must
+    // reject it too. Backlog: fetch a real StateInit via a corpus tool and
+    // add a positive multi-cell test from it.
     let boc_base64 = "te6cckECGwEAA2sAART/APSkE/S88sgLAQIBIAIDAgFIBAUCAvIMDQ8E9PzoYXX4ZPgfoTjIU7L/AgEgYH74BgYEBIMH/8IAIbGBn4YD4B4f/wQGpCGYfQIBBhITFBUCASAWFwIBSBgZGhsWAAgcPH6BkAIBSBgZAgJ7GhsACNrIULTQjkJwgBDIywVQB88WIfAHy//J0AT0BPQE9ATwAvoA9AQlYfQFPwX/BtQFBg==";
 
     let boc_bytes = decode_base64_boc(boc_base64);
-
-    println!("\nStateInit BoC size: {} bytes", boc_bytes.len());
-
-    // Verify it's valid BoC
     assert_eq!(&boc_bytes[0..4], &[0xb5, 0xee, 0x9c, 0x72]);
 
-    // Parse BoC
-    let cells = boc::parse_boc(&boc_bytes).expect("Failed to parse StateInit BoC");
-
-    println!("StateInit parsed {} cells", cells.len());
-    assert!(cells.len() > 1, "StateInit should have multiple cells");
-
-    // StateInit typically has references to code and data cells
-    let root = &cells[0];
-    println!(
-        "StateInit root: {} bits, {} refs",
-        root.bit_len,
-        root.refs.len()
+    let ours = boc::parse_boc(&boc_bytes);
+    assert!(
+        ours.is_err(),
+        "our parser accepted a BoC whose header claims more cell data than the file contains"
     );
 
-    // StateInit usually has 2 references (code and data)
+    let theirs = tonlib_core::cell::BagOfCells::parse(&boc_bytes);
     assert!(
-        !root.refs.is_empty(),
-        "StateInit should have cell references"
+        theirs.is_err(),
+        "DISAGREEMENT: tonlib-core accepted a BoC we reject: {theirs:?}"
     );
 }
 
@@ -110,10 +103,6 @@ fn test_boc_format_validation() {
         (
             "Standard BoC",
             "te6cckEBBAEAOgACATQCAQAAART/APSkE/S88sgLAwBI0wHQ0wMBcbCRW+D6QDBwgBDIywVYzxYh+gLLagHPFsmAQPsAlxCarA==",
-        ),
-        (
-            "Another valid BoC",
-            "te6cckECGwEAA2sAART/APSkE/S88sgLAQIBIAIDAgFIBAUCAvIMDQ8E9PzoYXX4ZPgfoTjIU7L/AgEgYH74BgYEBIMH/8IAIbGBn4YD4B4f/wQGpCGYfQIBBhITFBUCASAWFwIBSBgZGhsWAAgcPH6BkAIBSBgZAgJ7GhsACNrIULTQjkJwgBDIywVQB88WIfAHy//J0AT0BPQE9ATwAvoA9AQlYfQFPwX/BtQFBg==",
         ),
     ];
 
@@ -162,33 +151,46 @@ fn test_parse_real_transaction() {
 
 #[test]
 fn test_multiple_cell_boc() {
-    // Test BoC with multiple cells (from StateInit example)
-    let boc_base64 = "te6cckECGwEAA2sAART/APSkE/S88sgLAQIBIAIDAgFIBAUCAvIMDQ8E9PzoYXX4ZPgfoTjIU7L/AgEgYH74BgYEBIMH/8IAIbGBn4YD4B4f/wQGpCGYfQIBBhITFBUCASAWFwIBSBgZGhsWAAgcPH6BkAIBSBgZAgJ7GhsACNrIULTQjkJwgBDIywVQB88WIfAHy//J0AT0BPQE9ATwAvoA9AQlYfQFPwX/BtQFBg==";
+    // A verified-valid multi-cell BoC (4 cells; header sizes are internally
+    // consistent). The previous fixture here was the corrupt StateInit - see
+    // test_corrupt_boc_rejected_by_both_implementations.
+    let boc_base64 = "te6cckEBBAEAOgACATQCAQAAART/APSkE/S88sgLAwBI0wHQ0wMBcbCRW+D6QDBwgBDIywVYzxYh+gLLagHPFsmAQPsAlxCarA==";
 
     let boc_bytes = decode_base64_boc(boc_base64);
     let cells = boc::parse_boc(&boc_bytes).expect("Failed to parse multi-cell BoC");
 
     println!("\nMulti-cell BoC details:");
     println!("  Total cells: {}", cells.len());
-
-    for (i, cell) in cells.iter().enumerate() {
-        println!(
-            "  Cell {}: {} bits, {} refs, {} bytes",
-            i,
-            cell.bit_len,
-            cell.refs.len(),
-            cell.data.len()
-        );
-    }
-
-    // Verify structure
-    assert!(
-        cells.len() > 5,
-        "Complex BoC should have multiple cells (has {})",
-        cells.len()
-    );
+    assert!(cells.len() > 1, "should contain multiple cells");
 
     // Verify cells can reference each other
     let has_refs = cells.iter().any(|c| !c.refs.is_empty());
     assert!(has_refs, "Should have cells with references");
+
+    // Differential: tonlib-core must parse the same bytes and agree on the
+    // total number of distinct cells (roots plus all referenced cells).
+    let theirs = tonlib_core::cell::BagOfCells::parse(&boc_bytes)
+        .expect("tonlib-core rejected a BoC we accept - DISAGREEMENT");
+    fn count_cells(
+        cell: &std::sync::Arc<tonlib_core::cell::Cell>,
+        seen: &mut Vec<*const tonlib_core::cell::Cell>,
+    ) {
+        let ptr = std::sync::Arc::as_ptr(cell);
+        if seen.contains(&ptr) {
+            return;
+        }
+        seen.push(ptr);
+        for r in cell.references() {
+            count_cells(r, seen);
+        }
+    }
+    let mut seen = Vec::new();
+    for root in &theirs.roots {
+        count_cells(root, &mut seen);
+    }
+    assert_eq!(
+        cells.len(),
+        seen.len(),
+        "cell count disagreement with tonlib-core"
+    );
 }
