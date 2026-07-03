@@ -105,8 +105,19 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   is wrong.
 - [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
   decoder-ethereum dev-deps; re-run `alloy_differential`.
-- [ ] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
-  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`.
+- [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
+  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
+  bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
+  `compute_txid()`. All 123 Bitcoin Core differential vectors still agree
+  with the upstream crate. `upstream_outdated` 7 -> 6.)
+- [ ] *(auto-generated 2026-07)* **Bump pallas 0.30 -> 1.1** in
+  decoder-cardano dev-deps; re-run the differential suite. NOTE: the current
+  `pallas_validation_tests::test_compare_with_pallas` is an `#[ignore]` TODO
+  stub (integration_tests.rs:311-333), so `pallas-codec` is a dead validation
+  dep in practice — the report counts it toward `differential_decoders_count`
+  but nothing is actually compared. Do the major-version bump together with
+  the real work in the P1 "Cardano vs pallas" item; bumping alone buys
+  nothing measurable.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
