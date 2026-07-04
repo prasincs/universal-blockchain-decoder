@@ -98,15 +98,31 @@ dev machine, commit the fixtures, verification re-runs offline in tests).
 The health report now queries crates.io for newer stable versions of every
 locked upstream oracle (`upstream_outdated` in `loop/report.json`).
 
+- [x] **crates.io freshness check silently skipped** — crates.io's
+  data-access policy rejects requests whose `User-Agent` carries no contact
+  (a 403), and the catch-all `except` degraded that to
+  `"skipped (crates.io unreachable)"` even on a healthy network, so the
+  entire upstream-drift signal was dark. Added the repo URL to the
+  User-Agent. Verify: `python3 scripts/loop/health_report.py` prints
+  `upstream update check: ok (N crates checked)`, not `skipped`.
+  (Done 2026-07; surfaced 8 outdated oracles that were previously invisible.)
 - [ ] **Policy**: when `upstream_outdated` lists a library that has
   differential tests, bumping it and re-running the suite IS a backlog item
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
-- [ ] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
-  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`.
+- [ ] *(auto-generated 2026-06, re-confirmed 2026-07)* **Bump alloy 1.8.3 ->
+  2.1.0** in decoder-ethereum dev-deps (`alloy-consensus`, `alloy-eips`);
+  re-run `alloy_differential`. Major-version bump — expect API churn.
+- [ ] *(auto-generated 2026-06, re-confirmed 2026-07)* **Bump rust-bitcoin
+  0.31.3 -> 0.32.101** in decoder-bitcoin dev-deps; re-run
+  `bitcoin_core_vectors`.
+- [ ] *(auto-generated 2026-07)* **Bump pallas 0.30.2 -> 1.1.1** in
+  decoder-cardano dev-deps (`pallas-codec` is a live differential oracle;
+  `pallas-primitives`/`pallas-traverse` are declared but dead). Major-version
+  bump 0.30 -> 1.1 — expect breaking API changes. Re-run the Cardano
+  differential suite; any decode disagreement after the bump is a finding
+  (minimal repro fixture first).
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.

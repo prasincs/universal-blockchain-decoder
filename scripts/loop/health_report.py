@@ -244,8 +244,19 @@ def check_upstream_updates(report):
         if lib not in locked:
             continue
         url = f"https://crates.io/api/v1/crates/{lib}"
+        # crates.io's data-access policy rejects requests whose User-Agent
+        # lacks a contact (a 403 that urllib raises as an error). Without the
+        # repo URL below the whole check silently degrades to "skipped
+        # (crates.io unreachable)" even on a healthy network, masking the
+        # upstream-drift signal this function exists to produce.
         req = urllib.request.Request(
-            url, headers={"User-Agent": "universal-blockchain-decoder health_report"}
+            url,
+            headers={
+                "User-Agent": (
+                    "universal-blockchain-decoder health_report "
+                    "(+https://github.com/prasincs/universal-blockchain-decoder)"
+                )
+            },
         )
         try:
             with urllib.request.urlopen(req, timeout=8) as resp:
