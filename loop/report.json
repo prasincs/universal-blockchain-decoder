@@ -38,10 +38,7 @@
     "decoder-solana": 6
   },
   "fixture_total": 107,
-  "ratchet_improvements": {
-    "dead_validation_deps_count": 5,
-    "differential_decoders_count": 5
-  },
+  "ratchet_improvements": {},
   "ratchet_regressions": [],
   "raw_bytes_storing_count": 22,
   "raw_bytes_storing_decoders": [
@@ -72,7 +69,6 @@
   "upstream_outdated": [
     "alloy-consensus: locked 1.8.3 -> latest 2.1.0",
     "alloy-eips: locked 1.8.3 -> latest 2.1.0",
-    "bitcoin: locked 0.31.3 -> latest 0.32.101",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
     "pallas-traverse: locked 0.30.2 -> latest 1.1.1",

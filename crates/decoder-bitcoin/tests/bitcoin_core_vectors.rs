@@ -233,7 +233,9 @@ fn validate_against_bitcoin_crate(
 
     // Validate TXID
     let our_txid = our_tx.txid();
-    let bitcoin_txid = bitcoin_tx.txid();
+    // rust-bitcoin 0.32 deprecated `Transaction::txid()` in favour of
+    // `compute_txid()` (same value, clearer that it is computed, not cached).
+    let bitcoin_txid = bitcoin_tx.compute_txid();
     let bitcoin_txid_bytes: &[u8] = bitcoin_txid.as_ref();
     if our_txid != bitcoin_txid_bytes {
         return Err(format!(

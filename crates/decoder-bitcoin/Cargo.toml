@@ -20,7 +20,7 @@ sha2 = { workspace = true }
 [dev-dependencies]
 # Blockchain libraries for test validation ONLY
 # Production code uses pure Rust parsing (Phase 2.1 complete)
-bitcoin = "0.31"
+bitcoin = "0.32"
 serde_json = { workspace = true }
 proptest = { workspace = true }
 decoder-test-utils = { path = "../decoder-test-utils" }
