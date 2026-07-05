@@ -56,6 +56,9 @@ members = [
     "tools/auto-update-docs",
     "tools/autonomous-executor",
     "crates/decoder-generator", "crates/decoder-mina",
+
+    # Utilities (internal tooling, publish = false)
+    "crates/api-rate-limiter",   # In-process rate limiting + budget guard for LLM calls
 ]
 resolver = "2"
 

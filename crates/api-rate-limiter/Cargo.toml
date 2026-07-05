@@ -1,0 +1,24 @@
+[package]
+name = "api-rate-limiter"
+version = "0.1.0"
+edition = "2021"
+authors = ["Universal Blockchain Decoder Team"]
+description = "Production-grade rate limiter for API calls with token bucket algorithm"
+license = "MIT OR Apache-2.0"
+# Internal workspace tooling: path-only dependencies and an unstable API.
+# Do not publish until the crate meets the criteria in the README.
+publish = false
+
+[dependencies]
+# Error handling
+thiserror = "1.0"
+
+# Async support (optional)
+tokio = { version = "1.35", features = ["sync", "time"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.35", features = ["full"] }
+
+[features]
+default = []
+async = ["tokio"]
