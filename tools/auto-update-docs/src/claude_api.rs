@@ -1,47 +1,23 @@
 use anyhow::{Context, Result};
+use api_rate_limiter::{RateLimitConfig, RateLimiter};
+use llm_client::{GenerationParams, LlmClient};
 use log::{debug, info};
-use reqwest::blocking::Client;
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 use crate::analyzer::CodebaseAnalysis;
 use crate::doc_updater::DocUpdate;
 
-const CLAUDE_API_URL: &str = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION: &str = "2023-06-01";
-
-#[derive(Debug, Serialize)]
-struct ClaudeRequest {
-    model: String,
-    max_tokens: u32,
-    temperature: f32,
-    messages: Vec<Message>,
+/// Create a default rate limiter for LLM API calls
+pub fn create_rate_limiter() -> RateLimiter {
+    // Conservative defaults: 10 RPM, $10/month
+    RateLimiter::new(RateLimitConfig::conservative())
+        .expect("conservative preset is a valid configuration")
 }
 
-#[derive(Debug, Serialize)]
-struct Message {
-    role: String,
-    content: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ClaudeResponse {
-    content: Vec<Content>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Content {
-    #[serde(rename = "type")]
-    _content_type: String,
-    text: String,
-}
-
-/// Generate documentation update using Claude API
+/// Generate documentation update using an LLM
 pub fn generate_doc_update(
-    api_key: &str,
+    client: &LlmClient,
     model: &str,
-    max_tokens: u32,
-    temperature: f32,
+    params: &GenerationParams,
     update: &DocUpdate,
     analysis: &CodebaseAnalysis,
 ) -> Result<String> {
@@ -51,17 +27,14 @@ pub fn generate_doc_update(
 
     debug!("Prompt length: {} chars", prompt.len());
 
-    let response = call_claude_api(api_key, model, max_tokens, temperature, &prompt)?;
-
-    Ok(response)
+    call_llm(client, model, params, &prompt)
 }
 
-/// Generate architecture diagram using Claude API
+/// Generate architecture diagram using an LLM
 pub fn generate_architecture_diagram(
-    api_key: &str,
+    client: &LlmClient,
     model: &str,
-    max_tokens: u32,
-    temperature: f32,
+    params: &GenerationParams,
     analysis: &CodebaseAnalysis,
     diagram_type: &str,
 ) -> Result<String> {
@@ -69,67 +42,38 @@ pub fn generate_architecture_diagram(
 
     let prompt = build_diagram_prompt(analysis, diagram_type);
 
-    let response = call_claude_api(api_key, model, max_tokens, temperature, &prompt)?;
+    let response = call_llm(client, model, params, &prompt)?;
 
     // Extract Mermaid code from response
     extract_mermaid_diagram(&response)
 }
 
-/// Call Claude API with a prompt
-fn call_claude_api(
-    api_key: &str,
+/// Call the LLM with a prompt through the rate-limited client
+fn call_llm(
+    client: &LlmClient,
     model: &str,
-    max_tokens: u32,
-    temperature: f32,
+    params: &GenerationParams,
     prompt: &str,
 ) -> Result<String> {
-    let client = Client::builder()
-        .timeout(Duration::from_secs(120))
-        .build()?;
+    debug!("Sending request (model: {})", model);
 
-    let request = ClaudeRequest {
-        model: model.to_string(),
-        max_tokens,
-        temperature,
-        messages: vec![Message {
-            role: "user".to_string(),
-            content: prompt.to_string(),
-        }],
-    };
+    let completion = client
+        .complete(model, None, prompt, params)
+        .context("LLM request failed")?;
 
-    debug!("Sending request to Claude API (model: {})", model);
-
-    let response = client
-        .post(CLAUDE_API_URL)
-        .header("x-api-key", api_key)
-        .header("anthropic-version", ANTHROPIC_VERSION)
-        .header("content-type", "application/json")
-        .json(&request)
-        .send()
-        .context("Failed to send request to Claude API")?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let error_text = response
-            .text()
-            .unwrap_or_else(|_| "Unknown error".to_string());
-        anyhow::bail!("Claude API error ({}): {}", status, error_text);
+    info!(
+        "Actual usage: {} input + {} output tokens",
+        completion.usage.input_tokens, completion.usage.output_tokens
+    );
+    if let Some(stats) = client.usage_stats() {
+        info!(
+            "Budget: {} daily tokens used, ${:.4} monthly cost",
+            stats.daily_tokens,
+            stats.monthly_cost_dollars()
+        );
     }
 
-    let claude_response: ClaudeResponse = response
-        .json()
-        .context("Failed to parse Claude API response")?;
-
-    // Extract text from first content block
-    let text = claude_response
-        .content
-        .first()
-        .map(|c| c.text.clone())
-        .unwrap_or_default();
-
-    debug!("Received response: {} chars", text.len());
-
-    Ok(text)
+    Ok(completion.text)
 }
 
 /// Build prompt for documentation update

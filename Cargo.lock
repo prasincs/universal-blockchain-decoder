@@ -402,6 +402,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
+name = "api-rate-limiter"
+version = "0.1.0"
+dependencies = [
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
 name = "arc-swap"
 version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -685,11 +693,13 @@ name = "auto-update-docs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-rate-limiter",
  "chrono",
  "clap",
  "env_logger",
  "git2",
  "ignore",
+ "llm-client",
  "log",
  "pulldown-cmark",
  "regex",
@@ -723,6 +733,7 @@ name = "autonomous-executor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-rate-limiter",
  "chrono",
  "clap",
  "env_logger",
@@ -3928,6 +3939,17 @@ name = "litrs"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
+
+[[package]]
+name = "llm-client"
+version = "0.1.0"
+dependencies = [
+ "api-rate-limiter",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
 
 [[package]]
 name = "lock_api"

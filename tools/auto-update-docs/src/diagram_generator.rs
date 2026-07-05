@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use llm_client::{GenerationParams, LlmClient};
 use log::info;
 use std::collections::HashMap;
 use std::fs;
@@ -7,12 +8,11 @@ use std::path::Path;
 use crate::analyzer::CodebaseAnalysis;
 use crate::claude_api;
 
-/// Generate all architecture diagrams using Anthropic API
+/// Generate all architecture diagrams using an LLM
 pub fn generate_diagrams_anthropic(
-    api_key: &str,
+    client: &LlmClient,
     model: &str,
-    max_tokens: u32,
-    temperature: f32,
+    params: &GenerationParams,
     analysis: &CodebaseAnalysis,
 ) -> Result<HashMap<String, String>> {
     let mut diagrams = HashMap::new();
@@ -29,10 +29,9 @@ pub fn generate_diagrams_anthropic(
         info!("Generating {} diagram...", diagram_type);
 
         match claude_api::generate_architecture_diagram(
-            api_key,
+            client,
             model,
-            max_tokens,
-            temperature,
+            params,
             analysis,
             diagram_type,
         ) {

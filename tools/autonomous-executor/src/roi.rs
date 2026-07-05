@@ -73,7 +73,7 @@ impl RoiCalculator {
     fn parse_time_estimate(&self, time_str: Option<&str>) -> f64 {
         let time_str = match time_str {
             Some(s) => s.to_lowercase(),
-            None => return 80.0, // Default: 1 week
+            None => return 80.0, // Default: 2 weeks at 40 hours/week
         };
 
         // Extract numbers
@@ -89,9 +89,10 @@ impl RoiCalculator {
         // Calculate average if range
         let avg = numbers.iter().sum::<f64>() / numbers.len() as f64;
 
-        // Convert to hours based on unit
+        // Convert to hours based on unit (40-hour work week, consistent
+        // with the 160-hour month below and the doc examples above)
         if time_str.contains("week") {
-            avg * 80.0 // 80 hours/week (2 work weeks per estimate week)
+            avg * 40.0
         } else if time_str.contains("day") {
             avg * 8.0 // 8 hours/day
         } else if time_str.contains("hour") || time_str.contains("hr") {
@@ -115,7 +116,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore = "TODO: Fix time estimate parsing"]
     fn test_parse_time_estimate() {
         let calc = RoiCalculator::new();
 
