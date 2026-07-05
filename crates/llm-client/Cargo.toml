@@ -1,0 +1,18 @@
+[package]
+name = "llm-client"
+version = "0.1.0"
+edition = "2021"
+authors = ["Universal Blockchain Decoder Team"]
+description = "Provider-agnostic LLM client with rate limiting, cost tracking, and reasoning parameters"
+license = "MIT OR Apache-2.0"
+# Internal workspace tooling: path-only dependencies and an unstable API.
+# Do not publish until the crate meets the criteria in the README.
+publish = false
+
+[dependencies]
+api-rate-limiter = { path = "../api-rate-limiter" }
+
+reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls"], default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"

@@ -59,6 +59,7 @@ members = [
 
     # Utilities (internal tooling, publish = false)
     "crates/api-rate-limiter",   # In-process rate limiting + budget guard for LLM calls
+    "crates/llm-client",         # Internal LLM adapter (Anthropic + OpenAI-compatible)
 ]
 resolver = "2"
 
