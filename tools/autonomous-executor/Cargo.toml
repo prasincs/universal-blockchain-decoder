@@ -42,5 +42,8 @@ log = "0.4"
 # Time
 chrono = { version = "0.4", features = ["serde"] }
 
+# Rate limiting
+api-rate-limiter = { path = "../../crates/api-rate-limiter", features = ["async"] }
+
 [dev-dependencies]
 tempfile = "3.14"

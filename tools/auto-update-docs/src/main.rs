@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{ArgAction, Parser};
+use llm_client::{Effort, GenerationParams, LlmClient, Provider, ThinkingMode};
 use log::{debug, info};
 use std::path::PathBuf;
 
@@ -59,19 +60,28 @@ struct Args {
     #[arg(long)]
     create_pr: bool,
 
-    /// Claude model to use
-    /// For Anthropic API: claude-sonnet-4-5-20250929, claude-opus-4-20250514
-    /// For Bedrock: anthropic.claude-3-5-sonnet-20241022-v2:0
+    /// Model to use
+    /// For Anthropic API: claude-sonnet-4-6, claude-opus-4-8, claude-haiku-4-5
+    /// For Bedrock: global.anthropic.claude-sonnet-4-6
     #[arg(long)]
     model: Option<String>,
 
-    /// Maximum tokens for Claude response
+    /// Maximum tokens for the model response
     #[arg(long, default_value = "8000")]
     max_tokens: u32,
 
-    /// Temperature for Claude API
+    /// Sampling temperature (ignored when --thinking is set, or on models
+    /// that reject sampling parameters)
     #[arg(long, default_value = "0.3")]
     temperature: f32,
+
+    /// Enable adaptive thinking (model decides when and how much to reason)
+    #[arg(long)]
+    thinking: bool,
+
+    /// Reasoning effort: low, medium, high, or max
+    #[arg(long)]
+    effort: Option<String>,
 
     /// Verbose output
     #[arg(short, long)]
@@ -99,6 +109,30 @@ fn main() -> Result<()> {
     info!("🚀 Starting documentation auto-update tool");
     info!("Repository: {:?}", args.repo_root);
 
+    // Create rate limiter for API calls
+    let rate_limiter = claude_api::create_rate_limiter();
+    info!("📊 Rate limiter configured: 10 RPM, 100K tokens/day, $10/month limit");
+
+    // Normalized generation parameters (mapped per provider by llm-client)
+    let effort = args
+        .effort
+        .as_deref()
+        .map(|s| {
+            Effort::parse(s)
+                .ok_or_else(|| anyhow::anyhow!("invalid --effort '{}': use low|medium|high|max", s))
+        })
+        .transpose()?;
+    let gen_params = GenerationParams {
+        max_tokens: args.max_tokens,
+        temperature: Some(args.temperature),
+        thinking: if args.thinking {
+            ThinkingMode::Adaptive
+        } else {
+            ThinkingMode::Off
+        },
+        effort,
+    };
+
     // Determine which API to use and validate configuration
     let (api_mode, model) = if args.use_bedrock {
         info!("Using AWS Bedrock (region: {})", args.aws_region);
@@ -110,7 +144,7 @@ fn main() -> Result<()> {
 
         let model = args
             .model
-            .unwrap_or_else(|| "anthropic.claude-3-5-sonnet-20241022-v2:0".to_string());
+            .unwrap_or_else(|| "global.anthropic.claude-sonnet-4-6".to_string());
 
         info!("Bedrock model: {}", model);
         ("bedrock", model)
@@ -126,10 +160,20 @@ fn main() -> Result<()> {
 
         let model = args
             .model
-            .unwrap_or_else(|| "claude-sonnet-4-5-20250929".to_string());
+            .unwrap_or_else(|| "claude-sonnet-4-6".to_string());
 
         info!("Anthropic model: {}", model);
         ("anthropic", model)
+    };
+
+    // Rate-limited, cost-tracked client (Anthropic mode; Bedrock has its own path)
+    let llm = if api_mode == "anthropic" {
+        Some(
+            LlmClient::new(Provider::anthropic(args.api_key.as_deref().unwrap()))
+                .with_limiter(rate_limiter.clone()),
+        )
+    } else {
+        None
     };
 
     // Step 1: Analyze the codebase
@@ -169,10 +213,9 @@ fn main() -> Result<()> {
             )?
         } else {
             diagram_generator::generate_diagrams_anthropic(
-                args.api_key.as_ref().unwrap(),
+                llm.as_ref().unwrap(),
                 &model,
-                args.max_tokens,
-                args.temperature,
+                &gen_params,
                 &analysis,
             )?
         };
@@ -207,10 +250,9 @@ fn main() -> Result<()> {
                 )?
             } else {
                 claude_api::generate_doc_update(
-                    args.api_key.as_ref().unwrap(),
+                    llm.as_ref().unwrap(),
                     &model,
-                    args.max_tokens,
-                    args.temperature,
+                    &gen_params,
                     update,
                     &analysis,
                 )?

@@ -1,6 +1,7 @@
 //! Task executor using Claude Code
 
 use anyhow::{Context, Result};
+use api_rate_limiter::{AsyncRateLimiter, RateLimitConfig};
 use chrono::Utc;
 use log::{info, warn};
 use std::env;
@@ -10,6 +11,7 @@ use crate::task::Task;
 
 pub struct TaskExecutor {
     anthropic_api_key: Option<String>,
+    rate_limiter: AsyncRateLimiter,
 }
 
 impl TaskExecutor {
@@ -20,7 +22,21 @@ impl TaskExecutor {
             warn!("ANTHROPIC_API_KEY not set - Claude Code invocation will be placeholder");
         }
 
-        Ok(Self { anthropic_api_key })
+        // Create rate limiter with conservative limits for automation
+        let config = RateLimitConfig::builder()
+            .requests_per_minute(5) // Very conservative for automation
+            .tokens_per_day(50_000) // Limit daily token usage
+            .monthly_budget_cents(500) // $5/month for automation
+            .build();
+
+        let rate_limiter = AsyncRateLimiter::new(config)?;
+
+        info!("Rate limiter configured: 5 RPM, 50K tokens/day, $5/month limit");
+
+        Ok(Self {
+            anthropic_api_key,
+            rate_limiter,
+        })
     }
 
     /// Execute a task
@@ -166,19 +182,46 @@ Begin implementation now. Work autonomously until all success criteria are met.
     /// TODO: Implement actual Anthropic API call when SDK is available
     async fn invoke_claude_code(&self, prompt: &str) -> Result<()> {
         if self.anthropic_api_key.is_none() {
+            // No request is made on this path, so nothing is charged
+            // against the rate limiter or budget.
             info!("[PLACEHOLDER] Claude Code invocation would happen here");
             info!("Prompt preview:\n{}", &prompt[..prompt.len().min(200)]);
             info!("...\n");
 
-            // For now, just return success
-            // In production, this would:
-            // 1. Call Anthropic API with the prompt
-            // 2. Stream the response
-            // 3. Execute tool calls (file edits, commands, etc.)
-            // 4. Return when task is complete
-
             warn!("Claude Code invocation is a placeholder - no actual changes made");
             return Ok(());
+        }
+
+        // Estimate token usage (rule of thumb: 1 token ≈ 4 chars)
+        let input_tokens = (prompt.len() / 4) as u64;
+        let max_output_tokens = 4000_u64; // Conservative estimate for task execution
+        let total_tokens = input_tokens + max_output_tokens;
+
+        // Estimate cost assuming Sonnet 4.6: $3/MTok input, $15/MTok output
+        // = 300/1500 cents per MTok. Cost in microdollars is
+        // tokens * cents_per_mtok * 10_000 / 1_000_000 = tokens * rate / 100.
+        let cost_microdollars = (input_tokens * 300 + max_output_tokens * 1500).div_ceil(100);
+
+        // Check rate limits BEFORE making the API call
+        info!(
+            "Checking rate limits: 1 request, {} tokens, ${:.4}",
+            total_tokens,
+            cost_microdollars as f64 / 1_000_000.0
+        );
+
+        self.rate_limiter
+            .acquire_wait(1, total_tokens, cost_microdollars)
+            .await
+            .context("Rate limit exceeded")?;
+
+        // Show current usage stats
+        if let Ok(stats) = self.rate_limiter.stats() {
+            info!(
+                "Usage stats: {} daily tokens, ${:.4} monthly cost, {} requests available",
+                stats.daily_tokens,
+                stats.monthly_cost_dollars(),
+                stats.requests_available
+            );
         }
 
         // TODO: Implement actual API call
@@ -186,6 +229,10 @@ Begin implementation now. Work autonomously until all success criteria are met.
         // let client = AnthropicClient::new(self.anthropic_api_key.as_ref().unwrap());
         // let response = client.messages().create(prompt).await?;
         // ... process response and tool calls ...
+        //
+        // On failure, cancel the reservation:
+        //   self.rate_limiter.reconcile(total_tokens, 0, cost_microdollars, 0)
+        // On success, reconcile with response.usage actuals.
 
         Ok(())
     }

@@ -693,11 +693,13 @@ name = "auto-update-docs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-rate-limiter",
  "chrono",
  "clap",
  "env_logger",
  "git2",
  "ignore",
+ "llm-client",
  "log",
  "pulldown-cmark",
  "regex",
@@ -731,6 +733,7 @@ name = "autonomous-executor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-rate-limiter",
  "chrono",
  "clap",
  "env_logger",
