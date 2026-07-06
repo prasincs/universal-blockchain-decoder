@@ -49,7 +49,14 @@ Each closed item must raise `differential_decoders_count` and reduce
   `eth_eip2930.hex` is an unsigned 8-field payload, `eth_erc20_transfer.hex`
   has corrupt RLP (declares 176 payload bytes, contains 175). Both decoders
   agree on rejection; the tests document this. Replacement items below.
-- [ ] **Solana vs solana-transaction-status** (dep declared, unused).
+- [x] **Solana vs solana-transaction-status** (dep declared, unused).
+  Added `tests/solana_differential.rs`: decodes all 6 legacy-tx fixtures in
+  `tests/fixtures/simple/` with BOTH our `SolanaDecoder` and the upstream
+  `EncodedTransaction::decode()` (bincode `VersionedTransaction` + `sanitize`),
+  asserting field-level agreement on signatures, header, account keys, recent
+  blockhash, and every instruction (program_id_index/accounts/data). Both
+  decoders agree on all fixtures. (Done 2026-07; `differential_decoders_count`
+  5 -> 6, `dead_validation_deps_count` 5 -> 4.)
   Verify: `cargo test -p decoder-solana` includes a differential test file.
 - [ ] **Cardano vs pallas** (3 deps declared, unused).
 - [ ] **TON vs tonlib-core** (dep declared, unused).
@@ -118,6 +125,16 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   but nothing is actually compared. Do the major-version bump together with
   the real work in the P1 "Cardano vs pallas" item; bumping alone buys
   nothing measurable.
+- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
+  in decoder-solana dev-deps; re-run `solana_differential`. Now that the
+  differential test exists (above), the crate is a live oracle and the report
+  flags it `OUTDATED ORACLE: solana-transaction-status 3.1.14 -> 4.1.1`. The
+  4.x line is a major bump (likely a solana-* dep-graph shift); any field
+  disagreement after the bump is a finding — capture a repro fixture first.
+- [ ] *(auto-generated 2026-07)* **Bump alloy-rlp 0.3.15 -> 0.3.16** in
+  decoder-bnb dev-deps — patch bump, but the dep is currently *dead*
+  (`decoder-bnb:alloy-rlp` in dead_validation_deps); either wire the BNB
+  differential test that uses it or delete the dep per the P1 policy item.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -170,13 +187,15 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable (1.94)** — pre-existing
+- [ ] **Workspace fails clippy on current stable (1.94+)** — pre-existing
   `unnecessary_unwrap` / `large_enum_variant` errors in `decoder-optimism`
-  (src/types.rs:397-403, enum at :13) and `decoder-evm`
-  (src/registry.rs:177-178) fire under `-D warnings` with clippy 1.94 but
-  evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
-  pin/refresh the CI toolchain so local and CI clippy agree.
-  Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
+  (src/types.rs:397-403, enum at :13), `decoder-evm`
+  (src/registry.rs:177-178), and `decoder-crypto-zk`
+  (tests/ecdsa_tests.rs:157 — `unwrap` after `is_ok` on `result1`/`result2`)
+  fire under `-D warnings` with local clippy (observed on 0.1.96 / rust 1.96)
+  but evidently not in CI's toolchain. Fix the lints (don't allow-list them)
+  and pin/refresh the CI toolchain so local and CI clippy agree.
+  Verify: `cargo clippy -p decoder-optimism -p decoder-evm -p decoder-crypto-zk --all-targets -- -D warnings`.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
