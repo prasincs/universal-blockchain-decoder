@@ -103,8 +103,11 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` 1.8.3 -> 2.1.1. No API breakage in the
+  differential test; all 7 vectors still agree field-for-field incl. tx hash
+  and recovered sender. `upstream_outdated` 7 -> 5.)
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
