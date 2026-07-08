@@ -67,8 +67,7 @@
   ],
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
-    "alloy-consensus: locked 1.8.3 -> latest 2.1.0",
-    "alloy-eips: locked 1.8.3 -> latest 2.1.0",
+    "alloy-rlp: locked 0.3.15 -> latest 0.3.16",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
     "pallas-traverse: locked 0.30.2 -> latest 1.1.1",

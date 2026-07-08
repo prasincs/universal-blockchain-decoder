@@ -29,6 +29,15 @@ Status: `[ ]` open · `[x]` done · `[~]` in progress
   Added `scripts/loop/health_report.py` + `loop/ratchet.json`.
   Verify: `python3 scripts/loop/health_report.py` exits 0. (Done 2026-06.)
 
+- [x] **Full-workspace clippy gate red (pre-existing, unrelated to any item)**
+  A newer clippy (rust-1.96.0) flagged `clippy::unnecessary_unwrap` in
+  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (`unwrap()` after `is_ok()`
+  check), breaking `cargo clippy --all --all-targets -- -D warnings` and thus
+  the mandatory verify gate. Discovered while bumping alloy. Fixed by matching
+  `if let (Ok(v1), Ok(v2)) = (&result1, &result2)`. No test weakened.
+  Verify: `cargo clippy -p decoder-crypto-zk --all-targets -- -D warnings`
+  exits 0. (Done 2026-07.)
+
 ## P1 — make the founding premise true (differential testing)
 
 One item per chain. Pattern to copy:
@@ -103,8 +112,12 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` 1.8.3 -> 2.1.1 — API surface used by
+  the differential oracle unchanged, all 7 `alloy_differential` tests still
+  agree field-for-field incl. tx hash + recovered sender.
+  `upstream_outdated` 7 -> 5.)
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with

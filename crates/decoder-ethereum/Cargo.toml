@@ -34,5 +34,5 @@ decoder-test-utils = { path = "../decoder-test-utils" }
 # oracle in tests/alloy_differential.rs. VALIDATION ONLY - production code
 # uses pure Rust parsing. Versions are pinned by Cargo.lock.
 alloy-primitives = "1.0"
-alloy-consensus = { version = "1.0", features = ["k256"] }
-alloy-eips = "1.0"
+alloy-consensus = { version = "2.1", features = ["k256"] }
+alloy-eips = "2.1"
