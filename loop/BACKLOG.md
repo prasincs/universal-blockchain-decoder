@@ -49,8 +49,14 @@ Each closed item must raise `differential_decoders_count` and reduce
   `eth_eip2930.hex` is an unsigned 8-field payload, `eth_erc20_transfer.hex`
   has corrupt RLP (declares 176 payload bytes, contains 175). Both decoders
   agree on rejection; the tests document this. Replacement items below.
-- [ ] **Solana vs solana-transaction-status** (dep declared, unused).
+- [x] **Solana vs solana-transaction-status** (dep declared, unused).
   Verify: `cargo test -p decoder-solana` includes a differential test file.
+  (Done 2026-07; `tests/solana_transaction_status_differential.rs` decodes a
+  real SOL transfer with both our parser and the upstream oracle via
+  `EncodedTransaction::decode()` — bincode + `sanitize()` — and asserts
+  field-level agreement on signatures, header, account keys, recent blockhash,
+  and every instruction's program index / accounts / data. `differential_
+  decoders_count` 5 -> 6; `dead_validation_deps_count` 5 -> 4.)
 - [ ] **Cardano vs pallas** (3 deps declared, unused).
 - [ ] **TON vs tonlib-core** (dep declared, unused).
 - [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
