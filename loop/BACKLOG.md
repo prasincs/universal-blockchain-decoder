@@ -109,8 +109,24 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` 1.8.3 -> 2.1.1. `alloy-primitives`
+  stays "1.0": it is on its own 1.x track — latest is 1.6.0, no 2.x exists.
+  All 7 `alloy_differential` tests still agree with the new upstream — no
+  post-bump disagreement to file. `upstream_outdated` 7 -> 5.)
+- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status
+  3.1.14 -> 4.x** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. This is a MAJOR-version bump of a
+  library with a real differential test (added 2026-07), so disagreements
+  after the bump are findings: minimal repro fixture + backlog entry before
+  deciding which side is wrong.
+  Verify: `cargo test -p decoder-solana --test solana_transaction_status_differential`
+  passes and `upstream_outdated` drops solana-transaction-status.
+- [ ] *(auto-generated 2026-07)* **Bump alloy-rlp 0.3.15 -> 0.3.16** (patch)
+  wherever locked; no differential test depends on it directly (decoder-bnb
+  dead dev-dep), so this folds into the "BNB vs alloy" / dead-dep cleanup —
+  bump or delete together with those deps rather than in isolation.
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
@@ -183,6 +199,12 @@ of re-litigating it. Reference decoders first:
   evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
   pin/refresh the CI toolchain so local and CI clippy agree.
   Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
+  UPDATE 2026-07: on stable 1.96 a THIRD instance surfaced —
+  `decoder-crypto-zk` test `ecdsa_tests` (tests/ecdsa_tests.rs:155-156):
+  `unnecessary_unwrap` (`result1.unwrap()`/`result2.unwrap()` after an
+  `is_ok()` check) fails `cargo clippy --all --all-targets -- -D warnings`.
+  Pre-existing (unrelated to any src change); fix alongside the optimism/evm
+  lints. Verify: add `-p decoder-crypto-zk` to the command above.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
