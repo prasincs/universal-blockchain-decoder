@@ -109,8 +109,20 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` 1.8.3 -> 2.1.1 — only these two
+  moved to 2.x, `alloy-primitives` stays on the 1.x line and was already
+  current. No decoder or test code changes needed; the `TxEnvelope` /
+  `decode_2718` / `SignerRecoverable` API surface is unchanged. All 7
+  `alloy_differential` tests still agree field-for-field. `upstream_outdated`
+  7 -> 5.)
+- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1.14 ->
+  4.x** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. This is a real differential
+  oracle (added 2026-07), so a major-version bump that keeps agreement is a
+  measurable win; a disagreement is a finding (minimal repro + backlog entry).
+  Verify: `cargo test -p decoder-solana` and `upstream_outdated` drops.
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
