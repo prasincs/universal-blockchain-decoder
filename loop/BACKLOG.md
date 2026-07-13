@@ -109,8 +109,11 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` req `1.0` -> `2.0`, lockfile 1.8.3 ->
+  2.1.1, no API changes needed. All 7 `alloy_differential` tests still agree
+  field-for-field. `upstream_outdated` drops alloy-consensus/alloy-eips.)
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
@@ -124,6 +127,16 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   but nothing is actually compared. Do the major-version bump together with
   the real work in the P1 "Cardano vs pallas" item; bumping alone buys
   nothing measurable.
+- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1.14 ->
+  4.x** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. This is now a REAL differential
+  oracle (added 2026-07), so a major-version bump is a first-class backlog
+  item: disagreements after the bump are findings (minimal repro fixture +
+  entry before deciding which side is wrong).
+- [ ] *(auto-generated 2026-07)* **Bump alloy-rlp 0.3.15 -> 0.3.16** — patch
+  bump; alloy-rlp is currently only a dead validation dep (decoder-bnb), so
+  this buys nothing measurable until BNB has a real differential test. Fold
+  into the "BNB vs alloy" P1 item or delete the dep per the dead-dep policy.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
