@@ -57,7 +57,11 @@ Each closed item must raise `differential_decoders_count` and reduce
   field-level agreement on signatures, header, account keys, recent blockhash,
   and every instruction's program index / accounts / data. `differential_
   decoders_count` 5 -> 6; `dead_validation_deps_count` 5 -> 4.)
-- [ ] **Cardano vs pallas** (3 deps declared, unused).
+- [ ] **Cardano vs pallas** (3 deps declared, unused). BLOCKED (corpus):
+  the available example Cardano CBORs cannot be decoded even by pallas
+  (integration_tests.rs:272-283), so a real field-level comparison needs a
+  verified mainnet fixture from a Cardano node / Cardanoscan CBOR export
+  first. Do together with the pallas 0.30 -> 1.1 major bump (line ~119).
 - [ ] **TON vs tonlib-core** (dep declared, unused).
 - [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
   EVM differential test covers it.
@@ -109,8 +113,19 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   (treat each entry as auto-generated work). Disagreements after a bump are
   findings: minimal repro fixture + backlog entry before deciding which side
   is wrong.
-- [ ] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`.
+- [x] *(auto-generated 2026-06)* **Bump alloy 1.8.3 -> 2.x** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-07;
+  bumped `alloy-consensus`/`alloy-eips` 1.8.3 -> 2.1.1. NOTE: `alloy-primitives`
+  is separately versioned at 1.x and was never in `upstream_outdated`, so it
+  stays at "1.0". No API migration needed — all 7 `alloy_differential` tests
+  still agree field-for-field (types, chain_id, nonce, gas, to, value, input,
+  access list, v/r/s, tx hash, recovered sender). No findings.
+  `upstream_outdated` 7 -> 5.)
+- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
+  in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings (minimal repro fixture + backlog entry before deciding which side
+  is wrong).
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
