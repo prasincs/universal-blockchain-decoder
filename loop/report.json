@@ -22,7 +22,7 @@
     "decoder-ethereum:alloy-consensus",
     "decoder-ethereum:alloy-eips",
     "decoder-ethereum:alloy-primitives",
-    "decoder-solana:solana-transaction-status",
+    "decoder-solana:solana-transaction-status-client-types",
     "decoder-ton:tonlib-core"
   ],
   "fixture_counts": {
@@ -67,11 +67,12 @@
   ],
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
+    "alloy-primitives: locked 0.7.7, 1.6.0 -> latest 1.6.1",
     "alloy-rlp: locked 0.3.15 -> latest 0.3.16",
+    "bitcoin: locked 0.32.101 -> latest 0.32.102",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
-    "pallas-traverse: locked 0.30.2 -> latest 1.1.1",
-    "solana-transaction-status: locked 3.1.14 -> latest 4.1.2"
+    "pallas-traverse: locked 0.30.2 -> latest 1.1.1"
   ],
   "upstream_update_check": "ok (11 crates checked)",
   "workspace_resolves": true
