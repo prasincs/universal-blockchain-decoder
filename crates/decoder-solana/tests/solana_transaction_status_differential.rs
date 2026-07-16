@@ -1,10 +1,16 @@
-//! Differential validation against `solana-transaction-status`.
+//! Differential validation against `solana-transaction-status-client-types`.
 //!
-//! This is the *real* use of the `solana-transaction-status` dev-dep: it was
+//! This is the *real* use of the Solana `transaction-status` dev-dep: it was
 //! declared as a validation oracle but nothing imported it, so the health
 //! report counted it as a dead dependency (Assumption 6). Here we decode the
 //! same raw transaction bytes with BOTH our pure-Rust parser and the upstream
 //! Solana crate, then assert field-level agreement — not merely "both parsed".
+//!
+//! As of Solana 4.x the `EncodedTransaction::decode()` oracle lives in
+//! `solana-transaction-status-client-types`; the aggregating
+//! `solana-transaction-status` crate now gates its entire public surface behind
+//! the explicitly-unstable `agave-unstable-api` feature, so we depend on the
+//! stable client-types crate directly.
 //!
 //! The oracle path is `EncodedTransaction::decode()`, which bincode-decodes the
 //! wire bytes into a `VersionedTransaction` and runs `sanitize()`. We reach the
@@ -18,7 +24,7 @@
 
 use decoder_primitives::prelude::*;
 use decoder_solana::*;
-use solana_transaction_status::{EncodedTransaction, TransactionBinaryEncoding};
+use solana_transaction_status_client_types::{EncodedTransaction, TransactionBinaryEncoding};
 
 /// A real mainnet SOL transfer (System Program `Transfer`), base64-encoded.
 /// Same fixture the `real_transactions` suite exercises; here it must decode

@@ -54,6 +54,7 @@ UPSTREAM_LIBS = [
     "pallas-traverse",
     "tonlib-core",
     "solana-transaction-status",
+    "solana-transaction-status-client-types",
     "solana-sdk",
     "algonaut",
     "algonaut_core",
