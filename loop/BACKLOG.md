@@ -139,6 +139,15 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   but nothing is actually compared. Do the major-version bump together with
   the real work in the P1 "Cardano vs pallas" item; bumping alone buys
   nothing measurable.
+- [x] *(auto-generated 2026-07)* **Bump alloy oracle 2.1.1 -> 2.2.0** in
+  decoder-ethereum dev-deps. (Done 2026-07; `cargo update` moved
+  `alloy-consensus`/`alloy-eips` 2.1.1 -> 2.2.0 and `alloy-primitives`
+  1.6.0 -> 1.6.1 in Cargo.lock. No API migration needed — all 7
+  `alloy_differential` tests still agree field-for-field. No findings.
+  `upstream_outdated` 9 -> 6.)
+- [ ] *(auto-generated 2026-07)* **Bump rust-bitcoin 0.32.101 -> 0.32.102** in
+  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. Patch bump;
+  disagreements after the bump are findings.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
