@@ -121,11 +121,17 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   still agree field-for-field (types, chain_id, nonce, gas, to, value, input,
   access list, v/r/s, tx hash, recovered sender). No findings.
   `upstream_outdated` 7 -> 5.)
-- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
+- [x] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
   in decoder-solana dev-deps; re-run
-  `solana_transaction_status_differential`. Disagreements after the bump are
-  findings (minimal repro fixture + backlog entry before deciding which side
-  is wrong).
+  `solana_transaction_status_differential`. (Done 2026-07; bumped to 4.1.2.
+  In 4.x the whole crate is gated behind `#![cfg(feature =
+  "agave-unstable-api")]`, so the only migration was adding
+  `features = ["agave-unstable-api"]` to the dev-dep — the oracle API
+  (`EncodedTransaction::decode()` -> `VersionedTransaction` via bincode +
+  `sanitize()`) is unchanged and re-exported from the same root path. Both
+  differential tests still agree field-for-field (signatures, header, account
+  keys, recent blockhash, per-instruction program index / accounts / data).
+  No findings. `upstream_outdated` 6 -> 5.)
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
@@ -200,13 +206,15 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable (1.94)** — pre-existing
+- [ ] **Workspace fails clippy on current stable (1.94/1.96)** — pre-existing
   `unnecessary_unwrap` / `large_enum_variant` errors in `decoder-optimism`
-  (src/types.rs:397-403, enum at :13) and `decoder-evm`
-  (src/registry.rs:177-178) fire under `-D warnings` with clippy 1.94 but
-  evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
-  pin/refresh the CI toolchain so local and CI clippy agree.
-  Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
+  (src/types.rs:397-403, enum at :13), `decoder-evm` (src/registry.rs:177-178),
+  and — newly surfaced by clippy 1.96 — `decoder-crypto-zk`
+  (tests/ecdsa_tests.rs:157, `unnecessary_unwrap` on `result1`/`result2` after
+  an `is_ok()` guard) fire under `-D warnings` but evidently not in CI's
+  toolchain. Fix the lints (don't allow-list them) and pin/refresh the CI
+  toolchain so local and CI clippy agree.
+  Verify: `cargo clippy -p decoder-optimism -p decoder-evm -p decoder-crypto-zk --all-targets -- -D warnings`.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
