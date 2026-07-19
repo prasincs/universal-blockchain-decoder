@@ -18,7 +18,9 @@ thiserror = { workspace = true }
 [dev-dependencies]
 # Blockchain libraries for test validation ONLY
 # Production code uses pure Rust parsing
-solana-transaction-status = "3.1"
+# 4.x gates the whole crate root (EncodedTransaction, TransactionBinaryEncoding,
+# and EncodedTransaction::decode) behind the `agave-unstable-api` feature.
+solana-transaction-status = { version = "4", features = ["agave-unstable-api"] }
 serde_json = { workspace = true }
 proptest = { workspace = true }
 base64 = "0.22"
