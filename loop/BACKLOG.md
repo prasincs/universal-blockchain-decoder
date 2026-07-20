@@ -121,11 +121,18 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   still agree field-for-field (types, chain_id, nonce, gas, to, value, input,
   access list, v/r/s, tx hash, recovered sender). No findings.
   `upstream_outdated` 7 -> 5.)
-- [ ] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
+- [x] *(auto-generated 2026-07)* **Bump solana-transaction-status 3.1 -> 4.x**
   in decoder-solana dev-deps; re-run
-  `solana_transaction_status_differential`. Disagreements after the bump are
-  findings (minimal repro fixture + backlog entry before deciding which side
-  is wrong).
+  `solana_transaction_status_differential`. (Done 2026-07; bumped dev-dep
+  `3.1` -> `4.1` (`cargo update --precise 4.1.2`). API migration: v4 gates its
+  entire lib behind the new `agave-unstable-api` feature, so `EncodedTransaction`
+  / `TransactionBinaryEncoding` (now re-exported from
+  `solana-transaction-status-client-types`) disappeared from the root until the
+  feature was enabled — added `features = ["agave-unstable-api"]` to the dev-dep.
+  No test source changes needed. Both differential tests still agree
+  field-for-field (signatures, header, account keys, recent blockhash, and every
+  instruction's program index / accounts / data). No findings.
+  `upstream_outdated` 6 -> 5.)
 - [x] *(auto-generated 2026-06)* **Bump rust-bitcoin 0.31 -> 0.32** in
   decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
