@@ -68,7 +68,6 @@
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
     "alloy-rlp: locked 0.3.15 -> latest 0.3.16",
-    "bitcoin: locked 0.32.101 -> latest 0.32.102",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
     "pallas-traverse: locked 0.30.2 -> latest 1.1.1"
