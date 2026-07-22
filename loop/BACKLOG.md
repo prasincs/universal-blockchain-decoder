@@ -62,9 +62,19 @@ Each closed item must raise `differential_decoders_count` and reduce
   (integration_tests.rs:272-283), so a real field-level comparison needs a
   verified mainnet fixture from a Cardano node / Cardanoscan CBOR export
   first. Do together with the pallas 0.30 -> 1.1 major bump (line ~119).
-- [ ] **TON vs tonlib-core** (dep declared, unused).
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **TON vs tonlib-core** (dep declared, unused). (Done 2026-07 via the P2
+  "TON `real_transactions`" work: `tests/validation_against_tonlib.rs` and
+  `tests/real_transactions.rs` now use `tonlib-core` as a differential oracle.
+  Report confirms `decoder-ton:tonlib-core` moved from dead deps to
+  `differential_test_deps`; this item's acceptance — `cargo test -p decoder-ton`
+  includes a differential test file — is satisfied.)
+- [x] **BNB vs alloy** (deps declared, unused) — deleted the dead deps: the
+  shared `decoder-ethereum` `alloy_differential` suite already covers alloy, and
+  decoder-bnb has no `tests/` dir importing `alloy-primitives`/`alloy-rlp`.
+  Removed both from `Cargo.toml` dev-deps + fixed the README claims. (Done
+  2026-07; `dead_validation_deps_count` 4 -> 2. This also removes the
+  `alloy-rlp 0.3.15 -> 0.3.16` upstream_outdated signal at its source — per the
+  dead-dep policy below, a dead oracle dep is deleted, not bumped.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
