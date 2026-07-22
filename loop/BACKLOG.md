@@ -152,9 +152,12 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   1.6.0 -> 1.6.1 in Cargo.lock. No API migration needed — all 7
   `alloy_differential` tests still agree field-for-field. No findings.
   `upstream_outdated` 9 -> 6.)
-- [ ] *(auto-generated 2026-07)* **Bump rust-bitcoin 0.32.101 -> 0.32.102** in
-  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. Patch bump;
-  disagreements after the bump are findings.
+- [x] *(auto-generated 2026-07)* **Bump rust-bitcoin 0.32.101 -> 0.32.102** in
+  decoder-bitcoin dev-deps; re-run `bitcoin_core_vectors`. (Done 2026-07;
+  `cargo update -p bitcoin --precise 0.32.102`. Patch bump, no API migration.
+  All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
+  agree field-for-field with the upstream crate. No findings.
+  `upstream_outdated` 5 -> 4.)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -207,13 +210,18 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable (1.94)** — pre-existing
-  `unnecessary_unwrap` / `large_enum_variant` errors in `decoder-optimism`
-  (src/types.rs:397-403, enum at :13) and `decoder-evm`
-  (src/registry.rs:177-178) fire under `-D warnings` with clippy 1.94 but
-  evidently not in CI's toolchain. Fix the lints (don't allow-list them) and
-  pin/refresh the CI toolchain so local and CI clippy agree.
-  Verify: `cargo clippy -p decoder-optimism -p decoder-evm --all-targets -- -D warnings`.
+- [ ] **Workspace fails clippy on current stable** — a moving target as the
+  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
+  (2026-07 observation) the workspace `-D warnings` build fails on
+  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
+  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
+  a `match` or destructure, do NOT weaken the assertion). The earlier
+  `decoder-optimism` (src/types.rs:397-403, enum at :13) /
+  `decoder-evm` (src/registry.rs:177-178) `unnecessary_unwrap` /
+  `large_enum_variant` errors reported under 1.94 no longer fire under 1.96.
+  Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
+  local and CI clippy agree.
+  Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
