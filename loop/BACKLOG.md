@@ -210,12 +210,13 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
-  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
-  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
-  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
-  a `match` or destructure, do NOT weaken the assertion). The earlier
+- [x] **Workspace fails clippy on current stable** — (Done 2026-07; under
+  clippy **1.96.0** the `-D warnings` build failed on
+  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` with two `unnecessary_unwrap`
+  after an `is_ok()` check. Rewrote the guarded assertion as an
+  `if let (Ok(v1), Ok(v2)) = (&result1, &result2)` destructure — assertion
+  preserved, not weakened. `cargo clippy --all --all-targets --all-features
+  -- -D warnings` now exits 0.) The earlier
   `decoder-optimism` (src/types.rs:397-403, enum at :13) /
   `decoder-evm` (src/registry.rs:177-178) `unnecessary_unwrap` /
   `large_enum_variant` errors reported under 1.94 no longer fire under 1.96.
