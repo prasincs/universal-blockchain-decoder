@@ -63,8 +63,19 @@ Each closed item must raise `differential_decoders_count` and reduce
   verified mainnet fixture from a Cardano node / Cardanoscan CBOR export
   first. Do together with the pallas 0.30 -> 1.1 major bump (line ~119).
 - [ ] **TON vs tonlib-core** (dep declared, unused).
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
+  EVM differential test covers it. (Done 2026-07; deleted. `decoder-bnb`
+  delegates 100% to `EthereumDecoder::decode()` (src/lib.rs:69), so the
+  Ethereum `alloy_differential` suite already covers its decode path
+  field-for-field. The `alloy-primitives`/`alloy-rlp`/`serde_json`/`proptest`
+  dev-deps were all unused — the crate's only tests are inline and use just
+  `super::*` — so they carried yank risk with zero value (the same class of
+  problem that broke the build via `algonaut`). Removed the whole dead
+  `[dev-dependencies]` block and the stale README validation claims.
+  `dead_validation_deps_count` 4 -> 2. NOTE: `alloy-rlp` STAYS in
+  `upstream_outdated` (0.3.15 -> 0.3.16) — still pulled transitively by
+  `alloy-consensus` (decoder-ethereum dev-dep), so it was never uniquely ours
+  to drop; that patch bump belongs to the "Re-pin cadence" item, not here.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
