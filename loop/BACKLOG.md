@@ -63,8 +63,15 @@ Each closed item must raise `differential_decoders_count` and reduce
   verified mainnet fixture from a Cardano node / Cardanoscan CBOR export
   first. Do together with the pallas 0.30 -> 1.1 major bump (line ~119).
 - [ ] **TON vs tonlib-core** (dep declared, unused).
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — DELETED the deps. (Done
+  2026-07.) `decoder-bnb` is a thin wrapper: `decode()` calls
+  `EthereumDecoder::decode` byte-for-byte (`src/lib.rs:69`), so BNB's RLP
+  parsing is already covered by decoder-ethereum's real `alloy_differential`
+  suite. The `alloy-primitives`/`alloy-rlp` dev-deps were never imported by
+  any test (grep: only Cargo.toml + README prose), i.e. dead validation deps
+  carrying yank risk with zero value (Policy below). Removed both; the sole
+  user of `alloy-primitives 0.7.7` was this dead dep, so that stale 0.7-era
+  subtree drops from Cargo.lock. `dead_validation_deps_count` 4 -> 2.
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
@@ -222,6 +229,11 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+  UPDATE 2026-07: the `ecdsa_tests.rs:157` `unnecessary_unwrap` pair is FIXED
+  (rewritten as `if let (Ok(v1), Ok(v2)) = (result1, result2)`, assertion
+  unchanged) — the workspace `-D warnings` clippy now passes clean on stable
+  1.96.0. Still open: pin/refresh the CI toolchain so local and CI clippy
+  can't drift again.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on

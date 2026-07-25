@@ -15,9 +15,9 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# Blockchain libraries for test validation ONLY
-# Production code will reuse Ethereum decoder (Phase 2)
-alloy-primitives = "0.7"
-alloy-rlp = "0.3"
+# BNB reuses the Ethereum decoder byte-for-byte (see src/lib.rs), so BNB's RLP
+# parsing is validated by decoder-ethereum's `alloy_differential` suite. No
+# direct alloy dev-dep here — a declared-but-unused upstream dev-dep is
+# supply-chain yank risk with zero validation value.
 serde_json = { workspace = true }
 proptest = { workspace = true }
