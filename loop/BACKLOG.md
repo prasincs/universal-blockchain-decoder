@@ -62,7 +62,30 @@ Each closed item must raise `differential_decoders_count` and reduce
   (integration_tests.rs:272-283), so a real field-level comparison needs a
   verified mainnet fixture from a Cardano node / Cardanoscan CBOR export
   first. Do together with the pallas 0.30 -> 1.1 major bump (line ~119).
-- [ ] **TON vs tonlib-core** (dep declared, unused).
+- [x] **TON vs tonlib-core** (was: dep declared, unused). (Done 2026-07;
+  `tests/validation_against_tonlib.rs` was a "both parsers returned something"
+  smoke check — it never compared our output to the oracle. Rewrote it into a
+  real recursive field-level differential test: for every cell reachable from
+  a root it asserts `bit_len`, payload `data` (completion tag stripped), and
+  reference fan-out agree with `tonlib-core`, walking references in lockstep.
+  Added `boc::parse_boc_with_roots` (additive; `parse_boc` unchanged) so the
+  test can walk the tree in producer order.
+  **Findings produced** (2 real parser bugs, both FIXED — our parser now
+  agrees cell-for-cell with tonlib on the real transfer BoC):
+  1. `d2 == 0` (an empty cell) was misread as "read an extra size byte",
+     desyncing the cursor and corrupting every subsequent cell. Standard BoC
+     has no size byte; `data_bytes = (d2>>1)+(d2&1)`.
+  2. The completion tag (trailing `1` bit + zero padding on non-byte-aligned
+     cells) was left in `data` and `bit_len` was derived from a trailing-1
+     marker even for byte-aligned cells (undercounting). Now mirrors
+     tonlib-core: strip the tag, `full_bytes = (d2&1)==0`.
+  A synthetic fixture in `basic_tests.rs::test_minimal_boc_parsing` encoded
+  the fictional "size byte" (its own comment said so); corrected it to a
+  spec-valid 32-byte cell (`d2 = 0x40`), assertions unchanged.
+  Note: `differential_decoders_count` did NOT move — the health-report
+  heuristic already (wrongly) counted the placeholder because it only checks
+  whether a test *imports* the oracle, not whether it *compares*. See the
+  metric-gap item below.)
 - [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
   EVM differential test covers it.
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
@@ -98,6 +121,16 @@ dev machine, commit the fixtures, verification re-runs offline in tests).
 - [ ] **Bitcoin corpus depth**: add a Taproot key-path spend, a Taproot
   script-path spend, and a large multi-input SegWit tx via
   `fetch_corpus.py bitcoin <txid>`; wire into the existing differential test.
+- [ ] *(finding 2026-07, from TON differential work)* **TON "complex
+  StateInit" BoC fixture is malformed** — the base64 used in
+  `real_transactions.rs` and `debug_boc_parsing.rs`
+  (`te6cckECGwEAA2s...`) is not a valid Bag of Cells: `tonlib-core` rejects
+  it with "failed to fill whole buffer". Our parser accepts it (lenient),
+  so any test asserting on it validates nothing. Replace with a verified
+  mainnet BoC and un-`#[ignore]`
+  `validation_against_tonlib::test_validate_against_tonlib_complex_boc`
+  (a multi-cell fixture that tonlib parses). Acceptance: that test passes
+  un-ignored.
 - [ ] **Corpus integrity test**: a test per decoder that recomputes each
   fixture's txid from its raw bytes and compares against the sidecar's
   `txid` field, so corpus corruption fails offline CI (this is what would
@@ -222,6 +255,18 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+- [ ] *(finding 2026-07, from TON differential work)* **`differential_
+  decoders_count` over-counts** — `check_dead_validation_deps` in
+  `scripts/loop/health_report.py` classifies a decoder as having a "real
+  differential test" if any test merely *imports* the oracle
+  (`crate_uses_lib`), not if it *compares* against it. This flagged TON's
+  placeholder (which only asserted "both parsers returned something") and
+  still flags `decoder-cardano:pallas-codec` whose comparison is an
+  `#[ignore]` stub. The metric can be satisfied without any real oracle
+  comparison. Tighten the heuristic (e.g. require an `assert*` in the same
+  file that references both our decoder output and the oracle, or maintain an
+  explicit allow-list of verified differential test files). Verify: the count
+  drops to only decoders with genuine field-level comparisons.
 - [ ] **Scheduled CI has no consumer** — `Nightly Tests` and `Autonomous
   Task Executor` workflows have failed EVERY night since at least 2026-02-16
   (months of silent red), and `Deploy WASM Demo to GitHub Pages` fails on
@@ -248,8 +293,17 @@ fixture (`fetch_corpus.py`) or upstream library as its oracle.
   Verify: differential test against a known mainnet txid.
 - [ ] **TON `metadata.tx_hash` is the PREVIOUS transaction's hash**
   (`decoder-ton/src/lib.rs:232`), and `operations` is hardcoded `vec![]`
-  (`lib.rs:263`) despite parsed in/out messages. Also `tonlib-core` dev-dep
-  is declared but unused — this is the chain to close both gaps together.
+  (`lib.rs:263`) despite parsed in/out messages. (`tonlib-core` is now
+  actually exercised by a real differential test — see the closed "TON vs
+  tonlib-core" item; these two `lib.rs` gaps remain.)
+- [ ] *(finding 2026-07, from TON differential work)* **TON BoC cell
+  references are read as 1-byte indices unconditionally**
+  (`decoder-ton/src/boc.rs`, `parse_cell` ref loop). The BoC header's
+  `off_bytes`/cell-count implies a ref index size of `ceil(log256(cells))`
+  bytes; hardcoding 1 byte silently misparses any BoC with > 255 cells.
+  tonlib-core reads `read_var_size(reader, size)`. Fix: thread the ref size
+  through `BocContext` and read that many bytes per reference. Verify: a
+  differential fixture with > 255 cells agrees with tonlib.
 - [ ] **Polkadot extrinsic hash uses Blake2b-512; real hash is Blake2b-256**
   (`decoder-polkadot/src/lib.rs:45-49`). Also `Sr25519` public keys are
   mislabeled `KeyType::Ed25519` (`lib.rs:170`).

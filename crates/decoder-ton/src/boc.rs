@@ -119,6 +119,16 @@ struct BocContext {
 
 /// Parse a Bag of Cells from bytes
 pub fn parse_boc(bytes: &[u8]) -> Result<Vec<Cell>> {
+    Ok(parse_boc_with_roots(bytes)?.0)
+}
+
+/// Parse a Bag of Cells, returning the flat cell list together with the
+/// indices (into that list) of the root cells.
+///
+/// This is identical to [`parse_boc`] but also exposes the root list, which is
+/// required to walk the cell tree in the same topological order the producer
+/// intended (e.g. to compare against another BoC parser reference-by-reference).
+pub fn parse_boc_with_roots(bytes: &[u8]) -> Result<(Vec<Cell>, Vec<usize>)> {
     let mut cursor = Cursor::new(bytes);
 
     // Read magic number (4 bytes, big-endian)
@@ -175,9 +185,9 @@ pub fn parse_boc(bytes: &[u8]) -> Result<Vec<Cell>> {
     }
 
     // Read root list
-    let mut _root_list = Vec::with_capacity(roots_count);
+    let mut root_list = Vec::with_capacity(roots_count);
     for _ in 0..roots_count {
-        _root_list.push(read_var_uint(&mut cursor, off_bytes)? as usize);
+        root_list.push(read_var_uint(&mut cursor, off_bytes)? as usize);
     }
 
     // Skip index if present
@@ -202,7 +212,7 @@ pub fn parse_boc(bytes: &[u8]) -> Result<Vec<Cell>> {
         // TODO: Implement CRC32C verification
     }
 
-    Ok(cells)
+    Ok((cells, root_list))
 }
 
 /// Parse a single cell from the cursor
@@ -257,28 +267,17 @@ fn parse_cell(cursor: &mut Cursor<&[u8]>, ctx: &BocContext) -> Result<Cell> {
         })?;
     }
 
-    // Bit length encoding in d2:
-    // d2 = ceil(bit_len / 8) + floor(bit_len / 8)
-    // This tells us the number of BYTES to read, but not the exact bit count.
-    // The exact bit count is encoded in the data via a trailing 1 bit marker.
-    //
-    // Special case: d2=0 means read a size byte for the byte count
-    let data_bytes_from_d2 = if d2 == 0 {
-        0 // Will read size byte next
-    } else {
-        // d2 encodes the byte count
-        // For d2=1: could be 1-8 bits → 1 byte
-        // For d2=2: exactly 8 bits → 1 byte
-        // For d2=3: could be 9-16 bits → 2 bytes
-        // Formula: bytes = ceil(d2/2)
-        d2.div_ceil(2) as usize
-    };
+    // Bit length encoding in d2 (standard BoC, matches tonlib-core):
+    //   data_bytes = (d2 >> 1) + (d2 & 1)   == ceil(d2 / 2)
+    //   full_bytes = (d2 & 1) == 0
+    // When the cell is NOT byte-aligned (d2 odd), the final byte carries a
+    // "completion tag": a single `1` bit followed by zero padding, which is
+    // NOT part of the payload. d2 == 0 is a legitimate empty cell (0 bytes),
+    // NOT a signal to read an extra size byte.
+    let full_bytes = (d2 & 0x01) == 0;
 
-    // For exotic cells, we'll need to parse the cell type from the data to
-    // determine the actual number of refs after reading the data.
-
-    // Calculate data size and read data
-    // Note: Exotic cells have different descriptor format - for now, treat as opaque
+    // Calculate data size and read data.
+    // Exotic cells have a different descriptor format - for now, treat as opaque.
     let (data_bytes, is_exotic_with_descriptor) = if is_exotic && d2 == 0 {
         // Exotic cells with d2=0 have first data byte as cell type,
         // not size. We need to parse based on exotic type.
@@ -288,13 +287,7 @@ fn parse_cell(cursor: &mut Cursor<&[u8]>, ctx: &BocContext) -> Result<Cell> {
         // For now, return minimal exotic cell
         (0, true)
     } else {
-        let bytes = if data_bytes_from_d2 == 0 {
-            // d2=0: read size byte for full bytes (ordinary cells only)
-            read_u8(cursor)? as usize
-        } else {
-            data_bytes_from_d2
-        };
-        (bytes, false)
+        ((d2 as usize >> 1) + (d2 as usize & 1), false)
     };
 
     if data_bytes > MAX_CELL_SIZE {
@@ -311,21 +304,26 @@ fn parse_cell(cursor: &mut Cursor<&[u8]>, ctx: &BocContext) -> Result<Cell> {
         })?;
     }
 
-    // Decode actual bit length from data using trailing 1 bit marker
-    // Format: <payload_bits><1><padding_zeros>
-    // The rightmost 1 bit marks the end of payload
+    // Decode the payload bit length. For byte-aligned cells (d2 even) the bit
+    // length is simply data.len() * 8. Otherwise the final byte holds a
+    // completion tag `<payload_bits><1><padding_zeros>`; strip that tag from
+    // the stored data so `data` holds only payload bits (0-padded). This
+    // mirrors tonlib-core's raw cell reader.
     let actual_bit_len = if data.is_empty() || is_exotic_with_descriptor {
         0 // Exotic cells or empty data
+    } else if full_bytes {
+        (data.len() * 8) as u16
     } else {
-        let last_byte = data[data.len() - 1];
-        if last_byte == 0 {
-            // No marker bit found - this might be a cell with special encoding
-            // (e.g., pruned branch, library ref) or misaligned parsing
-            // For now, assume full bytes (no partial bits)
+        let last = data.len() - 1;
+        let num_zeros = data[last].trailing_zeros() as usize;
+        if num_zeros >= 8 {
+            // Malformed: last byte is zero but a completion tag was expected.
+            // Fall back to a byte-aligned interpretation rather than panicking.
             (data.len() * 8) as u16
         } else {
-            let trailing_zeros = last_byte.trailing_zeros() as usize;
-            ((data.len() - 1) * 8 + (8 - trailing_zeros - 1)) as u16
+            // Clear the completion bit so only payload bits remain.
+            data[last] &= !(1u8 << num_zeros);
+            ((data.len() * 8) - (num_zeros + 1)) as u16
         }
     };
 

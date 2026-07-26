@@ -85,11 +85,10 @@ fn test_minimal_boc_parsing() {
     // Cell descriptor (2 bytes):
     // - d1: refs_count=0, not exotic, no hashes, level_mask=0
     boc.push(0x00);
-    // - d2: bit_len = 0 (will use size byte)
-    boc.push(0x00);
-
-    // Data size: 32 bytes
-    boc.push(0x20);
+    // - d2 encodes the data length: data_bytes = (d2 >> 1) + (d2 & 1).
+    //   For a byte-aligned 32-byte (256-bit) cell, d2 = 32 * 2 = 0x40.
+    //   (Standard BoC has no separate "size byte"; d2 == 0 is an empty cell.)
+    boc.push(0x40);
 
     // Cell data: 32 bytes of dummy data
     boc.extend_from_slice(&[0xAAu8; 32]);
