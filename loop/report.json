@@ -8,12 +8,10 @@
     "universal-decoder-core"
   ],
   "dead_validation_deps": [
-    "decoder-bnb:alloy-primitives",
-    "decoder-bnb:alloy-rlp",
     "decoder-cardano:pallas-primitives",
     "decoder-cardano:pallas-traverse"
   ],
-  "dead_validation_deps_count": 4,
+  "dead_validation_deps_count": 2,
   "differential_decoders_count": 6,
   "differential_test_deps": [
     "decoder-bitcoin:bitcoin",
@@ -38,7 +36,9 @@
     "decoder-solana": 6
   },
   "fixture_total": 107,
-  "ratchet_improvements": {},
+  "ratchet_improvements": {
+    "dead_validation_deps_count": 2
+  },
   "ratchet_regressions": [],
   "raw_bytes_storing_count": 22,
   "raw_bytes_storing_decoders": [
@@ -67,7 +67,6 @@
   ],
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
-    "alloy-rlp: locked 0.3.15 -> latest 0.3.16",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
     "pallas-traverse: locked 0.30.2 -> latest 1.1.1"
