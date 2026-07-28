@@ -15,9 +15,10 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# Blockchain libraries for test validation ONLY
-# Production code will reuse Ethereum decoder (Phase 2)
-alloy-primitives = "0.7"
-alloy-rlp = "0.3"
+# BNB decoding delegates entirely to EthereumDecoder (see src/lib.rs), so the
+# EVM/alloy differential coverage lives in decoder-ethereum's alloy_differential
+# suite. No separate alloy oracle is declared here: unused dev-deps are
+# supply-chain risk with zero validation value (a yanked algonaut dep already
+# broke the workspace once).
 serde_json = { workspace = true }
 proptest = { workspace = true }

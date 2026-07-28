@@ -86,11 +86,19 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
-- [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
+- [x] **BNB vs alloy** (was: deps declared, unused). (Done 2026-07; deleted the
+  `alloy-primitives` + `alloy-rlp` dev-deps. `decoder-bnb::decode()` delegates
+  100% to `EthereumDecoder::decode()` (src/lib.rs:69), so the exact decode path
+  is already exercised field-for-field by decoder-ethereum's `alloy_differential`
+  suite — a separate BNB oracle would re-test identical code while carrying yank
+  risk (`alloy-rlp` was in `upstream_outdated`). README updated to cite the
+  Ethereum differential coverage. `dead_validation_deps_count` 4 -> 2.)
+- [x] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
-  risk with zero value (this already broke the build once).
+  risk with zero value (this already broke the build once). (Applied to
+  decoder-bnb 2026-07 with the item above; decoder-cardano's `pallas-primitives`
+  /`pallas-traverse` remain, deferred to the blocked "Cardano vs pallas" item so
+  the deletion decision is made alongside the real differential work.)
 
 ## P1 — corpus of KNOWN on-chain transactions
 
