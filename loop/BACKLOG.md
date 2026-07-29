@@ -86,8 +86,19 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
+  EVM differential test covers it. (Done 2026-07; chose DELETE. `BnbDecoder`
+  is a pure delegate: `TxSpecific = EthereumTransaction`, `decode` =
+  `EthereumDecoder::decode` + a 56/97 chain-id check, `validate_format` =
+  `EthereumDecoder::validate_format` — no BNB-specific byte→field logic. The
+  byte→field decoding is therefore already covered field-for-field by
+  `decoder-ethereum`'s `tests/alloy_differential.rs`, so a BNB-local alloy
+  oracle would only duplicate it (and a real BNB mainnet fixture needs RPC
+  egress this sandbox lacks). `alloy-primitives`/`alloy-rlp` were unused in
+  every `.rs` in the crate (only `src/lib.rs` exists; grep for `alloy` in
+  `--include=*.rs` was empty) — removed them from `[dev-dependencies]`, updated
+  README to point at the Ethereum suite. `dead_validation_deps_count` 4 -> 2.
+  No findings.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).

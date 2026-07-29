@@ -73,7 +73,9 @@ impl ChainDecoder for BnbDecoder {
 1. Unit tests for chain ID validation
 2. Integration tests with real BSC transactions
 3. Property tests (fuzz RLP encoding)
-4. Validation against `alloy-rs` (dev-dependency)
+4. Validation against `alloy-rs` — covered by the Ethereum decoder's
+   `alloy_differential` suite, since BNB decodes via `EthereumDecoder` verbatim
+   (no separate alloy oracle is duplicated here)
 
 **Test Fixtures**:
 - BSC mainnet transactions (chain ID 56)
@@ -99,10 +101,13 @@ Will share dependencies with Ethereum decoder:
 
 ### Dev Dependencies (Validation Only)
 
-- `alloy-primitives` - For validation testing
-- `alloy-rlp` - For RLP comparison
 - `serde_json` - For test fixtures
 - `proptest` - Property-based testing
+
+alloy validation lives in the Ethereum decoder (`decoder-ethereum`'s
+`alloy_differential`), which BNB reuses verbatim for byte->field decoding, so
+the `alloy-primitives` / `alloy-rlp` oracle dev-deps were removed here as dead
+(unused) declarations.
 
 ## Key Differences from Ethereum
 
