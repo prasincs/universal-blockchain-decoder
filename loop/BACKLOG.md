@@ -86,8 +86,19 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
+  EVM differential test covers it. (Done 2026-07; chose deletion. BNB reuses
+  `EthereumDecoder`/`EthereumTransaction` verbatim — `BnbDecoder` only adds a
+  chain-id (56/97) check — so the Ethereum `alloy_differential` suite already
+  validates BNB's entire decode path. A separate BNB alloy dev-dep would only
+  re-test identical code while carrying yank risk, so removed
+  `alloy-primitives`/`alloy-rlp` dev-deps from `decoder-bnb/Cargo.toml` and
+  reconciled the README's validation claims. `dead_validation_deps_count`
+  4 -> 2. No findings.)
+  Note: `alloy-rlp` stays in `upstream_outdated` (0.3.15 -> 0.3.16) because it
+  remains a *transitive* dep of the alloy stack used by decoder-ethereum's
+  real suite — no direct dev-dep consumes it, so there is no differential
+  suite to re-run for that patch bump; not a backlog item.
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
