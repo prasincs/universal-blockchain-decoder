@@ -86,8 +86,18 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — deleted the deps: the EVM
+  differential test covers it. (Done 2026-07; `decoder-bnb::decode()`
+  delegates its entire RLP parse to `EthereumDecoder::decode` — src/lib.rs —
+  which is already validated field-for-field by decoder-ethereum's
+  `alloy_differential` suite. A separate BNB<->alloy oracle would only re-test
+  the identical parser, so the dead `alloy-primitives`/`alloy-rlp` dev-deps
+  (supply-chain risk, zero validation value) were removed from
+  `crates/decoder-bnb/Cargo.toml`, and the README dependency section corrected.
+  `dead_validation_deps_count` 4 -> 2. Note: `alloy-rlp` stays in
+  `upstream_outdated` — it is still pulled transitively by `alloy-consensus`
+  via decoder-ethereum, so that entry belongs to the alloy re-pin cadence, not
+  here.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
@@ -243,9 +253,16 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
-  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
+- [x] **Workspace fails clippy on current stable** — (fixed 2026-07 for clippy
+  1.96.0: rewrote `decoder-crypto-zk/tests/ecdsa_tests.rs:157` from
+  `result1.unwrap()`/`result2.unwrap()` after `is_ok()` to
+  `if let (Ok(v1), Ok(v2)) = (&result1, &result2) { assert_eq!(v1, v2); }` —
+  same assertion, no `unnecessary_unwrap`. `cargo clippy --all --all-targets
+  --all-features -- -D warnings` now exits 0. This was a workspace-wide
+  pre-commit blocker; fixed as a prerequisite for the BNB item above. The CI
+  toolchain pin/refresh half of this item remains open — see follow-up below.)
+  Under clippy **1.96.0**
+  (2026-07 observation) the workspace `-D warnings` build failed on
   `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
   `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
   a `match` or destructure, do NOT weaken the assertion). The earlier
@@ -255,6 +272,14 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+- [ ] **Pin/refresh the CI clippy toolchain** (remaining half of the item
+  above, whose lint fix landed 2026-07). Local `-D warnings` is green now, but
+  clippy lints are a moving target across toolchain versions and CI's toolchain
+  can drift from local. Pin a `rust-toolchain.toml` (or an explicit CI
+  toolchain version) so local and CI clippy agree, and so a new lint level
+  can't silently red-line CI. Verify: CI clippy job runs the pinned toolchain
+  and matches local `cargo clippy --all --all-targets --all-features -- -D
+  warnings`.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
