@@ -9,7 +9,7 @@
     }
   ],
   "core_loc_non_vendored": 5169,
-  "dead_validation_deps_count": 4,
+  "dead_validation_deps_count": 2,
   "differential_decoders_count": 6,
   "fixture_total": 107,
   "raw_bytes_storing_count": 22,

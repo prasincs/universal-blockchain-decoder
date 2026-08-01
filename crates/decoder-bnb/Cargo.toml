@@ -15,9 +15,8 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# Blockchain libraries for test validation ONLY
-# Production code will reuse Ethereum decoder (Phase 2)
-alloy-primitives = "0.7"
-alloy-rlp = "0.3"
+# BNB reuses the Ethereum decoder verbatim (see src/lib.rs); its RLP decode
+# path is already covered by decoder-ethereum's `alloy_differential` suite, so
+# no BNB-specific oracle deps are declared here (dead deps carry yank risk).
 serde_json = { workspace = true }
 proptest = { workspace = true }
