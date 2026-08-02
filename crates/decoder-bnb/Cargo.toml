@@ -15,9 +15,10 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# Blockchain libraries for test validation ONLY
-# Production code will reuse Ethereum decoder (Phase 2)
-alloy-primitives = "0.7"
-alloy-rlp = "0.3"
+# BNB Chain reuses the Ethereum decoder verbatim (BnbDecoder::TxSpecific ==
+# EthereumTransaction), so decoding correctness is covered by decoder-ethereum's
+# alloy differential suite (tests/alloy_differential.rs). No separate alloy
+# oracle is declared here: a declared-but-unused dev-dep carries yank risk with
+# zero validation value. See loop/BACKLOG.md "BNB vs alloy".
 serde_json = { workspace = true }
 proptest = { workspace = true }
