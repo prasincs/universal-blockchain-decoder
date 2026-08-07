@@ -191,6 +191,15 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-08)* **Bump alloy oracle 2.2.0 -> 2.3.0** in
+  decoder-ethereum dev-deps. (Done 2026-08; `cargo update` moved
+  `alloy-consensus`/`alloy-eips`/`alloy-serde`/`alloy-tx-macros` 2.2.0 -> 2.3.0
+  and `alloy-rlp`/`alloy-rlp-derive` 0.3.15 -> 0.3.16 in Cargo.lock. No API
+  migration needed — all 7 `alloy_differential` tests still agree
+  field-for-field (types, chain_id, nonce, gas, to, value, input, access list,
+  v/r/s, tx hash, recovered sender). No findings. `upstream_outdated` 6 -> 3
+  (only the three pallas 0.30 -> 1.1 majors remain, blocked on the Cardano
+  corpus item).)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
