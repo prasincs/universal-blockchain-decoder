@@ -191,6 +191,18 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-08)* **Bump alloy oracle 2.2.0 -> 2.4.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-08;
+  `cargo update -p alloy-consensus -p alloy-eips --precise 2.4.0` moved
+  `alloy-consensus`/`alloy-eips`/`alloy-serde`/`alloy-tx-macros` 2.2.0 -> 2.4.0
+  in Cargo.lock. No API migration needed — all 7 `alloy_differential` tests
+  still agree field-for-field (type, chain_id, nonce, gas, to, value, input,
+  access list, v/r/s, tx hash, recovered sender). No findings.
+  `upstream_outdated` drops the two alloy entries.)
+- [ ] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
+  4.2.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`.
+  Verify: `cargo test -p decoder-solana --test solana_transaction_status_differential`.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -227,6 +239,22 @@ of re-litigating it. Reference decoders first:
 
 ## P2 — restore rotted infrastructure
 
+- [x] **Clippy gate broken by toolchain drift** — `unnecessary_unwrap`
+  (rust-1.96.0) flagged `result1.unwrap()`/`result2.unwrap()` after an
+  `is_ok()` check in `decoder-crypto-zk/tests/ecdsa_tests.rs`, so
+  `cargo clippy --all --all-targets -- -D warnings` failed on a clean tree and
+  blocked every commit. Rewrote to `if let (Ok(v1), Ok(v2)) = (result1,
+  result2)` (semantics unchanged). Fixed incidentally 2026-08 while landing
+  the alloy bump, because it blocked the loop's own verify step.
+  Verify: `cargo clippy -p decoder-crypto-zk --all-targets -- -D warnings`.
+- [ ] **`hex_performance::test_encoding_scales_linearly` is flaky** — it
+  asserts wall-clock scaling ratios; the 100-byte baseline is tiny and jittery,
+  so it spuriously fails under parallel load in the full suite (observed
+  2026-08) yet passes 3/3 in isolation. Make it robust: either gate the ratio
+  assertions on a warm-up + median of N runs, or move it out of `#[test]` into
+  a criterion benchmark that doesn't fail CI on timing noise.
+  Verify: run `cargo test -p universal-decoder-core` 5x with the full suite in
+  parallel; 0 failures.
 - [ ] **Fuzz targets don't compile** (Ethereum, EVM, core — API drift, see
   FUZZING_RESULTS.md). Fix them, then add a CI job that `cargo check`s every
   `crates/*/fuzz` so they can't rot silently again.
