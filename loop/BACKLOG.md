@@ -191,6 +191,13 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [~] *(auto-generated 2026-08)* **Bump alloy oracle 2.2.0 -> 2.4.1** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. Disagreements after
+  the bump are findings (minimal repro fixture + backlog entry first).
+- [ ] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
+  4.2.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings (minimal repro fixture + backlog entry first).
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -243,9 +250,16 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
-  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
+- [x] **Workspace fails clippy on current stable** (Done 2026-08; rewrote
+  `decoder-crypto-zk/tests/ecdsa_tests.rs:156-158` from
+  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check to an
+  `if let (Ok(v1), Ok(v2)) = (result1, result2)` destructure — same
+  determinism assertion, no `unnecessary_unwrap`. `cargo clippy --all
+  --all-targets --all-features -- -D warnings` now exits 0 under clippy
+  1.96.0.) Remaining: pin/refresh the CI toolchain so local and CI clippy
+  agree, and re-open if a newer clippy flags something else — a moving target
+  as the toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
+  (2026-07 observation) the workspace `-D warnings` build failed on
   `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
   `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
   a `match` or destructure, do NOT weaken the assertion). The earlier
