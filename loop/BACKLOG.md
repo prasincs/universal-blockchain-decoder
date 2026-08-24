@@ -199,10 +199,14 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
   recovered sender). No findings. `upstream_outdated` drops the two alloy
   oracle entries.)
-- [ ] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
-  4.2.1** in decoder-solana dev-deps; re-run
-  `solana_transaction_status_differential`. Disagreements after the bump are
-  findings (minimal repro fixture + backlog entry first).
+- [x] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
+  4.2.1** in decoder-solana dev-deps. (Done 2026-08; `cargo update -p
+  solana-transaction-status --precise 4.2.1` moved the oracle and its agave/
+  solana transitive graph 4.1.2 -> 4.2.1 in Cargo.lock. No API migration
+  needed — both `solana_transaction_status_differential` tests still agree
+  field-for-field (signatures, header, account keys, recent blockhash, and
+  every instruction's program index / accounts / data). No findings.
+  `upstream_outdated` drops the solana-transaction-status entry.)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
