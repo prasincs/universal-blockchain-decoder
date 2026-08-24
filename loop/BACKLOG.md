@@ -191,9 +191,14 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
-- [~] *(auto-generated 2026-08)* **Bump alloy oracle 2.2.0 -> 2.4.1** in
-  decoder-ethereum dev-deps; re-run `alloy_differential`. Disagreements after
-  the bump are findings (minimal repro fixture + backlog entry first).
+- [x] *(auto-generated 2026-08)* **Bump alloy oracle 2.2.0 -> 2.4.1** in
+  decoder-ethereum dev-deps. (Done 2026-08; `cargo update -p alloy-consensus
+  -p alloy-eips` moved `alloy-consensus`/`alloy-eips`/`alloy-serde`/
+  `alloy-tx-macros` 2.2.0 -> 2.4.1 in Cargo.lock. No API migration needed —
+  all 7 `alloy_differential` tests still agree field-for-field (types,
+  chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. `upstream_outdated` drops the two alloy
+  oracle entries.)
 - [ ] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
   4.2.1** in decoder-solana dev-deps; re-run
   `solana_transaction_status_differential`. Disagreements after the bump are
