@@ -203,9 +203,15 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   `unnecessary_unwrap` clippy failure (clippy 1.96.0) that blocked the verify
   gate — rewrote the determinism check as a `match` without weakening it (see
   P2 clippy item).
-- [ ] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
+- [x] *(auto-generated 2026-08)* **Bump solana-transaction-status 4.1.2 ->
   4.2.1** in decoder-solana dev-deps; re-run
-  `solana_transaction_status_differential`.
+  `solana_transaction_status_differential`. (Done 2026-08; `cargo update
+  --precise 4.2.1` moved solana-transaction-status and its agave-*/solana-*
+  transitive graph 4.1.2 -> 4.2.1 in Cargo.lock. No API migration needed —
+  `differential_sol_transfer_matches_solana_transaction_status` still agrees
+  field-for-field (signatures, header, account keys, recent blockhash, and
+  every instruction's program index / accounts / data). No findings.
+  `upstream_outdated` 5 -> 4.)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
