@@ -67,10 +67,10 @@
   ],
   "string_fields_in_canonical": 5,
   "upstream_outdated": [
-    "alloy-rlp: locked 0.3.15 -> latest 0.3.16",
     "pallas-codec: locked 0.30.2 -> latest 1.1.1",
     "pallas-primitives: locked 0.30.2 -> latest 1.1.1",
-    "pallas-traverse: locked 0.30.2 -> latest 1.1.1"
+    "pallas-traverse: locked 0.30.2 -> latest 1.1.1",
+    "solana-transaction-status: locked 4.1.2 -> latest 4.2.1"
   ],
   "upstream_update_check": "ok (11 crates checked)",
   "workspace_resolves": true
