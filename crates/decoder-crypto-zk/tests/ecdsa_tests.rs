@@ -152,9 +152,14 @@ fn test_verify_deterministic() {
     let result2 = verify(&public_key, &message, &r, &s);
 
     // Same inputs should produce same result
-    assert_eq!(result1.is_ok(), result2.is_ok());
-    if result1.is_ok() && result2.is_ok() {
-        assert_eq!(result1.unwrap(), result2.unwrap());
+    match (result1, result2) {
+        (Ok(v1), Ok(v2)) => assert_eq!(v1, v2),
+        (Err(_), Err(_)) => {}
+        (a, b) => panic!(
+            "nondeterministic verify: {:?} vs {:?}",
+            a.is_ok(),
+            b.is_ok()
+        ),
     }
 }
 
