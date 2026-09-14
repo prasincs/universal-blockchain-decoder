@@ -16,6 +16,16 @@ Status: `[ ]` open · `[x]` done · `[~]` in progress
 
 ## P0 — the loop cannot run without these
 
+- [x] *(discovered 2026-09)* **Clippy gate broken: `unnecessary_unwrap` in
+  `decoder-crypto-zk/tests/ecdsa_tests.rs`**. The environment's clippy 1.96.0
+  flags `if result1.is_ok() && result2.is_ok() { ...unwrap()... }`, failing the
+  workspace-wide `clippy -D warnings` gate that blocks every commit — surfaced
+  incidentally while running the loop's verify step (unrelated to the dep bump
+  in the same iteration). Rewrote to `if let (Ok(v1), Ok(v2)) = ...`; assertion
+  semantics unchanged, no test weakened.
+  Verify: `cargo clippy -p decoder-crypto-zk --all-targets -- -D warnings`
+  exits 0. (Done 2026-09.)
+
 - [x] **Workspace unresolvable: yanked `algonaut_client 0.4.x`**
   Removed unused `algonaut*` dev-deps from `decoder-algorand`.
   Verify: `cargo metadata --no-deps` exits 0. (Done 2026-06.)
@@ -191,6 +201,26 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-09)* **Bump alloy oracle 2.2.0 -> 2.4.2 +
+  alloy-primitives 1.6.1 -> 1.7.3** in decoder-ethereum dev-deps; re-run
+  `alloy_differential`. (Done 2026-09; `cargo update --precise` moved
+  `alloy-consensus`/`alloy-eips`/`alloy-serde`/`alloy-tx-macros` 2.2.0 -> 2.4.2,
+  `alloy-primitives` 1.6.1 -> 1.7.3, and `alloy-rlp`/`alloy-rlp-derive`
+  0.3.15 -> 0.3.16 in Cargo.lock. The transitive `alloy-primitives` 0.7.7 is a
+  separate major line pulled by another crate and stays. No API migration
+  needed — all 7 `alloy_differential` tests still agree field-for-field
+  (types, chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. `upstream_outdated` 8 -> 3.)
+- [x] *(auto-generated 2026-09)* **Bump solana-transaction-status 4.1.2 ->
+  4.2.2** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. (Done 2026-09;
+  `cargo update -p solana-transaction-status --precise 4.2.2` moved the whole
+  v4 solana graph 4.1.2 -> 4.2.2 and shifted several spl-* transitive deps.
+  No API migration needed (v4 `agave-unstable-api` feature already enabled).
+  Both differential tests still agree field-for-field (signatures, header,
+  account keys, recent blockhash, and every instruction's program index /
+  accounts / data). No findings. Counted in the `upstream_outdated` 8 -> 3
+  drop above.)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
