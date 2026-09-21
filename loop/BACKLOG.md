@@ -86,8 +86,17 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — deleted the deps: the EVM
+  differential test covers it. (Done 2026-09; `decoder-bnb` reuses
+  `decoder-ethereum` verbatim — `TxSpecific = EthereumTransaction`, decode via
+  `EthereumDecoder` — so alloy validation already lives in
+  `decoder-ethereum`'s `alloy_differential` test and a BNB copy would only
+  re-run the identical path with chain_id 56. Dropped the never-imported
+  `alloy-primitives = "0.7"` / `alloy-rlp = "0.3"` dev-deps (yank risk, zero
+  value). `dead_validation_deps_count` 4 -> 2; side effect: the stale
+  `alloy-primitives 0.7.7` duplicate lock entry disappeared, so
+  `upstream_outdated` now reports `alloy-primitives: 1.6.1 -> 1.7.3` without
+  the 0.7.7 noise. No findings.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
@@ -171,7 +180,8 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
   `compute_txid()`. All 123 Bitcoin Core differential vectors still agree
   with the upstream crate. `upstream_outdated` 7 -> 6.)
-- [ ] *(auto-generated 2026-07)* **Bump pallas 0.30 -> 1.1** in
+- [ ] *(auto-generated 2026-07; latest now 1.4.0 as of 2026-09)* **Bump pallas
+  0.30 -> 1.x** in
   decoder-cardano dev-deps; re-run the differential suite. NOTE: the current
   `pallas_validation_tests::test_compare_with_pallas` is an `#[ignore]` TODO
   stub (integration_tests.rs:311-333), so `pallas-codec` is a dead validation
@@ -191,6 +201,19 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [ ] *(auto-generated 2026-09)* **Bump alloy oracle 2.2.0 -> 2.4.2** in
+  decoder-ethereum dev-deps (also `alloy-primitives` 1.6.1 -> 1.7.3 and
+  `alloy-rlp` 0.3.15 -> 0.3.16); re-run `alloy_differential`. Disagreements
+  after the bump are findings: minimal repro fixture + backlog entry before
+  deciding which side is wrong.
+  Verify: `cargo test -p decoder-ethereum --test alloy_differential` passes and
+  `upstream_outdated` drops the three alloy entries.
+- [ ] *(auto-generated 2026-09)* **Bump solana-transaction-status 4.1.2 -> 4.3.0**
+  in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings (minimal repro fixture + backlog entry first).
+  Verify: `cargo test -p decoder-solana` passes and `upstream_outdated` drops
+  the `solana-transaction-status` entry.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
