@@ -191,6 +191,18 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-09)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps (and `alloy-primitives` 1.6.1 -> 1.7.3); re-run
+  `alloy_differential`. (Done 2026-09; `cargo update --precise` moved
+  `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 and `alloy-primitives`
+  1.6.1 -> 1.7.3 in Cargo.lock. No API migration needed — all 7
+  `alloy_differential` tests still agree field-for-field (types, chain_id,
+  nonce, gas, to, value, input, access list, v/r/s, tx hash, recovered
+  sender). No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-09)* **Bump solana-transaction-status 4.1.2 ->
+  4.3.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -227,6 +239,13 @@ of re-litigating it. Reference decoders first:
 
 ## P2 — restore rotted infrastructure
 
+- [x] **Clippy red on current toolchain (rust 1.96.0)** — `unnecessary_unwrap`
+  fired on `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (`unwrap()` after an
+  `is_ok()` check), failing the mandatory `cargo clippy -- -D warnings` gate
+  for every commit. Toolchain drift, not tied to any decoder change; surfaced
+  while bumping the alloy oracle. Rewrote the determinism check as an
+  `if let (Ok(v1), Ok(v2)) = (&result1, &result2)` tuple match. (Done 2026-09;
+  `cargo clippy --all --all-targets --all-features -- -D warnings` exits 0.)
 - [ ] **Fuzz targets don't compile** (Ethereum, EVM, core — API drift, see
   FUZZING_RESULTS.md). Fix them, then add a CI job that `cargo check`s every
   `crates/*/fuzz` so they can't rot silently again.
