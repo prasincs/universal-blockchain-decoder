@@ -86,8 +86,13 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — deleted the dead deps: the
+  shared `decoder-ethereum` `alloy_differential` suite already covers alloy, and
+  decoder-bnb has no `tests/` dir importing `alloy-primitives`/`alloy-rlp`.
+  Removed both from `Cargo.toml` dev-deps + fixed the README claims. (Done
+  2026-07; `dead_validation_deps_count` 4 -> 2. This also removes the
+  `alloy-rlp 0.3.15 -> 0.3.16` upstream_outdated signal at its source — per the
+  dead-dep policy below, a dead oracle dep is deleted, not bumped.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
