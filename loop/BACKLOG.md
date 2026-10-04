@@ -191,6 +191,28 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps (`alloy-consensus`/`alloy-eips`); `alloy-primitives`
+  1.6.1 -> 1.7.3 rides along in the same `cargo update`. Re-run
+  `alloy_differential`. (Done 2026-10; `cargo update` moved
+  `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 (pulling `alloy-serde`,
+  `alloy-trie` 0.9.5 -> 0.9.8, `alloy-tx-macros`, adding `alloy-eip8141`) and
+  `alloy-primitives` 1.6.1 -> 1.7.3 in Cargo.lock. No API migration needed — all
+  7 `alloy_differential` tests still agree field-for-field (types, chain_id,
+  nonce, gas, to, value, input, access list, v/r/s, tx hash, recovered sender).
+  No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
+  4.3.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`.
+  Verify: `cargo test -p decoder-solana` differential test green;
+  `upstream_outdated` shrinks by the solana entry.
+  NOTE: `pallas-codec 0.30.2 -> 1.4.0`, `alloy-rlp 0.3.15 -> 0.3.16`, and
+  `pallas-primitives`/`pallas-traverse 0.30.2 -> 1.4.0` are also outdated but
+  are NOT actionable here: the pallas major bump is blocked on the Cardano
+  corpus (see the P1 "Cardano vs pallas" item, which notes the comparison is an
+  `#[ignore]` stub, so the bump "buys nothing measurable"), and
+  `alloy-rlp`/`pallas-primitives`/`pallas-traverse` are dead validation
+  dev-deps with no differential test (`dead_validation_deps_count`).
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
