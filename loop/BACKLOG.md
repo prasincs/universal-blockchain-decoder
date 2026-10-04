@@ -204,8 +204,21 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
 - [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
   4.3.0** in decoder-solana dev-deps; re-run
   `solana_transaction_status_differential`.
-  Verify: `cargo test -p decoder-solana` differential test green;
-  `upstream_outdated` shrinks by the solana entry.
+  BLOCKED (toolchain MSRV): `solana-transaction-status 4.3.0` and its
+  `solana-*` deps require **rustc 1.97.1**, but `rust-toolchain.toml` pins
+  the workspace to **1.96.0** (deliberately, so CI and local clippy agree).
+  `cargo update -p solana-transaction-status --precise 4.3.0` resolves, but
+  `cargo test -p decoder-solana` then fails to build: "solana-transaction-
+  status@4.3.0 requires rustc 1.97.1" (observed 2026-10). Bumping the pinned
+  toolchain is a deliberate cross-cutting change (it shifts clippy lints
+  workspace-wide — see the P2 "Workspace fails clippy on current stable"
+  item) and must NOT be done autonomously by the loop. Do this bump together
+  with a deliberate `rust-toolchain.toml` 1.96.0 -> >=1.97.1 raise, re-running
+  the full clippy `-D warnings` gate and fixing any new lints it surfaces.
+  Until then `solana-transaction-status` stays at 4.1.2 and keeps appearing
+  in `upstream_outdated`.
+  Verify (once unblocked): `cargo test -p decoder-solana` differential test
+  green; `upstream_outdated` shrinks by the solana entry.
   NOTE: `pallas-codec 0.30.2 -> 1.4.0`, `alloy-rlp 0.3.15 -> 0.3.16`, and
   `pallas-primitives`/`pallas-traverse 0.30.2 -> 1.4.0` are also outdated but
   are NOT actionable here: the pallas major bump is blocked on the Cardano
