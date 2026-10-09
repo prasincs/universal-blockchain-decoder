@@ -171,7 +171,8 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   bumped to 0.32.101, replaced deprecated `Transaction::txid()` with
   `compute_txid()`. All 123 Bitcoin Core differential vectors still agree
   with the upstream crate. `upstream_outdated` 7 -> 6.)
-- [ ] *(auto-generated 2026-07)* **Bump pallas 0.30 -> 1.1** in
+- [ ] *(auto-generated 2026-07; latest now 1.4.0 as of 2026-10)* **Bump
+  pallas 0.30 -> 1.4** in
   decoder-cardano dev-deps; re-run the differential suite. NOTE: the current
   `pallas_validation_tests::test_compare_with_pallas` is an `#[ignore]` TODO
   stub (integration_tests.rs:311-333), so `pallas-codec` is a dead validation
@@ -191,6 +192,27 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps. (Done 2026-10; `cargo update` moved
+  `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 and `alloy-primitives`
+  1.6.1 -> 1.7.3 in Cargo.lock, pulling in `alloy-serde`/`alloy-tx-macros`
+  2.5.0, `alloy-trie` 0.9.5 -> 0.9.8, and new transitive `alloy-eip8141`
+  0.1.1. No API migration needed — all 7 `alloy_differential` tests still
+  agree field-for-field (type, chain_id, nonce, gas fields, to, value, input,
+  access list, v/r/s parity, tx hash, recovered sender). No findings.
+  Discovered via the sparse index (`index.crates.io`) because the crates.io
+  API host the health report queries is blocked in this sandbox — see the
+  infra item below.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
+  4.3.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Minor bump within v4 (the
+  `agave-unstable-api` feature gate is unchanged); disagreements after the
+  bump are findings — minimal repro fixture + backlog entry first.
+  Verify: `cargo test -p decoder-solana --test solana_transaction_status_differential`.
+- [ ] *(auto-generated 2026-10)* **Bump alloy-rlp 0.3.15 -> 0.3.16** — no
+  differential test exercises it (it is a dead validation dev-dep of
+  decoder-bnb, see the "BNB vs alloy" and dead-dep policy items); fold into
+  whichever of those resolves decoder-bnb's deps. Pure patch bump.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -243,18 +265,56 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
+- [x] **Workspace fails clippy on current stable** — a moving target as the
   toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
+  (2026-07 observation, still firing 2026-10) the workspace `-D warnings`
+  build failed on
   `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
-  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
-  a `match` or destructure, do NOT weaken the assertion). The earlier
+  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check). (Done
+  2026-10; rewrote the body to `if let (Ok(v1), Ok(v2)) = (&result1, &result2)
+  { assert_eq!(v1, v2); }` — destructure, not allow-list; the determinism
+  assertion is unchanged and the `assert_eq!(result1.is_ok(), result2.is_ok())`
+  guard above it is kept. `cargo clippy --all --all-targets --all-features --
+  -D warnings` now exits 0. This lint had been silently blocking the loop's
+  own verify gate for every iteration. The earlier
   `decoder-optimism` (src/types.rs:397-403, enum at :13) /
   `decoder-evm` (src/registry.rs:177-178) `unnecessary_unwrap` /
-  `large_enum_variant` errors reported under 1.94 no longer fire under 1.96.
-  Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
-  local and CI clippy agree.
+  `large_enum_variant` errors reported under 1.94 do not fire under 1.96.)
+  Remaining (advisory, not blocking): pin/refresh the CI toolchain so local
+  and CI clippy agree — see the new "pin the clippy toolchain" item below.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+- [ ] *(finding 2026-10)* **Pin the clippy toolchain** — the clippy failure
+  above only surfaced because the sandbox happened to ship clippy 1.96.0;
+  local and CI should agree deterministically. Add a `rust-toolchain.toml`
+  (or pin in CI) so the `-D warnings` gate runs on a known version.
+  Verify: `rust-toolchain.toml` exists and names a channel; CI clippy uses it.
+- [ ] *(finding 2026-10)* **Health report upstream check queries the wrong
+  crates.io host** — `check_upstream_updates` in
+  `scripts/loop/health_report.py` hits `https://crates.io/api/v1/crates/{lib}`
+  (the API host), which is blocked by the agent proxy in cloud sessions (403),
+  so `upstream_update_check` silently reports "skipped (crates.io
+  unreachable)" and the `upstream_outdated` signal is lost exactly where the
+  loop runs unattended. The sparse index `https://index.crates.io/{aa}/{bb}/
+  {name}` IS allowlisted (it is what cargo itself uses) and returns per-version
+  JSON lines; compute `max_stable_version` as the highest non-yanked,
+  non-prerelease `vers` by semver (NOT the last-published line — e.g. bitcoin
+  0.32.102 publishes before a later 0.32.11 backport). This iteration worked
+  around it with a one-off script; fold that into the health report so the
+  signal is measured again. Verify: `python3 scripts/loop/health_report.py`
+  in a cloud session reports `upstream_update_check: ok (...)`, not "skipped".
+- [ ] *(finding 2026-10)* **`hex_performance::test_decode_performance_
+  reasonable` is a flaky wall-clock assertion** —
+  `crates/universal-decoder-core/tests/hex_performance.rs:83` panics unless
+  decoding 20KB hex 100x finishes in < 200ms. On this cloud runner it measured
+  212–237ms across repeated runs (passing only occasionally), so it fails
+  ~2 of 3 times regardless of the diff — it blocked this iteration's
+  `cargo test -p universal-decoder-core` gate though nothing in the change
+  touches core hex decoding. Do NOT just bump the constant; a hard wall-clock
+  bound in a unit test is non-deterministic on shared runners. Options:
+  gate it behind `--release` + a generous bound, convert to a criterion
+  benchmark outside the test gate, or `#[ignore]` by default with a
+  `--ignored` perf lane. Verify: `cargo test -p universal-decoder-core` is
+  deterministic across 5 consecutive runs on a loaded runner.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
