@@ -191,6 +191,21 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** (and
+  `alloy-primitives` 1.6.1 -> 1.7.3, `alloy-rlp` 0.3.15 -> 0.3.16) in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-10;
+  `cargo update --precise` moved alloy-consensus/eips 2.2.0 -> 2.5.0,
+  alloy-primitives 1.6.1 -> 1.7.3, alloy-rlp 0.3.15 -> 0.3.16 in Cargo.lock.
+  No API migration — all 7 `alloy_differential` tests still agree
+  field-for-field (type, chain_id, nonce, gas, to, value, input, access list,
+  v/r/s, tx hash, recovered sender). No findings. The separate transitive
+  alloy-primitives 0.7.7 is pulled by another dep and stays. After the bump
+  `upstream_outdated` no longer lists any alloy crate.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
+  4.3.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. crates.io latest 4.3.0 at 2026-10
+  (still listed in `upstream_outdated`). Verify: `cargo test -p decoder-solana`.
+  (Next iteration's upstream-update item.)
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -255,6 +270,12 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+  UPDATE 2026-10: the `ecdsa_tests.rs:157` lint is FIXED (rewritten as an
+  `if let (Ok(v1), Ok(v2))` destructure, assertion unchanged) — it was
+  blocking the clippy gauntlet for every commit, so it had to be cleared to
+  land the 2026-10 alloy bump. The clippy gauntlet now passes clean under
+  1.96.0. Remaining work on this item: pin/refresh the CI toolchain so local
+  and CI clippy versions agree (the lint set is toolchain-dependent).
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
