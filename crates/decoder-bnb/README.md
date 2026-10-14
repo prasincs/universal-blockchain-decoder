@@ -73,7 +73,10 @@ impl ChainDecoder for BnbDecoder {
 1. Unit tests for chain ID validation
 2. Integration tests with real BSC transactions
 3. Property tests (fuzz RLP encoding)
-4. Validation against `alloy-rs` (dev-dependency)
+4. Differential validation is inherited from `decoder-ethereum`: BNB reuses
+   `EthereumDecoder` wholesale, so the bytes->TxIR path is covered by that
+   crate's `alloy_differential` suite (and `decoder-evm` multi-chain tests
+   exercise chain ID 56)
 
 **Test Fixtures**:
 - BSC mainnet transactions (chain ID 56)
@@ -97,12 +100,14 @@ Will share dependencies with Ethereum decoder:
 - `decoder-primitives` - Shared primitives
 - RLP parser (from Ethereum decoder)
 
-### Dev Dependencies (Validation Only)
+### Dev Dependencies
 
-- `alloy-primitives` - For validation testing
-- `alloy-rlp` - For RLP comparison
 - `serde_json` - For test fixtures
 - `proptest` - Property-based testing
+
+Differential validation against `alloy-rs` lives in `decoder-ethereum` (whose
+decoder BNB reuses), not here — a duplicate alloy dev-dep would only re-test
+the same code path.
 
 ## Key Differences from Ethereum
 
