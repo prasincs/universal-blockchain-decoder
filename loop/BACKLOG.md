@@ -191,6 +191,21 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-10;
+  `cargo update -p alloy-consensus -p alloy-eips -p alloy-primitives@1.6.1`
+  moved `alloy-consensus`/`alloy-eips`/`alloy-serde`/`alloy-tx-macros`
+  2.2.0 -> 2.5.0, `alloy-primitives` 1.6.1 -> 1.7.3, `alloy-trie`
+  0.9.5 -> 0.9.8 in Cargo.lock (dev-dep specs are caret ranges `2.0`/`1.0`,
+  no manifest edit needed). No API migration needed — all 7
+  `alloy_differential` tests still agree field-for-field (types, chain_id,
+  nonce, gas, to, value, input, access list, v/r/s, tx hash, recovered
+  sender). No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
+  4.3.2** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings: minimal repro fixture + backlog entry before deciding which side
+  is wrong. Verify: `cargo test -p decoder-solana`.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -274,6 +289,20 @@ of re-litigating it. Reference decoders first:
   workflows or delete them; then make scheduled failures visible (e.g.
   a health-report check via the Actions API, or failure notifications).
   Verify: latest scheduled run of each remaining workflow is green.
+- [ ] *(finding 2026-10, from alloy 2.5.0 bump iteration)* **`hex_performance::
+  test_decode_performance_reasonable` is a flaky wall-clock test** — it asserts
+  100× decode of 20KB hex finishes in `< 200ms`
+  (`crates/universal-decoder-core/tests/hex_performance.rs:83`), but on a
+  loaded debug-build container the real time hovers right at the boundary
+  (observed 210-216ms failing, ~0.18s passing across back-to-back runs → ~1/3
+  failure rate). `db9dedf` already added a `skip_timing_assertions()` hatch for
+  coverage instrumentation but nothing covers general machine-load sensitivity.
+  A wall-clock threshold in the correctness suite makes `cargo test` non-
+  deterministic. Fix: either move this to a `#[ignore]`/bench-only gate, raise
+  the bound with headroom (and derive it from the warm-up, not a magic 200),
+  or widen `skip_timing_assertions()`. Do NOT just delete the assertion.
+  Verify: the test is no longer in the default `cargo test` correctness path,
+  or passes deterministically under load (10 consecutive runs green).
 - [ ] **Run the health report in CI** — add a job calling
   `python3 scripts/loop/health_report.py` (static mode) on every PR; ratchet
   regressions fail the build.
