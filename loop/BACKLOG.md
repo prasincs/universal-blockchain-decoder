@@ -191,6 +191,17 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-10;
+  `cargo update --precise` moved `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0
+  and `alloy-primitives` 1.6.1 -> 1.7.3 in Cargo.lock. Minor bump, no API
+  migration needed — all 7 `alloy_differential` tests still agree
+  field-for-field (type, chain_id, nonce, gas, to, value, input, access list,
+  v/r/s, tx hash, recovered sender). No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 -> 4.4.0**
+  in decoder-solana dev-deps; re-run `solana_transaction_status_differential`.
+  Verify: `cargo test -p decoder-solana` differential test still agrees
+  field-for-field and `upstream_outdated` shrinks.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -243,17 +254,20 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
+- [x] **Workspace fails clippy on current stable** — a moving target as the
   toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
+  (2026-07 observation) the workspace `-D warnings` build failed on
   `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
-  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
-  a `match` or destructure, do NOT weaken the assertion). The earlier
-  `decoder-optimism` (src/types.rs:397-403, enum at :13) /
-  `decoder-evm` (src/registry.rs:177-178) `unnecessary_unwrap` /
-  `large_enum_variant` errors reported under 1.94 no longer fire under 1.96.
-  Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
-  local and CI clippy agree.
+  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check). (Done
+  2026-10 during the alloy-bump iteration, which could not pass its mandatory
+  clippy verification gate until this was cleared. Rewrote the guarded unwraps
+  as `if let (Ok(v1), Ok(v2)) = (result1, result2)` — the assertion is NOT
+  weakened: when both verify, their values are still asserted equal, and the
+  outer `is_ok()` equality assert is unchanged. `rust-toolchain.toml` already
+  pins channel 1.96.0 so local and CI clippy agree. The earlier
+  `decoder-optimism`/`decoder-evm` lints reported under 1.94 no longer fire.
+  `cargo clippy --all --all-targets --all-features -- -D warnings` now exits
+  0 across the workspace.)
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
@@ -280,6 +294,16 @@ of re-litigating it. Reference decoders first:
 - [ ] **Ethereum sender recovery** — `from` is a zeroed placeholder in TxIR;
   `k256` is already a dependency. Implement ECDSA recovery from (v, r, s).
   Verify: differential test asserts recovered sender == alloy's.
+- [ ] *(finding 2026-10, from alloy-bump iteration)* **`test_verify_performance`
+  is a wall-clock flake** (`decoder-crypto-zk/tests/ecdsa_tests.rs:445-456`):
+  asserts 100 `verify()` calls finish in `< 2s`. On this container it runs
+  ~1.93s isolated but ~2.64s under parallel test load (CPU contention), so the
+  full crate suite fails nondeterministically on slower/loaded runners — a
+  latent CI flake and the same blind spot that hides real regressions behind
+  noise. Fix: drop the absolute wall-clock budget (benchmarks don't belong in
+  `cargo test`), or make it a ratio against a baseline op, or gate it behind a
+  `--ignored`/bench harness. Do NOT just raise the magic number. Verify:
+  `cargo test -p decoder-crypto-zk` is green across repeated parallel runs.
 
 ## P2 — layer-1 correctness bugs (found by the 2026-07 concepts survey)
 
