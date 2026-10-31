@@ -191,6 +191,19 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-10)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps. (Done 2026-10; `cargo update` moved
+  `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 and `alloy-primitives`
+  1.6.1 -> 1.7.3 in Cargo.lock, plus transitive `alloy-serde`/`alloy-trie`/
+  `alloy-tx-macros` and new `alloy-eip8141`. No API migration needed — all 7
+  `alloy_differential` tests still agree field-for-field (types, chain_id,
+  nonce, gas, to, value, input, access list, v/r/s, tx hash, recovered
+  sender). No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-10)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`.
+  Verify: `cargo test -p decoder-solana`; `upstream_outdated` drops the
+  solana-transaction-status entry.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -255,6 +268,13 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+  UPDATE 2026-10: the `decoder-crypto-zk/tests/ecdsa_tests.rs` lint is now
+  FIXED (destructured `if let (Ok(v1), Ok(v2)) = (&result1, &result2)`,
+  assertion unchanged) — it was blocking the mandatory pre-commit clippy gate
+  during the alloy-bump iteration under clippy 1.96.0. `cargo clippy --all
+  --all-targets --all-features -- -D warnings` now exits 0 locally. The
+  toolchain-pinning half (so local and CI clippy can't silently diverge again)
+  REMAINS OPEN.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
