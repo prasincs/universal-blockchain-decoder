@@ -204,9 +204,53 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   `solana_transaction_status_differential`.
   Verify: `cargo test -p decoder-solana`; `upstream_outdated` drops the
   solana-transaction-status entry.
+  BLOCKED (toolchain): 4.4.0 and its agave/solana siblings declare
+  `rust-version = 1.98.1`; `rust-toolchain.toml` pins 1.96.0. Needs a
+  deliberate toolchain bump first (expect new clippy lints). Also note 4.4.0
+  ADDS ~20 crates (solana-runtime-transaction, -cost-model, -metrics, -perf,
+  -vote-program, ...) to the dev-dep graph — weigh that supply-chain growth
+  for an oracle against what the bump buys. Doing it would also clear the
+  `zstd`/`zstd-safe` advisories if 4.4.0 moves to zstd 0.14 (check).
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
-  committed Cargo.lock doesn't fossilize.
+  committed Cargo.lock doesn't fossilize. (2026-10: a full `cargo update`
+  would move 342 packages; three months without one let 20 advisories pile
+  up — see the security section.)
+
+## P1 — security advisories (found 2026-10 review)
+
+`cargo audit` on the committed Cargo.lock reported **20 vulnerabilities**
+(advisories published Aug–Oct 2026). CI's `security-audit` job only runs on
+main/PRs and main last ran 2026-07-26, so nothing surfaced them; the next push
+to main would go red.
+
+- [x] **Semver-compatible advisory fixes** (Done 2026-10; lockfile-only, no
+  toolchain change): rustls 0.23.41 -> 0.23.46, rustls-webpki 0.103.13 ->
+  0.103.16, webpki-roots 1.0.8 -> 1.0.11, h2 0.4.15 -> 0.4.20, quinn-proto
+  0.11.15 -> 0.11.19, ruint 1.18.0 -> 1.21.1, libz-sys 1.1.29 -> 1.1.31,
+  zstd-sys 2.0.16 -> 2.1.2. `cargo audit` vulnerabilities 20 -> 5.
+- [ ] **crypto-bigint 0.5.5 (RUSTSEC-2026-0387, timing variability)** — on
+  the PRODUCTION path of ethereum/evm/bnb/arbitrum/avalanche/aleo/mina/
+  crypto-zk via `k256`/`elliptic-curve` 0.13. Practical impact is low (we only
+  verify/recover over public data; signing is out of scope), but fixing needs
+  a major `k256`/`elliptic-curve` bump to a line on crypto-bigint >= 0.7.6.
+  Verify: `cargo audit` no longer lists crypto-bigint; Ethereum sender
+  recovery + alloy_differential still agree.
+- [ ] **h2 0.3.27 (RUSTSEC-2026-0258)** — only via `tools/auto-update-docs`
+  (old hyper/reqwest 0.11 line). Bump its reqwest to the hyper-1 line, or
+  retire the tool. Verify: `cargo tree -i h2@0.3.27` empty.
+- [ ] **zstd 0.13.3 / zstd-safe 7.2.4 (RUSTSEC-2026-0391/0398/0403)** — only
+  via the solana dev-dep oracle. Rides on the blocked solana 4.4.0 bump (check
+  whether it moves to zstd 0.14), otherwise accept with a documented
+  `.cargo/audit.toml` ignore scoped to dev-deps.
+- [ ] **Advisory signal in the loop**: add a `cargo audit --json` count to
+  `health_report.py` (when the tool is available) and ratchet it downward, so
+  advisories surface on every loop run instead of waiting for a main push.
+- [ ] **CLI pulls an HTTP/TLS stack** — `universal-decoder-cli` depends
+  (non-dev) on rustls/h2/webpki-roots. Check what uses it against the "no
+  runtime network calls in production code" rule; feature-gate or remove.
+  Verify: `cargo tree -p universal-decoder-cli -e normal -i rustls` empty
+  under default features.
 
 ## P1 — canonical form must actually be canonical
 
@@ -272,9 +316,16 @@ of re-litigating it. Reference decoders first:
   FIXED (destructured `if let (Ok(v1), Ok(v2)) = (&result1, &result2)`,
   assertion unchanged) — it was blocking the mandatory pre-commit clippy gate
   during the alloy-bump iteration under clippy 1.96.0. `cargo clippy --all
-  --all-targets --all-features -- -D warnings` now exits 0 locally. The
-  toolchain-pinning half (so local and CI clippy can't silently diverge again)
-  REMAINS OPEN.
+  --all-targets --all-features -- -D warnings` now exits 0 locally.
+  CORRECTION (2026-10 review): the toolchain IS already pinned
+  (`rust-toolchain.toml` = 1.96.0, which rustup honors over CI's
+  `dtolnay/rust-toolchain@stable`). The real reason CI never saw this lint:
+  `.github/workflows/test.yml` clippy step `--exclude`s 7 crates
+  (decoder-crypto-zk, -starknet, -aleo, -mina, -polygon-zkevm, -ton,
+  universal-decoder-wasm) citing "unstable Rust features" — stale, since
+  `--all --all-features` is clean locally on 1.96.0. Remaining work: drop the
+  exclusions so CI checks what local checks.
+  Verify: CI clippy step has no `--exclude` and passes.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
@@ -294,6 +345,17 @@ of re-litigating it. Reference decoders first:
   workflows or delete them; then make scheduled failures visible (e.g.
   a health-report check via the Actions API, or failure notifications).
   Verify: latest scheduled run of each remaining workflow is green.
+- [ ] *(finding 2026-10)* **`hex_performance::test_decode_performance_reasonable`
+  is flaky** — wall-clock `< 200ms` for 100x20KB debug-build decodes. In a
+  4-vCPU container it measured 151-218ms and failed 2/5 runs on unchanged
+  code (other tests in the binary run on parallel threads). Since `cargo
+  test` stops at the first failing binary, this flake can also hide later
+  targets — run with `--no-fail-fast`. Fix without weakening the intent
+  (it guards against a `format!`-based slow path): e.g. compare against a
+  naive baseline measured in the same run (ratio, not absolute ms), or
+  mark `#[ignore]` + run it in a release-mode benchmark job.
+  Verify: 20 consecutive `cargo test -p universal-decoder-core --test
+  hex_performance` runs pass.
 - [ ] **Run the health report in CI** — add a job calling
   `python3 scripts/loop/health_report.py` (static mode) on every PR; ratchet
   regressions fail the build.
