@@ -191,6 +191,31 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps. (Done 2026-11; `cargo update` moved
+  `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 and
+  `alloy-primitives` 1.6.1 -> 1.7.3 in Cargo.lock (pulling
+  `alloy-serde`/`alloy-tx-macros` 2.5.0, `alloy-trie` 0.9.9, and new transitive
+  `alloy-eip8141` 0.1.1 / `alloy-eip2930` 0.2.3). No API migration needed — all
+  7 `alloy_differential` tests still agree field-for-field (type, chain_id,
+  nonce, gas, to, value, input, access list, v/r/s, tx hash, recovered sender).
+  No findings. `upstream_outdated` 8 -> 5. Incidental: fixed a pre-existing
+  `clippy::unnecessary_unwrap` in `decoder-crypto-zk/tests/ecdsa_tests.rs:157`
+  (newer clippy 1.96.0 flagged existing test code; the mandatory
+  `clippy -D warnings` pre-commit gate blocked any commit until fixed —
+  semantics unchanged, `is_ok()`+`unwrap()` rewritten to `if let (Ok,Ok)`).)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.0** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings. Verify: `cargo test -p decoder-solana`.
+- [ ] *(auto-generated 2026-11)* **alloy-rlp 0.3.15 -> 0.3.17** is NOT a
+  real differential oracle — `decoder-bnb:alloy-rlp` is a dead validation
+  dev-dep (see `dead_validation_deps_count`). Resolve via the "BNB vs alloy"
+  item (add a real differential test or delete the dep), not a blind bump.
+- [ ] *(auto-generated 2026-11)* **pallas 0.30.2 -> 1.4.0** is still gated on
+  the Cardano corpus item — the differential test is an `#[ignore]` stub, so
+  bumping alone buys nothing measurable. Do it with the "Cardano vs pallas"
+  P1 item.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
