@@ -153,8 +153,8 @@ fn test_verify_deterministic() {
 
     // Same inputs should produce same result
     assert_eq!(result1.is_ok(), result2.is_ok());
-    if result1.is_ok() && result2.is_ok() {
-        assert_eq!(result1.unwrap(), result2.unwrap());
+    if let (Ok(v1), Ok(v2)) = (result1, result2) {
+        assert_eq!(v1, v2);
     }
 }
 
