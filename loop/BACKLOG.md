@@ -202,7 +202,17 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   transitive dep, not our dev-dep.)
 - [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 -> 4.4.1**
   in decoder-solana dev-deps; re-run
-  `solana_transaction_status_differential`.
+  `solana_transaction_status_differential`. BLOCKED (toolchain MSRV):
+  attempted 2026-11. `cargo update -p solana-transaction-status --precise 4.4.1`
+  pulls in `agave-*` / `solana-*` 4.4.1 crates that declare
+  `rust-version = 1.98.1`, but this environment's toolchain is **rustc 1.96.0**,
+  so `cargo test -p decoder-solana` fails to resolve ("rustc 1.96.0 is not
+  supported by the following packages: agave-feature-set@4.4.1 requires rustc
+  1.98.1 ..."). The bump also drags shared `borsh` 1.7.0 -> 1.8.1 across the
+  whole workspace (a canonical-serialization dep — needs its own verification).
+  Unblock: bump the CI/dev toolchain to >= 1.98.1 first (relates to the clippy
+  toolchain-pin item in "restore rotted infrastructure"), then retry and re-run
+  the differential suite. Reverted the lock change for now; stays on 4.1.2.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
