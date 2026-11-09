@@ -191,6 +191,28 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-11;
+  `cargo update` moved `alloy-consensus`/`alloy-eips`/`alloy-serde`/
+  `alloy-tx-macros` 2.2.0 -> 2.5.0, `alloy-primitives` 1.6.1 -> 1.7.3,
+  `alloy-rlp`/`alloy-rlp-derive` 0.3.15 -> 0.3.17, `alloy-trie` 0.9.5 -> 0.9.9
+  in Cargo.lock (new transitive `alloy-eip8141 0.1.1`). No API migration
+  needed — all 7 `alloy_differential` tests still agree field-for-field
+  (types, chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. `upstream_outdated` 8 -> 4.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Patch/minor bump within v4 — no
+  major API change expected, but the dev-dep is gated behind
+  `agave-unstable-api`, so re-verify the feature-gated re-exports still resolve.
+- [ ] **Toolchain drift re-pin**: the clippy version in the environment moved
+  forward (now rust-1.96.0) and newly lints patterns that the committed code
+  used. Fixed one such site on 2026-11 (`decoder-crypto-zk/tests/ecdsa_tests.rs`
+  `unnecessary_unwrap`: `is_ok()` + `unwrap()` -> `if let (Ok, Ok)`), because
+  it broke the mandatory `cargo clippy -- -D warnings` gate for every commit.
+  The health report does not run clippy, so it missed this; consider adding a
+  `clippy -D warnings` check to `health_report.py` so toolchain drift surfaces
+  as a measured signal instead of blocking the next unrelated commit.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
