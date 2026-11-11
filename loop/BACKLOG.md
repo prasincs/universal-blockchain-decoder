@@ -191,6 +191,24 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-11;
+  `cargo update --precise` moved `alloy-consensus`/`alloy-eips`/`alloy-serde`/
+  `alloy-tx-macros` 2.2.0 -> 2.5.0, `alloy-primitives` 1.6.1 -> 1.7.3,
+  `alloy-trie` 0.9.5 -> 0.9.9, added `alloy-eip8141` 0.1.1. Dev-dep ranges
+  (`"2.0"`/`"1.0"`) already admit these, so no Cargo.toml change. No API
+  migration needed — all 7 `alloy_differential` tests still agree
+  field-for-field (type, chain_id, nonce, gas, to, value, input, access list,
+  v/r/s, tx hash, recovered sender). No findings.
+  `upstream_outdated` alloy entries cleared.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. BLOCKED (toolchain): the 4.4.x
+  graph (`solana-transaction-status` and ~25 transitive `solana-*` crates)
+  requires `rustc 1.98.1`, but `rust-toolchain.toml` is deliberately pinned to
+  `1.96.0` ("Bump deliberately" — new stable lints break CI). Unblock by
+  bumping the pinned toolchain first (a deliberate decision, not loop-auto),
+  then re-pin solana to 4.4.1 and re-run the differential suite.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -243,17 +261,15 @@ of re-litigating it. Reference decoders first:
   Note: coverage CI (PR events) runs `cargo test --workspace`, which is how
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
-- [ ] **Workspace fails clippy on current stable** — a moving target as the
-  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
-  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
-  `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
-  a `match` or destructure, do NOT weaken the assertion). The earlier
-  `decoder-optimism` (src/types.rs:397-403, enum at :13) /
-  `decoder-evm` (src/registry.rs:177-178) `unnecessary_unwrap` /
-  `large_enum_variant` errors reported under 1.94 no longer fire under 1.96.
-  Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
-  local and CI clippy agree.
+- [x] **Workspace fails clippy on current stable** — (Done 2026-11; the pinned
+  `1.96.0` `-D warnings` build failed on `decoder-crypto-zk/tests/
+  ecdsa_tests.rs:157`, two `unnecessary_unwrap` on `result1.unwrap()`/
+  `result2.unwrap()` after an `is_ok()` check. Rewrote the guard as
+  `if let (Ok(v1), Ok(v2)) = (&result1, &result2) { assert_eq!(v1, v2); }` —
+  same semantics (values compared only when both are `Ok`), no `unwrap`, not
+  allow-listed, assertion unchanged. `test_verify_deterministic` still passes.
+  Toolchain stays pinned at 1.96.0. Surfaced blocking this run's alloy-oracle
+  bump, which shares the mandatory pre-commit clippy gate.)
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
