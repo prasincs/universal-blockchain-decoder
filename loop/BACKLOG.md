@@ -29,6 +29,14 @@ Status: `[ ]` open · `[x]` done · `[~]` in progress
   Added `scripts/loop/health_report.py` + `loop/ratchet.json`.
   Verify: `python3 scripts/loop/health_report.py` exits 0. (Done 2026-06.)
 
+- [x] **Clippy gate broken by toolchain drift (rust-1.96.0)**
+  `cargo clippy --all --all-targets --all-features -- -D warnings` (the
+  mandatory pre-commit gate) failed on clean HEAD: a newer clippy tightened
+  `unnecessary_unwrap`, flagging `ecdsa_tests.rs:157`
+  (`is_ok()` guard + `.unwrap()`). Rewrote to `if let (Ok(v1), Ok(v2))` —
+  same assertion, same semantics, no test weakened. Found while verifying the
+  alloy bump below. Verify: clippy gate exits 0. (Done 2026-11.)
+
 ## P1 — make the founding premise true (differential testing)
 
 One item per chain. Pattern to copy:
@@ -191,6 +199,20 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.5.0** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-11;
+  `cargo update` moved `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.5.0 and
+  `alloy-primitives` 1.6.1 -> 1.7.3 in Cargo.lock, plus transitive
+  `alloy-serde`/`alloy-tx-macros` 2.2.0 -> 2.5.0 and `alloy-trie` 0.9.5 ->
+  0.9.9. No API migration needed — all 7 `alloy_differential` tests still
+  agree field-for-field (type, chain_id, nonce, gas, to, value, input, access
+  list, v/r/s, tx hash, recovered sender). No findings.
+  `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. (`upstream_outdated` regrew: 4.4.1
+  published since the last run.) Disagreements after the bump are findings.
+  Verify: `cargo test -p decoder-solana`.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
