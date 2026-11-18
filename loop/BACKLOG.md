@@ -86,8 +86,16 @@ Each closed item must raise `differential_decoders_count` and reduce
   heuristic already (wrongly) counted the placeholder because it only checks
   whether a test *imports* the oracle, not whether it *compares*. See the
   metric-gap item below.)
-- [ ] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
-  EVM differential test covers it.
+- [x] **BNB vs alloy** (deps declared, unused) — or delete the deps if the
+  EVM differential test covers it. (Done 2026-11; `BnbDecoder::decode`
+  delegates 100% to `EthereumDecoder::decode` + a chain-id==56/97 check and
+  reuses `EthereumTransaction` verbatim — the identical RLP parse path is
+  already covered field-for-field by decoder-ethereum's `alloy_differential`
+  test. A BNB-specific differential test would only re-run Ethereum's parser
+  with chainId 56, adding no coverage. The `alloy-primitives`/`alloy-rlp`
+  dev-deps were never imported by any test (dead), so per the P1 dead-deps
+  policy they were DELETED from `decoder-bnb/Cargo.toml` and the README's
+  dependency notes corrected. `dead_validation_deps_count` 4 -> 2.)
 - [ ] **Policy**: dead `UPSTREAM_LIBS` dev-deps for chains nobody is testing
   get DELETED, not kept "for later" — declared-but-unused deps carry yank
   risk with zero value (this already broke the build once).
@@ -191,6 +199,18 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [ ] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.6.1** in
+  decoder-ethereum dev-deps (`alloy-consensus`/`alloy-eips` 2.2.0 -> 2.6.1,
+  `alloy-primitives` 1.6.1 -> 1.7.3); re-run `alloy_differential`. Any
+  field-level disagreement after the bump is a finding (minimal repro fixture
+  + backlog entry). Acceptance: `cargo test -p decoder-ethereum --test
+  alloy_differential` passes; `upstream_outdated` no longer lists the three
+  alloy oracles.
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Disagreements after the bump are
+  findings. Acceptance: `cargo test -p decoder-solana` passes;
+  `upstream_outdated` no longer lists `solana-transaction-status`.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
