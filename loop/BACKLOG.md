@@ -191,6 +191,25 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.6.1** in
+  decoder-ethereum dev-deps (`alloy-consensus`/`alloy-eips`; `alloy-primitives`
+  1.6.1 -> 1.7.3); re-run `alloy_differential`. (Done 2026-11; `cargo update
+  --precise` moved `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.6.1 and
+  `alloy-primitives` (the 1.x dev-dep) 1.6.1 -> 1.7.3 in Cargo.lock; the
+  transitive `alloy-primitives` 0.7.7 is unrelated and stays. No API migration
+  needed — all 7 `alloy_differential` tests still agree field-for-field (types,
+  chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. `upstream_outdated` 8 -> 5 (the three alloy
+  entries gone). Also fixed the pre-existing `unnecessary_unwrap` clippy error
+  in `decoder-crypto-zk/tests/ecdsa_tests.rs:157` — it blocked the loop's own
+  `clippy --all -D warnings` gate; rewrote to `if let (Ok(v1), Ok(v2))` without
+  weakening the assertion. Partially addresses the "Workspace fails clippy on
+  current stable" item below.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Verify:
+  `cargo test -p decoder-solana`; `upstream_outdated` drops the
+  solana-transaction-status entry.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -255,6 +274,11 @@ of re-litigating it. Reference decoders first:
   Fix the lints (don't allow-list them) and pin/refresh the CI toolchain so
   local and CI clippy agree.
   Verify: `cargo clippy --all --all-targets --all-features -- -D warnings`.
+  UPDATE 2026-11: the `ecdsa_tests.rs:157` lint is FIXED (as a by-product of
+  the alloy bump, which needs the gate to pass) — rewrote to
+  `if let (Ok(v1), Ok(v2))`; the full `clippy --all -D warnings` gate now
+  passes clean under 1.96.0. Remaining work on this item is only the
+  pin/refresh-CI-toolchain part so local and CI clippy stay in sync.
 - [ ] *(finding 2026-07, from TON differential work)* **`differential_
   decoders_count` over-counts** — `check_dead_validation_deps` in
   `scripts/loop/health_report.py` classifies a decoder as having a "real
