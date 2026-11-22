@@ -191,6 +191,20 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.6.1** in
+  decoder-ethereum dev-deps; re-run `alloy_differential`. (Done 2026-11;
+  `cargo update` moved `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.6.1 and
+  `alloy-primitives` 1.6.1 -> 1.7.3 in Cargo.lock. No API migration needed —
+  all 7 `alloy_differential` tests still agree field-for-field (types,
+  chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. Alloy entries removed from
+  `upstream_outdated` (remaining: alloy-rlp, pallas x3, solana).)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`. Acceptance:
+  `cargo test -p decoder-solana` passes and `loop/report.json` shows
+  `solana-transaction-status` gone from `upstream_outdated`. Disagreements
+  after the bump are findings.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
@@ -244,8 +258,14 @@ of re-litigating it. Reference decoders first:
   this finally surfaced; the plain Test Suite integration job still only
   covers core.
 - [ ] **Workspace fails clippy on current stable** — a moving target as the
-  toolchain advances and CI's toolchain lags. Under clippy **1.96.0**
-  (2026-07 observation) the workspace `-D warnings` build fails on
+  toolchain advances and CI's toolchain lags. LINT FIXED 2026-11: the
+  `decoder-crypto-zk/tests/ecdsa_tests.rs:157` `unnecessary_unwrap` pair was
+  rewritten as `if let (Ok(v1), Ok(v2)) = (result1, result2)` (assertion
+  unchanged) — it was blocking the loop's mandated `cargo clippy -D warnings`
+  verify gate, so it was fixed alongside the 2026-11 alloy bump. STILL OPEN:
+  pin/refresh the CI toolchain so local and CI clippy agree (the lint target
+  moves with each clippy release). Under clippy **1.96.0**
+  (2026-07 observation) the workspace `-D warnings` build failed on
   `decoder-crypto-zk/tests/ecdsa_tests.rs:157` (two `unnecessary_unwrap`:
   `result1.unwrap()`/`result2.unwrap()` after an `is_ok()` check — rewrite as
   a `match` or destructure, do NOT weaken the assertion). The earlier
