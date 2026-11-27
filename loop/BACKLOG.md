@@ -191,6 +191,19 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.6.1** in
+  decoder-ethereum dev-deps (and `alloy-primitives` 1.6.1 -> 1.7.3, now in
+  `upstream_outdated` for the first time). (Done 2026-11; `cargo update`
+  moved `alloy-consensus`/`alloy-eips` 2.2.0 -> 2.6.1 and `alloy-primitives`
+  1.6.1 -> 1.7.3 in Cargo.lock (pulling `alloy-trie` 0.9.5 -> 0.9.9 and the
+  `alloy-sol-*`/`syn-solidity` 1.7.3 macro stack). No API migration needed —
+  all 7 `alloy_differential` tests still agree field-for-field (types,
+  chain_id, nonce, gas, to, value, input, access list, v/r/s, tx hash,
+  recovered sender). No findings. `upstream_outdated` 8 -> 5.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.1** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`.
+  Verify: `cargo test -p decoder-solana`; `upstream_outdated` drops by 1.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
