@@ -191,6 +191,20 @@ locked upstream oracle (`upstream_outdated` in `loop/report.json`).
   All 4 `bitcoin_core_vectors` test functions (123 Bitcoin Core vectors) still
   agree field-for-field with the upstream crate. No findings.
   `upstream_outdated` 5 -> 4.)
+- [x] *(auto-generated 2026-11)* **Bump alloy oracle 2.2.0 -> 2.6.1** in
+  decoder-ethereum dev-deps (`alloy-consensus`/`alloy-eips` 2.2.0 -> 2.6.1,
+  `alloy-primitives` 1.6.1 -> 1.7.3); re-run `alloy_differential`. (Done
+  2026-11; `cargo update --precise` on the locked graph, no dev-dep spec or
+  test-source changes needed. All 7 `alloy_differential` tests still agree
+  field-for-field (types, chain_id, nonce, gas, to, value, input, access list,
+  v/r/s, tx hash, recovered sender). No findings. `upstream_outdated` 8 -> 5.
+  Incidental: fixed 2 pre-existing `clippy::unnecessary_unwrap` errors in
+  `decoder-crypto-zk/tests/ecdsa_tests.rs` (toolchain drift to clippy 1.96.0)
+  that blocked the mandated pre-commit clippy gate — rewrote `is_ok()`+
+  `unwrap()` as an `if let (Ok, Ok)`, same assertion, no test weakening.)
+- [ ] *(auto-generated 2026-11)* **Bump solana-transaction-status 4.1.2 ->
+  4.4.2** in decoder-solana dev-deps; re-run
+  `solana_transaction_status_differential`.
 - [ ] **Re-pin cadence**: `cargo update` of the locked graph on a schedule
   (e.g. monthly), gated by the full test suite + health report, so the
   committed Cargo.lock doesn't fossilize.
